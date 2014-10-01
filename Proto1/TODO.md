@@ -1,0 +1,5 @@
+- While mesh is still being updated, call Mesh::MarkDynamic().
+- Make the patch grow.
+- Add outline.
+- Make UV coords scalable.
+- 

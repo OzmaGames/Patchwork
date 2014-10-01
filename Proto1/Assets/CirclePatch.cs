@@ -7,6 +7,16 @@ public class CirclePatch : MonoBehaviour {
 	public float InnerRadius = 0.2f;
 	public float OuterRadius = 1.0f;
 
+	class PatchEdge
+	{
+		Vector2 PointA;
+		Vector2 PointB;
+		Vector2 Origin;
+	};
+	
+	List<PatchEdge> innerEdges = new List<PatchEdge>();
+	List<PatchEdge> outerEdges = new List<PatchEdge>();
+
 	static Mesh CreateCircle(float innerRadius, float outerRadius)
 	{
 		const float requiredGranularity = 40.0f;
@@ -94,6 +104,12 @@ public class CirclePatch : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+	}
+
+	public void Generate(float innerRadius, float outerRadius)
+	{
+		InnerRadius = innerRadius;
+		OuterRadius = outerRadius;
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = CreateCircle(InnerRadius, OuterRadius);
 		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
