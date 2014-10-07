@@ -67,6 +67,10 @@ public class Player : MonoBehaviour {
 			if(Input.GetMouseButtonDown(0))
 			{
 				isDone = true;
+				if(activePatch != null)
+				{
+					activePatch.Place();
+				}
 			}
 		}
 	}

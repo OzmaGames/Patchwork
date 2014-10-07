@@ -7,6 +7,9 @@ public class CirclePatch : MonoBehaviour {
 	public float InnerRadius = 0.2f;
 	public float OuterRadius = 1.0f;
 
+	bool placed;
+	float size = 0.0f;
+
 	class PatchEdge
 	{
 		Vector2 PointA;
@@ -24,14 +27,17 @@ public class CirclePatch : MonoBehaviour {
 
 		List<Vector2> innerPoints = new List<Vector2>();
 		List<Vector2> outerPoints = new List<Vector2>();
+		List<Vector2> uvr = new List<Vector2>();
 		for(float angle = 0.0f; angle < (Mathf.PI * 2.0f); angle += granularity)
 		{
 			innerPoints.Add(new Vector2(innerRadius * Mathf.Cos(angle), innerRadius * Mathf.Sin(angle)));
 			outerPoints.Add(new Vector2(outerRadius * Mathf.Cos(angle), outerRadius * Mathf.Sin(angle)));
+			uvr.Add(new Vector2((Mathf.Cos(angle) * 0.5f) + 0.5f, (Mathf.Sin(angle) * 0.5f) + 0.5f));
 		}
 
 		List<Vector3> vertices = new List<Vector3>();
 		List<Vector2> uvs = new List<Vector2>();
+		List<Vector2> uvs2 = new List<Vector2>();
 		List<int> indices = new List<int>();
 		for(int i = 0; i < outerPoints.Count; ++i)
 		{
@@ -49,10 +55,23 @@ public class CirclePatch : MonoBehaviour {
 			vertices.Add(c);
 			vertices.Add(d);
 
-			uvs.Add(new Vector2(0.0f, 0.0f));
-			uvs.Add(new Vector2(0.0f, 1.0f));
-			uvs.Add(new Vector2(1.0f, 0.0f));
-			uvs.Add(new Vector2(1.0f, 1.0f));
+
+			Vector2 outerUVPointA = uvr[i];
+			Vector2 outerUVPointB = uvr[(i + 1) % uvr.Count];
+			Vector3 uvA = new Vector3(outerUVPointA.x, outerUVPointA.y);
+			Vector3 uvB = new Vector3(0.5f, 0.5f);
+			Vector3 uvC = new Vector3(outerUVPointB.x, outerUVPointB.y);
+			Vector3 uvD = new Vector3(0.5f, 0.5f);
+
+			uvs.Add(uvA);
+			uvs.Add(uvB);
+			uvs.Add(uvC);
+			uvs.Add(uvD);
+
+			uvs2.Add(new Vector2(0.0f, 0.0f));
+			uvs2.Add(new Vector2(0.0f, 1.0f));
+			uvs2.Add(new Vector2(1.0f, 0.0f));
+			uvs2.Add(new Vector2(1.0f, 1.0f));
 
 			indices.Add((i * 4) + 0);
 			indices.Add((i * 4) + 1);
@@ -75,6 +94,7 @@ public class CirclePatch : MonoBehaviour {
 		Mesh mesh = new Mesh();
 		mesh.vertices = vertices.ToArray();
 		mesh.uv = uvs.ToArray();
+		mesh.uv2 = uvs2.ToArray();
 		mesh.triangles = indices.ToArray();
 		mesh.RecalculateNormals();
 		mesh.RecalculateBounds();
@@ -113,12 +133,28 @@ public class CirclePatch : MonoBehaviour {
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = CreateCircle(InnerRadius, OuterRadius);
 		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-		renderer.material.shader = Shader.Find("Unlit/Texture");
+		//renderer.material.shader = Shader.Find("Unlit/Texture");
+		renderer.material.shader = Shader.Find("Custom/CirclePatch");
 		renderer.material.mainTexture = CreatePatternTexture((int)(Random.value * 255.0f));
+		size = 0.1f;
+		renderer.material.SetFloat("_CirclePatchSize", size);
+	}
+
+	public void Place()
+	{
+		placed = true;
 	}
 	
 	// Update is called once per frame
 	void Update () {
-	
+		if(placed)
+		{
+			if(size < 1.0f)
+			{
+				MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+				renderer.material.SetFloat("_CirclePatchSize", size);
+				size += 0.01f;
+			}
+		}
 	}
 }
