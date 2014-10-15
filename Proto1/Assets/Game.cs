@@ -13,18 +13,27 @@ public class Game : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		AddPlayer("Player1");
-		AddPlayer("Player2");
-		activePlayer = players.GetEnumerator();
-		activePlayer.MoveNext();
-		ActivatePlayer(activePlayer.Current);
+		AddPlayer("Player1", new Color[]{
+			new Color(0.753906f, 0.160156f, 0.257812f),
+			new Color(0.558594f, 0.0703125f, 0.441406f),
+			new Color(0.386719f, 0.136719f, 0.457031f),
+			new Color(0.847656f, 0.550781f, 0.808594f)
+		});
+		AddPlayer("Player2", new Color[]{
+			new Color(0.9f, 0.1f, 0.8f),
+			new Color(0.9f, 0.1f, 0.2f),
+			new Color(0.9f, 0.0f, 0.6f),
+			new Color(0.9f, 0.9f, 0.8f)
+		});
 	}
 
-	void AddPlayer(string name)
+	void AddPlayer(string name, Color[] colors)
 	{
 		GameObject playerObject = (GameObject)Instantiate(PlayerPrefab);
 		Player player = playerObject.GetComponent<Player>();
 		player.GetComponent<Player>().Name = name;
+		player.GetComponent<Player>().Colors = colors;
+
 		players.Add(player);
 	}
 
@@ -55,6 +64,12 @@ public class Game : MonoBehaviour {
 				}
 				ActivatePlayer(activePlayer.Current);
 			}
+		}
+		else
+		{
+			activePlayer = players.GetEnumerator();
+			activePlayer.MoveNext();
+			ActivatePlayer(activePlayer.Current);
 		}
 	}
 }

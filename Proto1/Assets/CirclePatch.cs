@@ -4,11 +4,17 @@ using System.Collections.Generic;
 
 public class CirclePatch : MonoBehaviour {
 
-	public float InnerRadius = 0.2f;
-	public float OuterRadius = 1.0f;
+	public int Segments = 1;
+	private int CurrentSegment = 0;
+	private float SegmentScale = 1.0f;
+	private float InnerRadius = 1.0f;
+	private float OuterRadius = 1.0f;
+
+	public Texture2D[] PatternTextures;
 
 	bool placed;
 	float size = 0.0f;
+	float maxSize = 0.0f;
 
 	class PatchEdge
 	{
@@ -38,6 +44,7 @@ public class CirclePatch : MonoBehaviour {
 		List<Vector3> vertices = new List<Vector3>();
 		List<Vector2> uvs = new List<Vector2>();
 		List<Vector2> uvs2 = new List<Vector2>();
+		List<Vector4> extras = new List<Vector4>();
 		List<int> indices = new List<int>();
 		for(int i = 0; i < outerPoints.Count; ++i)
 		{
@@ -58,15 +65,24 @@ public class CirclePatch : MonoBehaviour {
 
 			Vector2 outerUVPointA = uvr[i];
 			Vector2 outerUVPointB = uvr[(i + 1) % uvr.Count];
-			Vector3 uvA = new Vector3(outerUVPointA.x, outerUVPointA.y);
-			Vector3 uvB = new Vector3(0.5f, 0.5f);
-			Vector3 uvC = new Vector3(outerUVPointB.x, outerUVPointB.y);
-			Vector3 uvD = new Vector3(0.5f, 0.5f);
+			Vector2 uvA = new Vector3(outerUVPointA.x, outerUVPointA.y);
+			Vector2 uvB = new Vector3(0.5f, 0.5f);
+			Vector2 uvC = new Vector3(outerUVPointB.x, outerUVPointB.y);
+			Vector2 uvD = new Vector3(0.5f, 0.5f);
 
 			uvs.Add(uvA);
 			uvs.Add(uvB);
 			uvs.Add(uvC);
 			uvs.Add(uvD);
+
+			Vector4 extraA = new Vector4(uvA.x * outerRadius, uvA.y * outerRadius, 0.0f, 0.0f);
+			Vector4 extraB = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+			Vector4 extraC = new Vector4(uvC.x * outerRadius, uvC.y * outerRadius, 0.0f, 0.0f);
+			Vector4 extraD = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+			extras.Add(extraA);
+			extras.Add(extraB);
+			extras.Add(extraC);
+			extras.Add(extraD);
 
 			uvs2.Add(new Vector2(0.0f, 0.0f));
 			uvs2.Add(new Vector2(0.0f, 1.0f));
@@ -95,8 +111,9 @@ public class CirclePatch : MonoBehaviour {
 		mesh.vertices = vertices.ToArray();
 		mesh.uv = uvs.ToArray();
 		mesh.uv2 = uvs2.ToArray();
+		mesh.tangents = extras.ToArray();
 		mesh.triangles = indices.ToArray();
-		mesh.RecalculateNormals();
+//		mesh.RecalculateNormals();
 		mesh.RecalculateBounds();
 
 		return mesh;
@@ -123,36 +140,73 @@ public class CirclePatch : MonoBehaviour {
 	}
 
 	// Use this for initialization
-	void Start () {
+	void Start ()
+	{
 	}
 
-	public void Generate(float innerRadius, float outerRadius)
+	public void Generate(int segments, Texture2D[] patternTextures, Color[] colors)
 	{
-		InnerRadius = innerRadius;
-		OuterRadius = outerRadius;
+		// Setup initial values.
+		Segments = segments;
+		CurrentSegment = 1;
+
+		InnerRadius = 0.0f;
+		OuterRadius = Segments * SegmentScale;
+
+		PatternTextures = patternTextures;
+
+		// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = CreateCircle(InnerRadius, OuterRadius);
 		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-		//renderer.material.shader = Shader.Find("Unlit/Texture");
 		renderer.material.shader = Shader.Find("Custom/CirclePatch");
 		renderer.material.mainTexture = CreatePatternTexture((int)(Random.value * 255.0f));
-		size = 0.1f;
+		renderer.material.SetTexture("_PatternTexture1", PatternTextures[0]);
+		renderer.material.SetTexture("_PatternTexture2", PatternTextures[1]);
+		size = CurrentSegment * SegmentScale;
+		maxSize = size;
 		renderer.material.SetFloat("_CirclePatchSize", size);
+		renderer.material.SetFloat("_CirclePatchMaxSize", size);
+		renderer.material.SetFloat("_CirclePatchRadius", OuterRadius);
+		renderer.material.SetFloat("_CirclePatchLayer", CurrentSegment);
+		renderer.material.SetColor("_Color0", colors[0]);
+		renderer.material.SetColor("_Color1", colors[1]);
+		renderer.material.SetColor("_Color2", colors[2]);
+		renderer.material.SetColor("_Color3", colors[3]);
 	}
 
 	public void Place()
 	{
+		CurrentSegment = 1;
+		size = CurrentSegment * SegmentScale;
+		maxSize = size;
+		renderer.material.SetFloat("_CirclePatchSize", size);
+		renderer.material.SetFloat("_CirclePatchMaxSize", maxSize); 
+		renderer.material.SetFloat("_CirclePatchRadius", OuterRadius);
+		renderer.material.SetFloat("_CirclePatchLayer", CurrentSegment);
 		placed = true;
 	}
+
+	public void NextSegment()
+	{
+		if(CurrentSegment < Segments)
+		{
+			++CurrentSegment;
+			maxSize = CurrentSegment * SegmentScale;;
+		}
+	}
 	
-	// Update is called once per frame
-	void Update () {
+	void Update ()
+	{
 		if(placed)
 		{
-			if(size < 1.0f)
+			if(size < maxSize)
 			{
 				MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
 				renderer.material.SetFloat("_CirclePatchSize", size);
+				renderer.material.SetFloat("_CirclePatchMaxSize", maxSize); 
+				renderer.material.SetFloat("_CirclePatchRadius", OuterRadius);
+				renderer.material.SetFloat("_CirclePatchLayer", CurrentSegment);
 				size += 0.01f;
 			}
 		}

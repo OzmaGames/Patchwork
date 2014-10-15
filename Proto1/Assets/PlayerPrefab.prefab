@@ -40,7 +40,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PatchPrefab: {fileID: 100000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+  PatternTextures:
+  - {fileID: 2800000, guid: 6357c3b7ce4c5473c813494276b03f40, type: 3}
+  - {fileID: 2800000, guid: e415c498b510d4c5ab78eda3e3f89409, type: 3}
   Name: 
+  Colors:
+  - {r: 1, g: 0, b: 0, a: 0}
+  - {r: 1, g: 0, b: .55862093, a: 0}
+  - {r: .434472322, g: .5548383, b: .720588207, a: 0}
+  - {r: .0817473829, g: .79411763, b: .79411763, a: 0}
 --- !u!1001 &100100000
 Prefab:
   m_ObjectHideFlags: 1

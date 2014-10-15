@@ -5,11 +5,13 @@ using System.Collections.Generic;
 public class Player : MonoBehaviour {
 
 	public GameObject PatchPrefab;
+	public Texture2D[] PatternTextures;
 
 	public string Name;
 
 	List<GameObject> patches = new List<GameObject>();
 	CirclePatch activePatch;
+	public Color[] Colors;
 
 	bool myTurn = false;
 	bool isDone = false;
@@ -27,14 +29,13 @@ public class Player : MonoBehaviour {
 			Name = "Player" + UID;
 			++UID;
 		}
-	
 	}
 
-	CirclePatch CreatePatch(float innerRadius, float outerRadius)
+	CirclePatch CreatePatch(int segments)
 	{
 		GameObject patchObject = (GameObject)Instantiate(PatchPrefab);
 		CirclePatch circlePatch = patchObject.AddComponent<CirclePatch>();
-		circlePatch.Generate(innerRadius, outerRadius);
+		circlePatch.Generate(segments, PatternTextures, Colors);
 		patches.Add(patchObject);
 		return patchObject.GetComponent<CirclePatch>();
 	}
@@ -43,9 +44,12 @@ public class Player : MonoBehaviour {
 	{
 		isDone = false;
 		myTurn = true;
-		float innerRadius = 0.0f;//Random.Range(0.0f, 2.5f);
-		float outerRadius = Random.Range(innerRadius, innerRadius + 0.1f + 3.9f);
-		activePatch = CreatePatch(innerRadius, outerRadius);
+		int segments = Random.Range(2, 5);
+		activePatch = CreatePatch(segments);
+		for(int i = 0; i < patches.Count; ++i)
+		{
+			patches[i].GetComponent<CirclePatch>().NextSegment();
+		}
 	}
 
 	public void TurnOver()
