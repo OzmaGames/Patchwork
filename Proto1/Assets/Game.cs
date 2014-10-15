@@ -14,16 +14,18 @@ public class Game : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		AddPlayer("Player1", new Color[]{
-			new Color(0.753906f, 0.160156f, 0.257812f),
-			new Color(0.558594f, 0.0703125f, 0.441406f),
-			new Color(0.386719f, 0.136719f, 0.457031f),
-			new Color(0.847656f, 0.550781f, 0.808594f)
+			new Color(193.0f / 255.0f,	41.0f / 255.0f,		66.0f / 255.0f),
+			new Color(143.0f / 255.0f,	18.0f / 255.0f,		113.0f / 255.0f),
+			new Color(99.0f / 255.0f,	35.0f / 255.0f,		117.0f / 255.0f),
+			new Color(217.0f / 255.0f,	141.0f / 255.0f,	207.0f / 255.0f),
+			new Color(219.0f / 255.0f,	232.0f / 255.0f,	109.0f / 255.0f),
 		});
 		AddPlayer("Player2", new Color[]{
-			new Color(0.9f, 0.1f, 0.8f),
-			new Color(0.9f, 0.1f, 0.2f),
-			new Color(0.9f, 0.0f, 0.6f),
-			new Color(0.9f, 0.9f, 0.8f)
+			new Color(44.0f / 255.0f,	47.0f / 255.0f,		135.0f / 255.0f),
+			new Color(37.0f / 255.0f,	91.0f / 255.0f,		156.0f / 255.0f),
+			new Color(83.0f / 255.0f,	183.0f / 255.0f,	217.0f / 255.0f),
+			new Color(64.0f / 255.0f,	163.0f / 255.0f,	57.0f / 255.0f),
+			new Color(243.0f / 255.0f,	143.0f / 255.0f,	25.0f / 255.0f),
 		});
 	}
 
