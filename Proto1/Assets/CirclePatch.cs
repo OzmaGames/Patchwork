@@ -119,6 +119,53 @@ public class CirclePatch : MonoBehaviour {
 		return mesh;
 	}
 
+	static float Saturate(float x)
+	{
+		return Mathf.Clamp01(x);
+		//return Mathf.Min(0.0f, Mathf.Max(x, 1.0f));
+	}
+	static float SmuttStep(float x, float y, float z)
+	{
+		return Saturate((z - x) / (y - x));
+	}
+	static float Mix(float x, float y, float a)
+	{
+		return (x * (1.0f - a)) + (y * a);
+	}
+
+	public static Texture2D CreateGradientTexture(Color[] colors)
+	{
+		const int size = 256;
+		float stepSize = 1.0f / (colors.Length - 0);
+
+		Texture2D tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
+		for(int x = 0; x < size; ++x)
+		{
+			float index = x / 255.0f;
+
+			// Mix color.
+			float r = colors[0].r;
+			float g = colors[0].g;
+			float b = colors[0].b;
+			float step = stepSize;
+			for(int i = 1; i < colors.Length; ++i)
+			{
+				r = Mix(r, colors[i].r, SmuttStep(step, step + stepSize, index));
+				g = Mix(g, colors[i].g, SmuttStep(step, step + stepSize, index));
+				b = Mix(b, colors[i].b, SmuttStep(step, step + stepSize, index));
+				step += stepSize;
+			}
+
+			// Output a row of color to texture.
+			for(int y = 0; y < size; ++y)
+			{
+				tex.SetPixel(x, y, new Color(r, g, b, 1.0f));
+			}
+		}
+		tex.Apply();
+		
+		return tex;
+	}
 	static Texture2D CreatePatternTexture(int uniquePatternSeed)
 	{
 		const float granularity = 128.0f;
@@ -144,7 +191,7 @@ public class CirclePatch : MonoBehaviour {
 	{
 	}
 
-	public void Generate(int segments, Texture2D[] patternTextures, Color[] colors)
+	public void Generate(int segments, Texture2D[] patternTextures, Color[] colors, Texture2D gradientTexture)
 	{
 		// Setup initial values.
 		Segments = segments;
@@ -173,6 +220,7 @@ public class CirclePatch : MonoBehaviour {
 		renderer.material.SetColor("_Color1", colors[1]);
 		renderer.material.SetColor("_Color2", colors[2]);
 		renderer.material.SetColor("_Color3", colors[3]);
+		renderer.material.SetTexture("_GradientTexture", gradientTexture);
 	}
 
 	public void Place()

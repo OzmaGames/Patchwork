@@ -35,6 +35,7 @@ public class Game : MonoBehaviour {
 		Player player = playerObject.GetComponent<Player>();
 		player.GetComponent<Player>().Name = name;
 		player.GetComponent<Player>().Colors = colors;
+		player.GradientTexture = CirclePatch.CreateGradientTexture(colors);
 
 		players.Add(player);
 	}

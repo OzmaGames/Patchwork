@@ -8,11 +8,12 @@
 		_PatternTexture2("Pattern Texture 2", 2D) = "white" {}
 		_CirclePatchLayer("Circle Patch Layer", Float) = 0.0
 
-		_Color0("Color 0", Color) = (0.1, 0.0, 0.2)
-		_Color1("Color 1", Color) = (0.9, 0.6, 0.4)
-		_Color2("Color 2", Color) = (0.3, 0.9, 0.2)
-		_Color3("Color 3", Color) = (0.0, 0.6, 0.6)
+//		_Color0("Color 0", Color) = (0.1, 0.0, 0.2)
+//		_Color1("Color 1", Color) = (0.9, 0.6, 0.4)
+//		_Color2("Color 2", Color) = (0.3, 0.9, 0.2)
+//		_Color3("Color 3", Color) = (0.0, 0.6, 0.6)
 		
+		_GradientTexture("Gradient Texture", 2D) = "white" {}
 						
 		_Color ("Color", Color) = (1,1,1,1)
 		_Distort("Distort", vector) = (0.5, 0.5, 1.0, 1.0)
@@ -76,6 +77,7 @@
 			sampler2D _MainTex;
 			sampler2D _PatternTexture1;
 			sampler2D _PatternTexture2;
+			sampler2D _GradientTexture;
 			
 			struct appdata {
 				float4 vertex : POSITION;
@@ -108,10 +110,10 @@
 			float _CirclePatchMaxSize;
 			float _CirclePatchRadius;
 			float _CirclePatchLayer;
-			float3 _Color0;
-			float3 _Color1;
-			float3 _Color2;
-			float3 _Color3;
+//			float3 _Color0;
+//			float3 _Color1;
+//			float3 _Color2;
+//			float3 _Color3;
 			
 			float SmuttStep(float x, float y, float z)
 			{
@@ -120,18 +122,18 @@
 			
 			float3 ColorFromPalette(float index)
 			{
-				float3 color =	_Color0;
-				color =			mix(color, _Color1, SmuttStep(0.2f, 0.4f, index));
-				color =			mix(color, _Color2, SmuttStep(0.6f, 0.8f, index));
-				color =			mix(color, _Color3, SmuttStep(0.8f, 1.0f, index));
-//				color =			mix(color, _Color3, SmuttStep(0.8f, 0.99f, index));
-//				color =			mix(color, float3(0.0f, 0.0f, 0.0f), SmuttStep(0.99f, 1.0f, index));
-				return color;
+				return tex2D(_GradientTexture, float2(index, 0.0f)).rgb;
+//				float3 color =	_Color0;
+//				color =			mix(color, _Color1, SmuttStep(0.25f, 0.5f, index));
+//				color =			mix(color, _Color2, SmuttStep(0.5f, 0.75f, index));
+//				color =			mix(color, _Color3, SmuttStep(0.75f, 1.0f, index));
+//				return color;
 			}
 			
 			half4 frag(v2f i) : COLOR
 			{
-//				float2 l = ((i.uv - 0.5f) * 2.0f) * _CirclePatchSize;
+//				return float4(ColorFromPalette(i.uv.x), 1.0f);
+//			float2 l = ((i.uv - 0.5f) * 2.0f) * _CirclePatchSize;
 				float ll = length(i.extras.zw);
 				if(ll > _CirclePatchSize)
 					discard;
@@ -147,18 +149,24 @@
 					gray = tex2D(_PatternTexture1, i.uv).r;
 					bgtex = tex2D(_MainTex, i.uv * 8.0f).r;
 					fade = lerp(1.0f, 0.7f, ll);
+					if(ll > 0.9f)
+						fade = 0.5f;
 				}
 				else if(ll < 2.0f)
 				{
 					gray = tex2D(_PatternTexture1, i.uv * 4.0f).b * 0.9f;
 					bgtex = tex2D(_PatternTexture2, i.uv * 2.0f).r;
 					fade = lerp(1.0f, 0.6f, ll - 1.5f);
+					if(ll > 1.9f)
+						fade = 0.5f;
 				}
 				else if(ll < 3.0f)
 				{
 					gray = tex2D(_PatternTexture1, i.uv).r;
 					bgtex = dot(tex2D(_MainTex, 1.0f - i.uv2), float3(0.333f, 0.333f, 0.333f));
 					fade = lerp(1.0f, 0.5f, ll - 3.0f);
+					if(ll > 2.9f)
+						fade = 0.5f;
 				}
 				else
 				{
@@ -166,10 +174,11 @@
 					gray *= gray;//dot(tex2D(_TestTexture, i.uv), float3(0.333f, 0.333f, 0.333f));
 					bgtex = tex2D(_MainTex, i.uv * 8.0f).b;
 					fade = lerp(0.9f, 0.4f, ll - 4.0f);
+					if(ll > 3.9f)
+						fade = 0.5f;
 				}
 //				color = float4(gray, gray, gray, 1.0f);
 				color = float4(ColorFromPalette(bgtex) * gray * fade, 1.0f);
-//				color.rgb *= (bgtex) * fade;
 				return color;
 			}
 			ENDCG

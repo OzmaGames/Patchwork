@@ -6,6 +6,7 @@ public class Player : MonoBehaviour {
 
 	public GameObject PatchPrefab;
 	public Texture2D[] PatternTextures;
+	public Texture2D GradientTexture;
 
 	public string Name;
 
@@ -35,7 +36,7 @@ public class Player : MonoBehaviour {
 	{
 		GameObject patchObject = (GameObject)Instantiate(PatchPrefab);
 		CirclePatch circlePatch = patchObject.AddComponent<CirclePatch>();
-		circlePatch.Generate(segments, PatternTextures, Colors);
+		circlePatch.Generate(segments, PatternTextures, Colors, GradientTexture);
 		patches.Add(patchObject);
 		return patchObject.GetComponent<CirclePatch>();
 	}
