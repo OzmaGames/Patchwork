@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 public class CirclePatch : MonoBehaviour {
 
+	static Mesh GeneratedMesh;
+
 	public int Segments = 1;
 	private int CurrentSegment = 0;
 	private float SegmentScale = 1.0f;
@@ -25,6 +27,106 @@ public class CirclePatch : MonoBehaviour {
 	
 	List<PatchEdge> innerEdges = new List<PatchEdge>();
 	List<PatchEdge> outerEdges = new List<PatchEdge>();
+
+	public static void GenerateSegments(int numSegments, float segmentSize)
+	{
+		GeneratedMesh = new Mesh();
+		GeneratedMesh.subMeshCount = numSegments;
+
+		const float requiredGranularity = 40.0f;
+		const float granularity = (2.0f * Mathf.PI) / requiredGranularity;
+
+		List<Vector3> vertices = new List<Vector3>();
+		List<Vector2> uvs = new List<Vector2>();
+		List<Vector2> uvs2 = new List<Vector2>();
+		List<Vector4> extras = new List<Vector4>();
+		List<int[]> submeshIndices = new List<int[]>();
+		int submeshIndicesStart = 0;
+		for(int s = 0; s < numSegments; ++s)
+		{
+			float innerRadius = s * segmentSize;
+			float outerRadius = (s + 1) * segmentSize;
+
+			// Generate points for edges.
+			List<Vector2> innerPoints = new List<Vector2>();
+			List<Vector2> outerPoints = new List<Vector2>();
+			List<Vector2> uvr = new List<Vector2>();
+			for(float angle = 0.0f; angle < (Mathf.PI * 2.0f); angle += granularity)
+			{
+				innerPoints.Add(new Vector2(innerRadius * Mathf.Cos(angle), innerRadius * Mathf.Sin(angle)));
+				outerPoints.Add(new Vector2(outerRadius * Mathf.Cos(angle), outerRadius * Mathf.Sin(angle)));
+				uvr.Add(new Vector2((Mathf.Cos(angle) * 0.5f) + 0.5f, (Mathf.Sin(angle) * 0.5f) + 0.5f));
+			}
+
+			// Generate triangles.
+			List<int> indices = new List<int>();
+			for(int i = 0; i < outerPoints.Count; ++i)
+			{
+				Vector2 innerPointA = innerPoints[i];
+				Vector2 innerPointB = innerPoints[(i + 1) % innerPoints.Count];
+				Vector2 outerPointA = outerPoints[i];
+				Vector2 outerPointB = outerPoints[(i + 1) % outerPoints.Count];
+				
+				Vector3 a = new Vector3(outerPointA.x, outerPointA.y);
+				Vector3 b = new Vector3(innerPointA.x, innerPointA.y);
+				Vector3 c = new Vector3(outerPointB.x, outerPointB.y);
+				Vector3 d = new Vector3(innerPointB.x, innerPointB.y);
+				vertices.Add(a);
+				vertices.Add(b);
+				vertices.Add(c);
+				vertices.Add(d);
+				
+				
+				Vector2 outerUVPointA = uvr[i];
+				Vector2 outerUVPointB = uvr[(i + 1) % uvr.Count];
+				Vector2 uvA = new Vector3(outerUVPointA.x, outerUVPointA.y);
+				Vector2 uvB = new Vector3(0.5f, 0.5f);
+				Vector2 uvC = new Vector3(outerUVPointB.x, outerUVPointB.y);
+				Vector2 uvD = new Vector3(0.5f, 0.5f);
+				
+				uvs.Add(uvA);
+				uvs.Add(uvB);
+				uvs.Add(uvC);
+				uvs.Add(uvD);
+				
+				Vector4 extraA = new Vector4(uvA.x * outerRadius, uvA.y * outerRadius, 0.0f, 0.0f);
+				Vector4 extraB = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+				Vector4 extraC = new Vector4(uvC.x * outerRadius, uvC.y * outerRadius, 0.0f, 0.0f);
+				Vector4 extraD = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
+				extras.Add(extraA);
+				extras.Add(extraB);
+				extras.Add(extraC);
+				extras.Add(extraD);
+				
+				uvs2.Add(new Vector2(0.0f, 0.0f));
+				uvs2.Add(new Vector2(0.0f, 1.0f));
+				uvs2.Add(new Vector2(1.0f, 0.0f));
+				uvs2.Add(new Vector2(1.0f, 1.0f));
+				
+				indices.Add((i * 4) + 0 + submeshIndicesStart);
+				indices.Add((i * 4) + 1 + submeshIndicesStart);
+				indices.Add((i * 4) + 2 + submeshIndicesStart);
+				indices.Add((i * 4) + 2 + submeshIndicesStart);
+				indices.Add((i * 4) + 1 + submeshIndicesStart);
+				indices.Add((i * 4) + 3 + submeshIndicesStart);
+			}
+
+			submeshIndices.Add(indices.ToArray());
+			submeshIndicesStart = vertices.Count;
+		}
+
+		GeneratedMesh.vertices = vertices.ToArray();
+		GeneratedMesh.uv = uvs.ToArray();
+		GeneratedMesh.uv2 = uvs2.ToArray();
+		GeneratedMesh.tangents = extras.ToArray();
+		// Add triangles to submesh.
+		for(int s = 0; s < numSegments; ++s)
+		{
+			GeneratedMesh.SetTriangles(submeshIndices[s], s);
+		}
+		GeneratedMesh.RecalculateNormals();
+		GeneratedMesh.RecalculateBounds();
+	}
 
 	static Mesh CreateCircle(float innerRadius, float outerRadius)
 	{
@@ -226,23 +328,28 @@ public class CirclePatch : MonoBehaviour {
 
 		// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
-		meshFilter.mesh = CreateCircle(InnerRadius, OuterRadius);
+		meshFilter.mesh = GeneratedMesh;// CreateCircle(InnerRadius, OuterRadius);
 		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-		renderer.material.shader = Shader.Find("Custom/CirclePatch");
-		renderer.material.mainTexture = CreatePatternTexture((int)(Random.value * 255.0f));
-		renderer.material.SetTexture("_PatternTexture1", PatternTextures[0]);
-		renderer.material.SetTexture("_PatternTexture2", PatternTextures[1]);
-		size = CurrentSegment * SegmentScale;
-		maxSize = size;
-		renderer.material.SetFloat("_CirclePatchSize", size);
-		renderer.material.SetFloat("_CirclePatchMaxSize", size);
-		renderer.material.SetFloat("_CirclePatchRadius", OuterRadius);
-		renderer.material.SetFloat("_CirclePatchLayer", CurrentSegment);
-		renderer.material.SetColor("_Color0", colors[0]);
-		renderer.material.SetColor("_Color1", colors[1]);
-		renderer.material.SetColor("_Color2", colors[2]);
-		renderer.material.SetColor("_Color3", colors[3]);
-		renderer.material.SetTexture("_GradientTexture", gradientTexture);
+		renderer.materials = new Material[GeneratedMesh.subMeshCount];
+		for(int s = 0; s < GeneratedMesh.subMeshCount; ++s)
+		{
+			Material material = renderer.materials[s];
+			material.shader = Shader.Find("Custom/CirclePatch");
+			material.mainTexture = CreatePatternTexture((int)(Random.value * 255.0f));
+			material.SetTexture("_PatternTexture1", PatternTextures[0]);
+			material.SetTexture("_PatternTexture2", PatternTextures[1]);
+			size = CurrentSegment * SegmentScale;
+			maxSize = size;
+			material.SetFloat("_CirclePatchSize", size);
+			material.SetFloat("_CirclePatchMaxSize", size);
+			material.SetFloat("_CirclePatchRadius", OuterRadius);
+			material.SetFloat("_CirclePatchLayer", CurrentSegment);
+			material.SetColor("_Color0", colors[0]);
+			material.SetColor("_Color1", colors[1]);
+			material.SetColor("_Color2", colors[2]);
+			material.SetColor("_Color3", colors[3]);
+			material.SetTexture("_GradientTexture", gradientTexture);
+		}
 	}
 
 	public void Place()

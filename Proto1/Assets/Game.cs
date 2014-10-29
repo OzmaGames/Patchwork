@@ -13,6 +13,7 @@ public class Game : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		CirclePatch.GenerateSegments(4, 1.0f);
 		AddPlayer("Player1", new Color[]{
 			new Color(193.0f / 255.0f,	41.0f / 255.0f,		66.0f / 255.0f),
 			new Color(143.0f / 255.0f,	18.0f / 255.0f,		113.0f / 255.0f),

@@ -134,11 +134,12 @@
 			
 			half4 frag(v2f i) : COLOR
 			{
+				return float4(i.uv.x, i.uv.y, 0.0f, 1.0f);
 //				return float4(ColorFromPalette(i.uv.x), 1.0f);
 //			float2 l = ((i.uv - 0.5f) * 2.0f) * _CirclePatchSize;
 				float ll = length(i.extras.zw);
-				if(ll > _CirclePatchSize)
-					discard;
+//				if(ll > _CirclePatchSize)
+//					discard;
 
 //				return (tex2D(_TestTexture, i.uv) * 0.5f) + (tex2D(_MainTex, i.uv2) * 0.5f);
 //				return (tex2D(_MainTex, i.uv) * 0.5f) + (tex2D(_MainTex, i.uv2) * 0.5f);
