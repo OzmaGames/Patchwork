@@ -136,10 +136,11 @@ public class CirclePatch : MonoBehaviour {
 	public static Texture2D CreateGradientTexture(Color[] colors)
 	{
 		const int size = 256;
-		float stepSize = 1.0f / (colors.Length - 0);
+		//float stepSize = 1.0f / (colors.Length - 0);
+		int segmentSize = size / (colors.Length);
 
 		Texture2D tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
-		for(int x = 0; x < size; ++x)
+		/*for(int x = 0; x < size; ++x)
 		{
 			float index = x / 255.0f;
 
@@ -156,10 +157,31 @@ public class CirclePatch : MonoBehaviour {
 				step += stepSize;
 			}
 
-			// Output a row of color to texture.
-			for(int y = 0; y < size; ++y)
+			// Output a column of color to texture.
+			for(int y = 0; y < segmentSize; ++y)
 			{
 				tex.SetPixel(x, y, new Color(r, g, b, 1.0f));
+			}
+		}*/
+		for(int s = 0; s < colors.Length; ++s)
+		{
+			for(int x = 0; x < size; ++x)
+			{
+				float index = x / 255.0f;
+			
+				// Mix color.
+				float r = Mix(0.0f, colors[s].r, SmuttStep(0.0f, 0.5f, index));
+				float g = Mix(0.0f, colors[s].g, SmuttStep(0.0f, 0.5f, index));
+				float b = Mix(0.0f, colors[s].b, SmuttStep(0.0f, 0.5f, index));
+				r = Mix(r, 1.0f, SmuttStep(0.5f, 1.0f, index));
+				g = Mix(g, 1.0f, SmuttStep(0.5f, 1.0f, index));
+				b = Mix(b, 1.0f, SmuttStep(0.5f, 1.0f, index));
+
+				// Output a column of color to texture.
+				for(int y = (s * segmentSize); y < ((s + 1) * segmentSize); ++y)
+				{
+					tex.SetPixel(x, y, new Color(r, g, b, 1.0f));
+				}
 			}
 		}
 		tex.Apply();
@@ -232,6 +254,7 @@ public class CirclePatch : MonoBehaviour {
 		renderer.material.SetFloat("_CirclePatchMaxSize", maxSize); 
 		renderer.material.SetFloat("_CirclePatchRadius", OuterRadius);
 		renderer.material.SetFloat("_CirclePatchLayer", CurrentSegment);
+		renderer.material.SetFloat("_CirclePalette", Random.Range(0.0f, 1.0f));
 		placed = true;
 	}
 
@@ -255,6 +278,7 @@ public class CirclePatch : MonoBehaviour {
 				renderer.material.SetFloat("_CirclePatchMaxSize", maxSize); 
 				renderer.material.SetFloat("_CirclePatchRadius", OuterRadius);
 				renderer.material.SetFloat("_CirclePatchLayer", CurrentSegment);
+//				renderer.material.SetFloat("_CirclePalette", Random.Range(0.0f, 1.0f));
 				size += 0.01f;
 			}
 		}

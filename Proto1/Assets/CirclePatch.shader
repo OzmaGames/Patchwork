@@ -7,6 +7,7 @@
 		_PatternTexture1("Pattern Texture 1", 2D) = "white" {}
 		_PatternTexture2("Pattern Texture 2", 2D) = "white" {}
 		_CirclePatchLayer("Circle Patch Layer", Float) = 0.0
+		_CirclePalette("Palette", Float) = 0.0
 
 //		_Color0("Color 0", Color) = (0.1, 0.0, 0.2)
 //		_Color1("Color 1", Color) = (0.9, 0.6, 0.4)
@@ -114,6 +115,7 @@
 //			float3 _Color1;
 //			float3 _Color2;
 //			float3 _Color3;
+			float _CirclePalette;
 			
 			float SmuttStep(float x, float y, float z)
 			{
@@ -122,7 +124,7 @@
 			
 			float3 ColorFromPalette(float index)
 			{
-				return tex2D(_GradientTexture, float2(index, 0.0f)).rgb;
+				return tex2D(_GradientTexture, float2(index, _CirclePalette)).rgb;
 //				float3 color =	_Color0;
 //				color =			mix(color, _Color1, SmuttStep(0.25f, 0.5f, index));
 //				color =			mix(color, _Color2, SmuttStep(0.5f, 0.75f, index));
@@ -147,7 +149,7 @@
 				if(ll < 1.0f)
 				{
 					gray = tex2D(_PatternTexture1, i.uv).r;
-					bgtex = tex2D(_MainTex, i.uv * 8.0f).r;
+					bgtex = tex2D(_MainTex, i.uv * 8.0f).r * 0.25f;
 					fade = lerp(1.0f, 0.7f, ll);
 					if(ll > 0.9f)
 						fade = 0.5f;
@@ -155,7 +157,7 @@
 				else if(ll < 2.0f)
 				{
 					gray = tex2D(_PatternTexture1, i.uv * 4.0f).b * 0.9f;
-					bgtex = tex2D(_PatternTexture2, i.uv * 2.0f).r;
+					bgtex = tex2D(_PatternTexture2, i.uv * 2.0f).r * 0.25f + 0.5f;
 					fade = lerp(1.0f, 0.6f, ll - 1.5f);
 					if(ll > 1.9f)
 						fade = 0.5f;
@@ -163,21 +165,22 @@
 				else if(ll < 3.0f)
 				{
 					gray = tex2D(_PatternTexture1, i.uv).r;
-					bgtex = dot(tex2D(_MainTex, 1.0f - i.uv2), float3(0.333f, 0.333f, 0.333f));
+					bgtex = dot(tex2D(_MainTex, 1.0f - i.uv2), float3(0.333f, 0.333f, 0.333f)) * 0.25f + 0.75f;
 					fade = lerp(1.0f, 0.5f, ll - 3.0f);
-					if(ll > 2.9f)
-						fade = 0.5f;
+//					if(ll > 2.9f)
+//						fade = 0.5f;
 				}
 				else
 				{
-					gray = tex2D(_PatternTexture1, i.uv).b;
-					gray *= gray;//dot(tex2D(_TestTexture, i.uv), float3(0.333f, 0.333f, 0.333f));
+					gray = tex2D(_PatternTexture1, i.uv).b * 0.45f + 0.5f;
+					//gray *= gray;//dot(tex2D(_TestTexture, i.uv), float3(0.333f, 0.333f, 0.333f));
 					bgtex = tex2D(_MainTex, i.uv * 8.0f).b;
 					fade = lerp(0.9f, 0.4f, ll - 4.0f);
-					if(ll > 3.9f)
-						fade = 0.5f;
+//					if(ll > 3.9f)
+//						fade = 0.5f;
 				}
 //				color = float4(gray, gray, gray, 1.0f);
+				//color = float4(bgtex, bgtex, bgtex, 1.0f);//float4(ColorFromPalette(bgtex) * gray * fade, 1.0f);
 				color = float4(ColorFromPalette(bgtex) * gray * fade, 1.0f);
 				return color;
 			}
