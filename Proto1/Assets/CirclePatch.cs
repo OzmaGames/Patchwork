@@ -349,6 +349,8 @@ public class CirclePatch : MonoBehaviour {
 			material.SetColor("_Color2", colors[2]);
 			material.SetColor("_Color3", colors[3]);
 			material.SetTexture("_GradientTexture", gradientTexture);
+			List<string> shaderKeywords = new List<string> { "DO_SEGMENT_" + s };
+			material.shaderKeywords = shaderKeywords.ToArray();
 		}
 	}
 
