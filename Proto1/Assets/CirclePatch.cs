@@ -4,7 +4,11 @@ using System.Collections.Generic;
 
 public class CirclePatch : MonoBehaviour {
 
+	const int MAX_PATTERNS = 4;
+	const float ZPosAdd = -0.001f;
+
 	static Mesh GeneratedMesh;
+	static float ZPos = ZPosAdd;
 
 	public int Segments = 1;
 	private int CurrentSegment = 0;
@@ -14,7 +18,8 @@ public class CirclePatch : MonoBehaviour {
 
 	public Texture2D[] PatternTextures;
 
-	bool placed;
+	bool collided = false;
+	bool placed = false;
 	float size = 0.0f;
 	float maxSize = 0.0f;
 
@@ -44,18 +49,20 @@ public class CirclePatch : MonoBehaviour {
 		int submeshIndicesStart = 0;
 		for(int s = 0; s < numSegments; ++s)
 		{
-			float innerRadius = s * segmentSize;
+			float innerRadius = 0.0f;//s * segmentSize;
 			float outerRadius = (s + 1) * segmentSize;
 
 			// Generate points for edges.
 			List<Vector2> innerPoints = new List<Vector2>();
 			List<Vector2> outerPoints = new List<Vector2>();
 			List<Vector2> uvr = new List<Vector2>();
-			for(float angle = 0.0f; angle < (Mathf.PI * 2.0f); angle += granularity)
+			for(float phi = 0.0f; phi < (Mathf.PI * 2.0f); phi += granularity)
 			{
-				innerPoints.Add(new Vector2(innerRadius * Mathf.Cos(angle), innerRadius * Mathf.Sin(angle)));
-				outerPoints.Add(new Vector2(outerRadius * Mathf.Cos(angle), outerRadius * Mathf.Sin(angle)));
-				uvr.Add(new Vector2((Mathf.Cos(angle) * 0.5f) + 0.5f, (Mathf.Sin(angle) * 0.5f) + 0.5f));
+				float ca = Mathf.Cos(phi);
+				float sa = Mathf.Sin(phi);
+				innerPoints.Add(new Vector2(innerRadius * ca, innerRadius * sa));
+				outerPoints.Add(new Vector2(outerRadius * ca, outerRadius * sa));
+				uvr.Add(new Vector2((ca * 0.5f) + 0.5f, (sa * 0.5f) + 0.5f));
 			}
 
 			// Generate triangles.
@@ -67,10 +74,10 @@ public class CirclePatch : MonoBehaviour {
 				Vector2 outerPointA = outerPoints[i];
 				Vector2 outerPointB = outerPoints[(i + 1) % outerPoints.Count];
 				
-				Vector3 a = new Vector3(outerPointA.x, outerPointA.y);
-				Vector3 b = new Vector3(innerPointA.x, innerPointA.y);
-				Vector3 c = new Vector3(outerPointB.x, outerPointB.y);
-				Vector3 d = new Vector3(innerPointB.x, innerPointB.y);
+				Vector3 a = new Vector3(outerPointA.x, outerPointA.y, 0.0001f * s);
+				Vector3 b = new Vector3(innerPointA.x, innerPointA.y, 0.0001f * s);
+				Vector3 c = new Vector3(outerPointB.x, outerPointB.y, 0.0001f * s);
+				Vector3 d = new Vector3(innerPointB.x, innerPointB.y, 0.0001f * s);
 				vertices.Add(a);
 				vertices.Add(b);
 				vertices.Add(c);
@@ -88,10 +95,11 @@ public class CirclePatch : MonoBehaviour {
 				uvs.Add(uvB);
 				uvs.Add(uvC);
 				uvs.Add(uvD);
-				
-				Vector4 extraA = new Vector4(uvA.x * outerRadius, uvA.y * outerRadius, 0.0f, 0.0f);
+
+				float uvScale = outerRadius;
+				Vector4 extraA = new Vector4(uvA.x * uvScale, uvA.y * uvScale, 0.0f, 0.0f);
 				Vector4 extraB = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-				Vector4 extraC = new Vector4(uvC.x * outerRadius, uvC.y * outerRadius, 0.0f, 0.0f);
+				Vector4 extraC = new Vector4(uvC.x * uvScale, uvC.y * uvScale, 0.0f, 0.0f);
 				Vector4 extraD = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
 				extras.Add(extraA);
 				extras.Add(extraB);
@@ -128,99 +136,6 @@ public class CirclePatch : MonoBehaviour {
 		GeneratedMesh.RecalculateBounds();
 	}
 
-	static Mesh CreateCircle(float innerRadius, float outerRadius)
-	{
-		const float requiredGranularity = 40.0f;
-		const float granularity = (2.0f * Mathf.PI) / requiredGranularity;
-
-		List<Vector2> innerPoints = new List<Vector2>();
-		List<Vector2> outerPoints = new List<Vector2>();
-		List<Vector2> uvr = new List<Vector2>();
-		for(float angle = 0.0f; angle < (Mathf.PI * 2.0f); angle += granularity)
-		{
-			innerPoints.Add(new Vector2(innerRadius * Mathf.Cos(angle), innerRadius * Mathf.Sin(angle)));
-			outerPoints.Add(new Vector2(outerRadius * Mathf.Cos(angle), outerRadius * Mathf.Sin(angle)));
-			uvr.Add(new Vector2((Mathf.Cos(angle) * 0.5f) + 0.5f, (Mathf.Sin(angle) * 0.5f) + 0.5f));
-		}
-
-		List<Vector3> vertices = new List<Vector3>();
-		List<Vector2> uvs = new List<Vector2>();
-		List<Vector2> uvs2 = new List<Vector2>();
-		List<Vector4> extras = new List<Vector4>();
-		List<int> indices = new List<int>();
-		for(int i = 0; i < outerPoints.Count; ++i)
-		{
-			Vector2 innerPointA = innerPoints[i];
-			Vector2 innerPointB = innerPoints[(i + 1) % innerPoints.Count];
-			Vector2 outerPointA = outerPoints[i];
-			Vector2 outerPointB = outerPoints[(i + 1) % outerPoints.Count];
-			
-			Vector3 a = new Vector3(outerPointA.x, outerPointA.y);
-			Vector3 b = new Vector3(innerPointA.x, innerPointA.y);
-			Vector3 c = new Vector3(outerPointB.x, outerPointB.y);
-			Vector3 d = new Vector3(innerPointB.x, innerPointB.y);
-			vertices.Add(a);
-			vertices.Add(b);
-			vertices.Add(c);
-			vertices.Add(d);
-
-
-			Vector2 outerUVPointA = uvr[i];
-			Vector2 outerUVPointB = uvr[(i + 1) % uvr.Count];
-			Vector2 uvA = new Vector3(outerUVPointA.x, outerUVPointA.y);
-			Vector2 uvB = new Vector3(0.5f, 0.5f);
-			Vector2 uvC = new Vector3(outerUVPointB.x, outerUVPointB.y);
-			Vector2 uvD = new Vector3(0.5f, 0.5f);
-
-			uvs.Add(uvA);
-			uvs.Add(uvB);
-			uvs.Add(uvC);
-			uvs.Add(uvD);
-
-			Vector4 extraA = new Vector4(uvA.x * outerRadius, uvA.y * outerRadius, 0.0f, 0.0f);
-			Vector4 extraB = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-			Vector4 extraC = new Vector4(uvC.x * outerRadius, uvC.y * outerRadius, 0.0f, 0.0f);
-			Vector4 extraD = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-			extras.Add(extraA);
-			extras.Add(extraB);
-			extras.Add(extraC);
-			extras.Add(extraD);
-
-			uvs2.Add(new Vector2(0.0f, 0.0f));
-			uvs2.Add(new Vector2(0.0f, 1.0f));
-			uvs2.Add(new Vector2(1.0f, 0.0f));
-			uvs2.Add(new Vector2(1.0f, 1.0f));
-
-			indices.Add((i * 4) + 0);
-			indices.Add((i * 4) + 1);
-			indices.Add((i * 4) + 2);
-			indices.Add((i * 4) + 2);
-			indices.Add((i * 4) + 1);
-			indices.Add((i * 4) + 3);
-		}
-
-		/*vertices.Add(new Vector3(100.0f, 100.0f, 0.0f));
-		vertices.Add(new Vector3(0.0f, 0.0f, 0.0f));
-		vertices.Add(new Vector3(0.0f, 100.0f, 0.0f));
-		uvs.Add(new Vector2(0.0f, 0.0f));
-		uvs.Add(new Vector2(0.0f, 0.0f));
-		uvs.Add(new Vector2(0.0f, 0.0f));
-		indices.Add(0);
-		indices.Add(1);
-		indices.Add(2);*/
-
-		Mesh mesh = new Mesh();
-		mesh.vertices = vertices.ToArray();
-		mesh.uv = uvs.ToArray();
-		mesh.uv2 = uvs2.ToArray();
-		mesh.tangents = extras.ToArray();
-		mesh.triangles = indices.ToArray();
-//		mesh.RecalculateNormals();
-		mesh.RecalculateBounds();
-
-		return mesh;
-	}
-
 	static float Saturate(float x)
 	{
 		return Mathf.Clamp01(x);
@@ -239,7 +154,7 @@ public class CirclePatch : MonoBehaviour {
 	{
 		const int size = 256;
 		//float stepSize = 1.0f / (colors.Length - 0);
-		int segmentSize = size / (colors.Length);
+		int segmentSize = size / (colors.Length / 2);
 
 		Texture2D tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
 		/*for(int x = 0; x < size; ++x)
@@ -265,7 +180,7 @@ public class CirclePatch : MonoBehaviour {
 				tex.SetPixel(x, y, new Color(r, g, b, 1.0f));
 			}
 		}*/
-		for(int s = 0; s < colors.Length; ++s)
+		/*for(int s = 0; s < colors.Length; ++s)
 		{
 			for(int x = 0; x < size; ++x)
 			{
@@ -281,6 +196,27 @@ public class CirclePatch : MonoBehaviour {
 
 				// Output a column of color to texture.
 				for(int y = (s * segmentSize); y < ((s + 1) * segmentSize); ++y)
+				{
+					tex.SetPixel(x, y, new Color(r, g, b, 1.0f));
+				}
+			}
+		}*/
+		for(int s = 0; s < colors.Length; s += 2)
+		{
+			int ymin = ((s / 2) * segmentSize);
+			int ymax = (((s / 2) + 1) * segmentSize);
+
+			for(int x = 0; x < size; ++x)
+			{
+				float index = x / 255.0f;
+				
+				// Mix color.
+				float r = Mix(colors[s].r, colors[s + 1].r, SmuttStep(0.0f, 1.0f, index));
+				float g = Mix(colors[s].g, colors[s + 1].g, SmuttStep(0.0f, 1.0f, index));
+				float b = Mix(colors[s].b, colors[s + 1].b, SmuttStep(0.0f, 1.0f, index));
+
+				// Output a column of color to texture.
+				for(int y = ymin; y < ymax; ++y)
 				{
 					tex.SetPixel(x, y, new Color(r, g, b, 1.0f));
 				}
@@ -315,8 +251,40 @@ public class CirclePatch : MonoBehaviour {
 	{
 	}
 
+	public float GetSize()
+	{
+		return size;
+	}
+
+	public float GetMaxSize()
+	{
+		return maxSize;
+	}
+
+	public bool CollidesAgainst(CirclePatch patch)
+	{
+		float x1 = transform.position.x;
+		float y1 = transform.position.y;
+		float x2 = patch.transform.position.x;
+		float y2 = patch.transform.position.y;
+		float r1 = size * SegmentScale;
+		float r2 = patch.GetSize() * SegmentScale;
+
+		float distance = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
+		float sumRadius = ((r1 + r2) * (r1 + r2));
+		if(distance <= sumRadius)
+		{
+			return true;
+		}
+
+		return false;
+	}
+	
 	public void Generate(int segments, Texture2D[] patternTextures, Color[] colors, Texture2D gradientTexture)
 	{
+		transform.position = new Vector3(0.0f, 0.0f, ZPos);
+		ZPos += ZPosAdd;
+
 		// Setup initial values.
 		Segments = segments;
 		CurrentSegment = 1;
@@ -328,30 +296,44 @@ public class CirclePatch : MonoBehaviour {
 
 		// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
-		meshFilter.mesh = GeneratedMesh;// CreateCircle(InnerRadius, OuterRadius);
+		meshFilter.mesh = GeneratedMesh;
 		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
 		renderer.materials = new Material[GeneratedMesh.subMeshCount];
+		Material material;
+		List<string> shaderKeywords;
+		float numColors = (colors.Length) / 2.0f;
+		float colorOffset = 0.05f;//(1.0f / numColors) / 2.0f;
+		int prevPattern = -1;
 		for(int s = 0; s < GeneratedMesh.subMeshCount; ++s)
 		{
-			Material material = renderer.materials[s];
+			material = renderer.materials[s];
 			material.shader = Shader.Find("Custom/CirclePatch");
 			material.mainTexture = CreatePatternTexture((int)(Random.value * 255.0f));
-			material.SetTexture("_PatternTexture1", PatternTextures[0]);
+			material.SetTexture("_FabricTexture", PatternTextures[0]);
 			material.SetTexture("_PatternTexture2", PatternTextures[1]);
-			size = CurrentSegment * SegmentScale;
-			maxSize = size;
-			material.SetFloat("_CirclePatchSize", size);
-			material.SetFloat("_CirclePatchMaxSize", size);
+			size = s * SegmentScale;
+			maxSize = size + SegmentScale;
+			material.SetVector("_CirclePatchSize", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
 			material.SetFloat("_CirclePatchRadius", OuterRadius);
-			material.SetFloat("_CirclePatchLayer", CurrentSegment);
-			material.SetColor("_Color0", colors[0]);
-			material.SetColor("_Color1", colors[1]);
-			material.SetColor("_Color2", colors[2]);
-			material.SetColor("_Color3", colors[3]);
+			material.SetFloat("_CirclePatchLayer", CurrentSegment + s);
+			int paletteIndex = Random.Range(1, ((int)numColors));
+			material.SetFloat("_CirclePalette", (((float)paletteIndex) / numColors) + colorOffset);
 			material.SetTexture("_GradientTexture", gradientTexture);
-			List<string> shaderKeywords = new List<string> { "DO_SEGMENT_" + s };
+			material.SetColor("_BaseColor1", colors[paletteIndex * 2]);
+			material.SetColor("_BaseColor2", colors[(paletteIndex * 2) + 1]);
+			material.SetColor("_ComplementColor1", colors[0]);
+			material.SetColor("_ComplementColor2", colors[1]);
+			int pattern = Random.Range(0, MAX_PATTERNS);
+			if(pattern == prevPattern)
+			{
+				pattern = (pattern + 1) % MAX_PATTERNS;
+			}
+			shaderKeywords = new List<string> { "DO_SEGMENT_" + pattern };
 			material.shaderKeywords = shaderKeywords.ToArray();
+			prevPattern = pattern;
 		}
+		material = renderer.materials[0];
+		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
 	}
 
 	public void Place()
@@ -359,11 +341,14 @@ public class CirclePatch : MonoBehaviour {
 		CurrentSegment = 1;
 		size = CurrentSegment * SegmentScale;
 		maxSize = size;
-		renderer.material.SetFloat("_CirclePatchSize", size);
-		renderer.material.SetFloat("_CirclePatchMaxSize", maxSize); 
-		renderer.material.SetFloat("_CirclePatchRadius", OuterRadius);
-		renderer.material.SetFloat("_CirclePatchLayer", CurrentSegment);
-		renderer.material.SetFloat("_CirclePalette", Random.Range(0.0f, 1.0f));
+		Material material;
+		for(int s = 0; s < CurrentSegment; ++s)
+		{
+			material = renderer.materials[s];
+			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
+			material.SetFloat("_CirclePatchRadius", OuterRadius);
+			material.SetFloat("_CirclePatchLayer", CurrentSegment);
+		}
 		placed = true;
 	}
 
@@ -372,22 +357,35 @@ public class CirclePatch : MonoBehaviour {
 		if(CurrentSegment < Segments)
 		{
 			++CurrentSegment;
-			maxSize = CurrentSegment * SegmentScale;;
+			maxSize = (CurrentSegment * SegmentScale);
 		}
+	}
+
+	public void SetCollided(bool collide)
+	{
+		collided = collide;
+	}
+
+	public bool HasCollided()
+	{
+		return collided;
 	}
 	
 	void Update ()
 	{
-		if(placed)
+		if((placed) && (!collided))
 		{
 			if(size < maxSize)
 			{
 				MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
-				renderer.material.SetFloat("_CirclePatchSize", size);
-				renderer.material.SetFloat("_CirclePatchMaxSize", maxSize); 
-				renderer.material.SetFloat("_CirclePatchRadius", OuterRadius);
-				renderer.material.SetFloat("_CirclePatchLayer", CurrentSegment);
-//				renderer.material.SetFloat("_CirclePalette", Random.Range(0.0f, 1.0f));
+				Material material;
+				for(int s = 0; s < CurrentSegment; ++s)
+				{
+					material = renderer.materials[s];
+					material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
+					material.SetFloat("_CirclePatchRadius", OuterRadius);
+					material.SetFloat("_CirclePatchLayer", CurrentSegment);
+				}
 				size += 0.01f;
 			}
 		}

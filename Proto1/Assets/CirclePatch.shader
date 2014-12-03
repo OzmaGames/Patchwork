@@ -1,21 +1,26 @@
 ﻿Shader "Custom/CirclePatch" {
 	Properties {
-		_MainTex ("Base (RGB)", 2D) = "white" {}
-		_CirclePatchSize("Circle Patch Size", Float) = 1.0
-		_CirclePatchMaxSize("Circle Patch Max Size", Float) = 1.0
-		_CirclePatchRadius("Circle Patch Radius", Float) = 1.0
-		_PatternTexture1("Pattern Texture 1", 2D) = "white" {}
-		_PatternTexture2("Pattern Texture 2", 2D) = "white" {}
-		_CirclePatchLayer("Circle Patch Layer", Float) = 0.0
-		_CirclePalette("Palette", Float) = 0.0
-		
+		_CirclePatchSize("Circle Patch Min,Current,Max Size", vector) = (0.0, 0.0, 1.0)
+		_CirclePatchRadius("Circle Patch Radius", float) = 1.0
+
+		_CirclePalette("Palette", float) = 0.0		
 		_GradientTexture("Gradient Texture", 2D) = "white" {}
+
+		_BaseColor1 ("BaseColor1", Color) = (1,1,1,1)
+		_BaseColor2 ("BaseColor2", Color) = (1,1,1,1)
+		_ComplementColor1 ("ComplementColor1", Color) = (1,1,1,1)
+		_ComplementColor2 ("ComplementColor2", Color) = (1,1,1,1)
 						
+		_MainTex ("Base (RGB)", 2D) = "white" {}
+		_FabricTexture("Fabric Texture", 2D) = "white" {}
+		_PatternTexture2("Pattern Texture 2", 2D) = "white" {}
+		_CirclePatchLayer("Circle Patch Layer", float) = 0.0
+
 		_Color ("Color", Color) = (1,1,1,1)
 		_Distort("Distort", vector) = (0.5, 0.5, 1.0, 1.0)
 		_OuterRadius ("Outer Radius", float) = 0.5
 		_InnerRadius ("Inner Radius", float) = -0.5
-		_Hardness("Hardness", float) = 1.0
+		_Hardness("Hardness", float) = 10.0
 	}
 	SubShader {
 		Tags {
@@ -36,10 +41,15 @@
 			#include "UnityCG.cginc"
 			
 			sampler2D _MainTex;
-			sampler2D _PatternTexture1;
+			sampler2D _FabricTexture;
 			sampler2D _PatternTexture2;
 			sampler2D _GradientTexture;
-			
+
+			float4 _BaseColor1;
+			float4 _BaseColor2;
+			float4 _ComplementColor1;
+			float4 _ComplementColor2;
+						
 			struct appdata {
 				float4 vertex : POSITION;
 				float4 texcoord : TEXCOORD0;
@@ -67,68 +77,102 @@
 				return o;
 			}
 			
-			float _CirclePatchSize;
-			float _CirclePatchMaxSize;
+			float4 _CirclePatchSize;
 			float _CirclePatchRadius;
 			float _CirclePatchLayer;
-//			float3 _Color0;
-//			float3 _Color1;
-//			float3 _Color2;
-//			float3 _Color3;
 			float _CirclePalette;
-			
+
+			float4 _Color;
+			float4 _Distort;
+			float _OuterRadius;
+			float _InnerRadius;
+			float _Hardness;
+
 			float SmuttStep(float x, float y, float z)
 			{
 				return saturate((z - x) / (y - x));
 			}
 			
-			float3 ColorFromPalette(float index)
+			float3 FGColorFromPalette(float index)
 			{
-				return tex2D(_GradientTexture, float2(index, _CirclePalette)).rgb;
+				return mix(_ComplementColor1, _ComplementColor2, index).rgb;
+//				return tex2D(_GradientTexture, float2(index, 0.05f)).rgb;
+			}
+
+			float3 BGColorFromPalette(float index)
+			{
+				return mix(_BaseColor1, _BaseColor2, index).rgb;
+//				return tex2D(_GradientTexture, float2(index, _CirclePalette)).rgb;
 			}
 			
 			half4 frag(v2f i) : COLOR
 			{
-//				return float4(i.uv.x, i.uv.y, 0.0f, 1.0f);
+				float lll = length(i.uv2.xy);
 				float ll = length(i.extras.zw);
-//				if(ll > _CirclePatchSize)
-//					discard;
+				if(ll > _CirclePatchSize.y)
+					discard;
 
 				float bgtex = 0.0f;
+				float fgtex = 0.0f;
 				float gray = 0.0f;
 				float4 color = 0.0f;
 				float fade = 1.0f;
+				float border = 1.0f;
+
+				float x = length((_Distort.xy - i.uv.xy) * _Distort.zw);
+				float rc = (_OuterRadius + _InnerRadius) * 0.5f; // "central" radius
+				float rd = _OuterRadius - rc; // distance from "central" radius to edge radii
+				float circleTest = saturate(abs(x - rc) / rd);
+				
+//				float4 oc = 1.0f;
+//				oc.xyz *= (1.0f - pow(circleTest, _Hardness));
+//				oc.a *= (1.0f - pow(circleTest, _Hardness * _Hardness));
+//				return oc;
 
 #if DO_SEGMENT_O
-				gray = tex2D(_PatternTexture1, i.uv).r;
-				bgtex = tex2D(_MainTex, i.uv * 8.0f).r * 0.25f;
-				fade = lerp(1.0f, 0.7f, ll);
-				if(ll > 0.9f)
-					fade = 0.5f;
+				gray = tex2D(_FabricTexture, (i.uv.yx * _CirclePatchLayer) / 2.0f).r;
+				bgtex = tex2D(_MainTex, i.uv * 4.0f).r * 0.25f;
+				bgtex += tex2D(_MainTex, i.uv * 8.0f).b * 0.25f;
+				fade = lerp(1.0f, 0.9f, ll - _CirclePatchSize.x);
 #endif
 #if DO_SEGMENT_1
-				gray = tex2D(_PatternTexture1, i.uv * 4.0f).b * 0.9f;
-				bgtex = tex2D(_PatternTexture2, i.uv * 2.0f).r * 0.25f + 0.5f;
-				fade = lerp(1.0f, 0.6f, ll - 1.5f);
-				if(ll > 1.9f)
+				gray = tex2D(_FabricTexture, (i.uv * _CirclePatchLayer) / 2.0f).r;
+				bgtex = tex2D(_MainTex, i.uv.xy * 1.0f).r * 0.25f + 0.5f;
+				fgtex = tex2D(_PatternTexture2, i.uv.xy * 1.0f).r;// * 0.25f + 0.5f;
+				fade = lerp(1.0f, 0.9f, ll - _CirclePatchSize.x);
+				fade = lerp(fade, 0.6f, _CirclePatchSize.z - ll);
+				if(lll > 0.7f)
 					fade = 0.5f;
 #endif
 #if DO_SEGMENT_2
-				gray = tex2D(_PatternTexture1, i.uv).r;
-				bgtex = dot(tex2D(_MainTex, 1.0f - i.uv2), float3(0.333f, 0.333f, 0.333f)) * 0.25f + 0.75f;
-				fade = lerp(1.0f, 0.5f, ll - 3.0f);
-				if(ll > 2.9f)
+				gray = tex2D(_FabricTexture, (i.uv * _CirclePatchLayer) / 2.0f).r;
+				bgtex = tex2D(_MainTex, 1.0f - i.uv2).g;//dot(tex2D(_MainTex, 1.0f - i.uv2), float3(0.333f, 0.333f, 0.333f));// * 0.25f + 0.75f;
+				fade = lerp(1.0f, 0.9f, ll - _CirclePatchSize.x);
+				if(lll < 0.5f)
 					fade = 0.5f;
 #endif
 #if DO_SEGMENT_3
-				gray = tex2D(_PatternTexture1, i.uv).b * 0.45f + 0.5f;
+				gray = tex2D(_FabricTexture, (i.uv * _CirclePatchLayer) / 2.0f).b * 0.45f + 0.5f;
 				//gray *= gray;//dot(tex2D(_TestTexture, i.uv), float3(0.333f, 0.333f, 0.333f));
-				bgtex = tex2D(_MainTex, i.uv * 8.0f).b;
-				fade = lerp(0.9f, 0.4f, ll - 4.0f);
+				bgtex = tex2D(_MainTex, i.uv.xy * 4.0f).b;// * 0.25f + 0.5f;
+				fgtex = tex2D(_PatternTexture2, i.uv2 * 0.55f).b;
+				bgtex *= i.uv2.x / i.uv2.y * 0.10f;
+//				fade = lerp(1.0f, 0.4f, ll - _CirclePatchSize.x);
 #endif
+				// Awful outline.
+				if(ll > (_CirclePatchSize.z - 0.1f))
+				{
+					border = 0.5f;
+					fade = 0.0f;
+				}
+				
+				fade *= fade;
+				gray *= gray;
+					
+				// Final color.
+//				return float4(i.uv2.x, i.uv2.y, 0.0f, 0.0f);
 //				color = float4(gray, gray, gray, 1.0f);
-				//color = float4(bgtex, bgtex, bgtex, 1.0f);//float4(ColorFromPalette(bgtex) * gray * fade, 1.0f);
-				color = float4(ColorFromPalette(bgtex) * gray * fade, 1.0f);
+				color = float4(lerp(FGColorFromPalette(fgtex * fade), BGColorFromPalette(bgtex * fade), 1.0f - fgtex) * gray * border, 1.0f);
 				return color;
 			}
 			ENDCG

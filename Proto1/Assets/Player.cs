@@ -8,9 +8,10 @@ public class Player : MonoBehaviour {
 	public Texture2D[] PatternTextures;
 	public Texture2D GradientTexture;
 
+	public Game ActiveGame;
 	public string Name;
 
-	List<GameObject> patches = new List<GameObject>();
+
 	CirclePatch activePatch;
 	public Color[] Colors;
 
@@ -37,7 +38,6 @@ public class Player : MonoBehaviour {
 		GameObject patchObject = (GameObject)Instantiate(PatchPrefab);
 		CirclePatch circlePatch = patchObject.AddComponent<CirclePatch>();
 		circlePatch.Generate(segments, PatternTextures, Colors, GradientTexture);
-		patches.Add(patchObject);
 		return patchObject.GetComponent<CirclePatch>();
 	}
 
@@ -45,12 +45,8 @@ public class Player : MonoBehaviour {
 	{
 		isDone = false;
 		myTurn = true;
-		int segments = Random.Range(2, 5);
+		int segments = 7;//Random.Range(2, 5);
 		activePatch = CreatePatch(segments);
-		for(int i = 0; i < patches.Count; ++i)
-		{
-			patches[i].GetComponent<CirclePatch>().NextSegment();
-		}
 	}
 
 	public void TurnOver()
@@ -67,14 +63,15 @@ public class Player : MonoBehaviour {
 			{
 				Vector3 pz = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 				pz.z = 0.0f;
-				activePatch.transform.position = pz;
+				activePatch.transform.position = new Vector3(pz.x, pz.y, activePatch.transform.position.z);
 			}
 			if(Input.GetMouseButtonDown(0))
 			{
 				isDone = true;
 				if(activePatch != null)
 				{
-					activePatch.Place();
+					ActiveGame.Place(this, activePatch);
+					activePatch = null;
 				}
 			}
 		}
