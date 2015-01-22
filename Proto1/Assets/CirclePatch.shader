@@ -3,8 +3,7 @@
 		_CirclePatchSize("Circle Patch Min,Current,Max Size", vector) = (0.0, 0.0, 1.0)
 		_CirclePatchRadius("Circle Patch Radius", float) = 1.0
 
-		_CirclePalette("Palette", float) = 0.0		
-		_GradientTexture("Gradient Texture", 2D) = "white" {}
+		_AddColor ("ShadeColor", vector) = (0.0,0.0,0.0,0.0)
 
 		_BaseColor1 ("BaseColor1", Color) = (1,1,1,1)
 		_BaseColor2 ("BaseColor2", Color) = (1,1,1,1)
@@ -15,6 +14,7 @@
 		_FabricTexture("Fabric Texture", 2D) = "white" {}
 		_PatternTexture2("Pattern Texture 2", 2D) = "white" {}
 		_CirclePatchLayer("Circle Patch Layer", float) = 0.0
+		_CurrentSegmentArcSize("Circle Patch Current Segment Arc Size", float) = 0.0
 
 		_Color ("Color", Color) = (1,1,1,1)
 		_Distort("Distort", vector) = (0.5, 0.5, 1.0, 1.0)
@@ -43,8 +43,8 @@
 			sampler2D _MainTex;
 			sampler2D _FabricTexture;
 			sampler2D _PatternTexture2;
-			sampler2D _GradientTexture;
 
+			float4 _AddColor;
 			float4 _BaseColor1;
 			float4 _BaseColor2;
 			float4 _ComplementColor1;
@@ -80,7 +80,7 @@
 			float4 _CirclePatchSize;
 			float _CirclePatchRadius;
 			float _CirclePatchLayer;
-			float _CirclePalette;
+			float _CurrentSegmentArcSize;
 
 			float4 _Color;
 			float4 _Distort;
@@ -96,13 +96,11 @@
 			float3 FGColorFromPalette(float index)
 			{
 				return mix(_ComplementColor1, _ComplementColor2, index).rgb;
-//				return tex2D(_GradientTexture, float2(index, 0.05f)).rgb;
 			}
 
 			float3 BGColorFromPalette(float index)
 			{
 				return mix(_BaseColor1, _BaseColor2, index).rgb;
-//				return tex2D(_GradientTexture, float2(index, _CirclePalette)).rgb;
 			}
 			
 			half4 frag(v2f i) : COLOR
@@ -173,6 +171,7 @@
 //				return float4(i.uv2.x, i.uv2.y, 0.0f, 0.0f);
 //				color = float4(gray, gray, gray, 1.0f);
 				color = float4(lerp(FGColorFromPalette(fgtex * fade), BGColorFromPalette(bgtex * fade), 1.0f - fgtex) * gray * border, 1.0f);
+				color += _AddColor;
 				return color;
 			}
 			ENDCG

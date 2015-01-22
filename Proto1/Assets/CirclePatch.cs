@@ -2,26 +2,56 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class CirclePatch : MonoBehaviour {
+public class CirclePatch : GamePieceBase {
 
 	const int MAX_PATTERNS = 4;
-	const float ZPosAdd = -0.001f;
+	const float FLASH_TIME = 1.0f;
+	const float FLASH_SPEED = 4.0f;
+	const float GROWTH_SPEED = 0.5f;
+
+	public GameObject CirclePatchSizePrefab;
+	GameObject circlePatchSize;
+	GameObject circlePatchSymbol;
 
 	static Mesh GeneratedMesh;
-	static float ZPos = ZPosAdd;
 
 	public int Segments = 1;
 	private int CurrentSegment = 0;
 	private float SegmentScale = 1.0f;
 	private float InnerRadius = 1.0f;
 	private float OuterRadius = 1.0f;
+	private float CurrentSegmentArcSize = 0.0f;
+
+	private DecorationCircleStopper Decoration;
+
+	public enum Symbols
+	{
+		Square,
+		Triangle,
+		Circle
+	}
+	private Symbols Symbol = Symbols.Square;
 
 	public Texture2D[] PatternTextures;
 
+	struct PatchSegment
+	{
+		public int colorIndex;
+		public int patternIndex;
+	}
+	PatchSegment[] patchSegments;
+
+	Player Owner;
+
+	bool doneGrowing = false;
 	bool collided = false;
 	bool placed = false;
 	float size = 0.0f;
 	float maxSize = 0.0f;
+
+	bool isFlashing = false;
+	float flashValue = 0.0f;
+	float flashTimer = 0.0f;
 
 	class PatchEdge
 	{
@@ -150,82 +180,6 @@ public class CirclePatch : MonoBehaviour {
 		return (x * (1.0f - a)) + (y * a);
 	}
 
-	public static Texture2D CreateGradientTexture(Color[] colors)
-	{
-		const int size = 256;
-		//float stepSize = 1.0f / (colors.Length - 0);
-		int segmentSize = size / (colors.Length / 2);
-
-		Texture2D tex = new Texture2D(size, size, TextureFormat.ARGB32, false);
-		/*for(int x = 0; x < size; ++x)
-		{
-			float index = x / 255.0f;
-
-			// Mix color.
-			float r = colors[0].r;
-			float g = colors[0].g;
-			float b = colors[0].b;
-			float step = stepSize;
-			for(int i = 1; i < colors.Length; ++i)
-			{
-				r = Mix(r, colors[i].r, SmuttStep(step, step + stepSize, index));
-				g = Mix(g, colors[i].g, SmuttStep(step, step + stepSize, index));
-				b = Mix(b, colors[i].b, SmuttStep(step, step + stepSize, index));
-				step += stepSize;
-			}
-
-			// Output a column of color to texture.
-			for(int y = 0; y < segmentSize; ++y)
-			{
-				tex.SetPixel(x, y, new Color(r, g, b, 1.0f));
-			}
-		}*/
-		/*for(int s = 0; s < colors.Length; ++s)
-		{
-			for(int x = 0; x < size; ++x)
-			{
-				float index = x / 255.0f;
-			
-				// Mix color.
-				float r = Mix(0.0f, colors[s].r, SmuttStep(0.0f, 0.5f, index));
-				float g = Mix(0.0f, colors[s].g, SmuttStep(0.0f, 0.5f, index));
-				float b = Mix(0.0f, colors[s].b, SmuttStep(0.0f, 0.5f, index));
-				r = Mix(r, 1.0f, SmuttStep(0.5f, 1.0f, index));
-				g = Mix(g, 1.0f, SmuttStep(0.5f, 1.0f, index));
-				b = Mix(b, 1.0f, SmuttStep(0.5f, 1.0f, index));
-
-				// Output a column of color to texture.
-				for(int y = (s * segmentSize); y < ((s + 1) * segmentSize); ++y)
-				{
-					tex.SetPixel(x, y, new Color(r, g, b, 1.0f));
-				}
-			}
-		}*/
-		for(int s = 0; s < colors.Length; s += 2)
-		{
-			int ymin = ((s / 2) * segmentSize);
-			int ymax = (((s / 2) + 1) * segmentSize);
-
-			for(int x = 0; x < size; ++x)
-			{
-				float index = x / 255.0f;
-				
-				// Mix color.
-				float r = Mix(colors[s].r, colors[s + 1].r, SmuttStep(0.0f, 1.0f, index));
-				float g = Mix(colors[s].g, colors[s + 1].g, SmuttStep(0.0f, 1.0f, index));
-				float b = Mix(colors[s].b, colors[s + 1].b, SmuttStep(0.0f, 1.0f, index));
-
-				// Output a column of color to texture.
-				for(int y = ymin; y < ymax; ++y)
-				{
-					tex.SetPixel(x, y, new Color(r, g, b, 1.0f));
-				}
-			}
-		}
-		tex.Apply();
-		
-		return tex;
-	}
 	static Texture2D CreatePatternTexture(int uniquePatternSeed)
 	{
 		const float granularity = 128.0f;
@@ -261,6 +215,11 @@ public class CirclePatch : MonoBehaviour {
 		return maxSize;
 	}
 
+	public Symbols GetSymbol()
+	{
+		return Symbol;
+	}
+
 	public bool CollidesAgainst(CirclePatch patch)
 	{
 		float x1 = transform.position.x;
@@ -279,8 +238,9 @@ public class CirclePatch : MonoBehaviour {
 
 		return false;
 	}
-	
-	public void Generate(int segments, Texture2D[] patternTextures, Color[] colors, Texture2D gradientTexture)
+
+	static int idas = 0;
+	public void Generate(int segments, Texture2D[] patternTextures, Gradient[] colors, Gradient complementColor)
 	{
 		transform.position = new Vector3(0.0f, 0.0f, ZPos);
 		ZPos += ZPosAdd;
@@ -294,6 +254,8 @@ public class CirclePatch : MonoBehaviour {
 
 		PatternTextures = patternTextures;
 
+		patchSegments = new PatchSegment[Segments]; 
+
 		// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
@@ -301,9 +263,7 @@ public class CirclePatch : MonoBehaviour {
 		renderer.materials = new Material[GeneratedMesh.subMeshCount];
 		Material material;
 		List<string> shaderKeywords;
-		float numColors = (colors.Length) / 2.0f;
-		float colorOffset = 0.05f;//(1.0f / numColors) / 2.0f;
-		int prevPattern = -1;
+		int prevPatternIndex = -1;
 		for(int s = 0; s < GeneratedMesh.subMeshCount; ++s)
 		{
 			material = renderer.materials[s];
@@ -311,32 +271,100 @@ public class CirclePatch : MonoBehaviour {
 			material.mainTexture = CreatePatternTexture((int)(Random.value * 255.0f));
 			material.SetTexture("_FabricTexture", PatternTextures[0]);
 			material.SetTexture("_PatternTexture2", PatternTextures[1]);
-			size = s * SegmentScale;
-			maxSize = size + SegmentScale;
 			material.SetVector("_CirclePatchSize", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
 			material.SetFloat("_CirclePatchRadius", OuterRadius);
 			material.SetFloat("_CirclePatchLayer", CurrentSegment + s);
-			int paletteIndex = Random.Range(1, ((int)numColors));
-			material.SetFloat("_CirclePalette", (((float)paletteIndex) / numColors) + colorOffset);
-			material.SetTexture("_GradientTexture", gradientTexture);
-			material.SetColor("_BaseColor1", colors[paletteIndex * 2]);
-			material.SetColor("_BaseColor2", colors[(paletteIndex * 2) + 1]);
-			material.SetColor("_ComplementColor1", colors[0]);
-			material.SetColor("_ComplementColor2", colors[1]);
-			int pattern = Random.Range(0, MAX_PATTERNS);
-			if(pattern == prevPattern)
+			material.SetFloat("_CurrentSegmentArcSize", 0.0f);
+			int paletteIndex = Random.Range(0, colors.Length);
+			material.SetColor("_BaseColor1", colors[paletteIndex].colorKeys[0].color);
+			material.SetColor("_BaseColor2", colors[paletteIndex].colorKeys[1].color);
+			material.SetColor("_ComplementColor1", complementColor.colorKeys[0].color);
+			material.SetColor("_ComplementColor2", complementColor.colorKeys[1].color);
+			int patternIndex = Random.Range(0, MAX_PATTERNS);
+			if(patternIndex == prevPatternIndex)
 			{
-				pattern = (pattern + 1) % MAX_PATTERNS;
+				patternIndex = (patternIndex + 1) % MAX_PATTERNS;
 			}
-			shaderKeywords = new List<string> { "DO_SEGMENT_" + pattern };
+			shaderKeywords = new List<string> { "DO_SEGMENT_" + patternIndex };
 			material.shaderKeywords = shaderKeywords.ToArray();
-			prevPattern = pattern;
+			prevPatternIndex = patternIndex;
+
+			// Setup patch segment.
+			if(s < Segments)
+			{
+				patchSegments[s].colorIndex = paletteIndex;
+				patchSegments[s].patternIndex = patternIndex;
+			}
 		}
 		material = renderer.materials[0];
 		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
+		CurrentSegment = 1;
+		size = CurrentSegment * SegmentScale;
+		maxSize = size;
+
+		CirclePatchSizePrefab = Resources.Load<GameObject>("Prefab/TextPrefab");
+		circlePatchSize = (GameObject)Instantiate(CirclePatchSizePrefab, new Vector3(transform.position.x, transform.position.y, transform.position.z + (ZPosAdd * 0.5f)), Quaternion.identity);
+
+
+		//circlePatchSize = new GameObject(gameObject.name + "_Size");
+		circlePatchSize.transform.parent = gameObject.transform;
+		circlePatchSize.transform.localPosition = new Vector3(0.0f, 0.0f, ZPosAdd * 0.5f);
+		//TextMesh circlePatchSizeText = circlePatchSize.AddComponent<TextMesh>();
+		TextMesh circlePatchSizeText = circlePatchSize.GetComponent<TextMesh>();
+
+		// Fix aspect ratio of the text.
+		float pixelRatio = (Camera.main.orthographicSize * 2.0f) / Camera.main.pixelHeight;
+		circlePatchSize.transform.localScale = new Vector3(pixelRatio * 10.0f, pixelRatio * 10.0f, pixelRatio * 0.1f);
+		circlePatchSizeText.fontSize = 30;
+		circlePatchSizeText.text = segments.ToString();
+
+		// Creat symbol quad.
+		circlePatchSymbol = GameObject.CreatePrimitive(PrimitiveType.Quad);
+		if(idas == 0)
+		{
+			Symbol = Symbols.Square;
+			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolSquare");
+			idas = 1;
+		}
+		else if(idas == 1)
+		{
+			Symbol = Symbols.Triangle;
+			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolTriangle");
+			idas = 2;
+		}
+		else
+		{
+			Symbol = Symbols.Circle;
+			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolCircle");
+			idas = 0;
+		}
+		circlePatchSymbol.renderer.material.shader = Shader.Find("Unlit/Transparent");
+		circlePatchSymbol.transform.parent = gameObject.transform;
+		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, ZPosAdd * 0.25f);
+		circlePatchSymbol.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
 	}
 
-	public void Place()
+	public void SetOwner(Player player)
+	{
+		Owner = player;
+		SwapColors(Owner.Colors, Owner.ComplementColor);
+	}
+
+	public void SwapColors(Gradient[] colors, Gradient complementColor)
+	{
+		Material material;
+		for(int s = 0; s < Segments; ++s)
+		{
+			material = renderer.materials[s];
+			int paletteIndex = patchSegments[s].colorIndex;
+			material.SetColor("_BaseColor1", colors[paletteIndex].colorKeys[0].color);
+			material.SetColor("_BaseColor2", colors[paletteIndex].colorKeys[1].color);
+			material.SetColor("_ComplementColor1", complementColor.colorKeys[0].color);
+			material.SetColor("_ComplementColor2", complementColor.colorKeys[1].color);
+		}
+	}
+	
+	public override void Place()
 	{
 		CurrentSegment = 1;
 		size = CurrentSegment * SegmentScale;
@@ -348,8 +376,20 @@ public class CirclePatch : MonoBehaviour {
 			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
 			material.SetFloat("_CirclePatchRadius", OuterRadius);
 			material.SetFloat("_CirclePatchLayer", CurrentSegment);
+			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
 		}
 		placed = true;
+	}
+
+	public void PlaceDecoration(DecorationCircleStopper decoration)
+	{
+		Decoration = decoration;
+		SetGrowthDone(true);
+	}
+
+	public DecorationCircleStopper GetDecoration()
+	{
+		return Decoration;
 	}
 
 	public void NextSegment()
@@ -358,12 +398,14 @@ public class CirclePatch : MonoBehaviour {
 		{
 			++CurrentSegment;
 			maxSize = (CurrentSegment * SegmentScale);
+			CurrentSegmentArcSize = 0.0f;
 		}
 	}
 
 	public void SetCollided(bool collide)
 	{
 		collided = collide;
+		SetGrowthDone(collide);
 	}
 
 	public bool HasCollided()
@@ -371,22 +413,102 @@ public class CirclePatch : MonoBehaviour {
 		return collided;
 	}
 	
+	public void SetGrowthDone(bool enable)
+	{
+		doneGrowing = enable;
+		circlePatchSize.renderer.enabled = false;
+		SetShowSymbol(false);
+		Owner.AddScore((int)size);
+
+		// Start flashing to notify that it is done.
+		StartFlash();
+	}
+
+	void StartFlash()
+	{
+		isFlashing = true;
+		flashValue = 0.0f;
+		flashTimer = 0.0f;
+	}
+
+	void UpdateFlash()
+	{
+		if(flashTimer < FLASH_TIME)
+		{
+			Material material;
+			for(int s = 0; s < CurrentSegment; ++s)
+			{
+				material = renderer.materials[s];
+				material.SetColor("_AddColor", new Vector4(flashValue, flashValue, flashValue, 0.0f));
+			}
+		}
+		else
+		{
+			Material material;
+			for(int s = 0; s < CurrentSegment; ++s)
+			{
+				material = renderer.materials[s];
+				material.SetColor("_AddColor", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+			}
+			isFlashing = false;
+		}
+		flashValue += FLASH_SPEED * Time.deltaTime;
+		if(flashValue > 0.5f)
+		{
+			flashValue = -0.5f;
+		}
+
+		flashTimer += Time.deltaTime;
+	}
+	
+	public void SetShowSymbol(bool show)
+	{
+		circlePatchSymbol.renderer.enabled = show;
+	}
+
+	public bool HasStoppedGrowing()
+	{
+		return doneGrowing;
+	}
+
+	public override void SetPosition(float x, float y)
+	{
+		transform.position = new Vector3(x, y, transform.position.z);
+	}
+	
 	void Update ()
 	{
-		if((placed) && (!collided))
+		if(placed)
 		{
-			if(size < maxSize)
+			if(!doneGrowing)
 			{
-				MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
-				Material material;
-				for(int s = 0; s < CurrentSegment; ++s)
+				if(size < maxSize)
 				{
-					material = renderer.materials[s];
-					material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
-					material.SetFloat("_CirclePatchRadius", OuterRadius);
-					material.SetFloat("_CirclePatchLayer", CurrentSegment);
+					MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+					Material material;
+					for(int s = 0; s < CurrentSegment; ++s)
+					{
+						material = renderer.materials[s];
+						material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
+						material.SetFloat("_CirclePatchRadius", OuterRadius);
+						material.SetFloat("_CirclePatchLayer", CurrentSegment);
+						material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
+					}
+					//CurrentSegmentArcSize += 10.0f;
+					//if(CurrentSegmentArcSize > 360.0f)
+					{
+						size += GROWTH_SPEED * Time.deltaTime;
+						//CurrentSegmentArcSize = 0.0f;
+					}
 				}
-				size += 0.01f;
+				else if(CurrentSegment >= Segments)
+				{
+					SetGrowthDone(true);
+				}
+			}
+			else if(isFlashing)
+			{
+				UpdateFlash();
 			}
 		}
 	}
