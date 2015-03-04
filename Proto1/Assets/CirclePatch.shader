@@ -171,7 +171,7 @@
 //				return float4(i.uv2.x, i.uv2.y, 0.0f, 0.0f);
 //				color = float4(gray, gray, gray, 1.0f);
 				color = float4(lerp(FGColorFromPalette(fgtex * fade), BGColorFromPalette(bgtex * fade), 1.0f - fgtex) * gray * border, 1.0f);
-				color += _AddColor;
+				color.rgb += _AddColor.rgb;
 				return color;
 			}
 			ENDCG

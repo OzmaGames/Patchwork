@@ -5,6 +5,52 @@ using System.Collections.Generic;
 public class Playfield : MonoBehaviour {
 
 	const float CELL_SIZE = 2.0f;
+	
+	class QuadTree
+	{
+		bool Dirty = false;
+		Bounds Boundaries;
+		int MaxDepth = 1;
+		List<GamePieceBase> GamePieces;
+
+		QuadTree TopLeft;
+		QuadTree TopRight;
+		QuadTree BottomLeft;
+		QuadTree BottomRight;
+
+		public QuadTree(float x, float y, float halfWidth, float halfHeight, int maxDepth)
+		{
+			Boundaries = new Bounds(new Vector3(x, y, 0.0f), new Vector3(halfWidth, halfHeight, 1.0f));
+			MaxDepth = maxDepth;
+		}
+
+		public bool Add(Vector2 position, float size, GamePieceBase gamePiece)
+		{
+			//gamePiece.
+			if(!Boundaries.Contains(position))
+			{
+				return false;
+			}
+
+/*			Bounds bounds = gamePiece.GetBounds();
+			if(Boundaries.Encapsulate(bounds))
+			{
+				Bounds topLeft = new Bounds(bounds.center, bounds.size / 2.0f);
+				Bounds topRight = new Bounds(bounds.center, bounds.size / 2.0f);
+				Bounds bottomLeft = new Bounds(bounds.center, bounds.size / 2.0f);
+				Bounds bottomRight = new Bounds(bounds.center, bounds.size / 2.0f);
+			}*/
+			return true;
+		}
+
+		public void Split()
+		{
+		}
+
+		public void Merge()
+		{
+		}
+	}
 
 	class PlacedPatch
 	{
@@ -36,8 +82,10 @@ public class Playfield : MonoBehaviour {
 	{
 	}
 
-	public bool CanPlaceAt(Player player, GamePieceBase piece, Vector3 pos)
+	public bool CanPlaceAt(Player player, GamePieceBase piece, Vector3 pos, out List<GamePieceBase> collidedPieces)
 	{
+		collidedPieces = new List<GamePieceBase>();
+
 		if(!IsInsideGrid(pos))
 		{
 			return false;
@@ -49,13 +97,17 @@ public class Playfield : MonoBehaviour {
 			for(int p = 0; p < Patches.Count; ++p)
 			{
 				CirclePatch patch2 = Patches[p].Patch;
-				if((patch != patch2) && patch.CollidesAgainst(patch2))
+				if(patch == patch2)
 				{
-					return false;
+					continue;
+				}
+				if(patch.CollidesAgainst(patch2))
+				{
+					collidedPieces.Add(patch2);
 				}
 			}
 			
-			return true;
+			return collidedPieces.Count == 0;
 		}
 		if(piece.GetComponent<DecorationCircleStopper>() != null)
 		{
@@ -65,7 +117,51 @@ public class Playfield : MonoBehaviour {
 			for(int p = 0; p < Patches.Count; ++p)
 			{
 				CirclePatch patch = Patches[p].Patch;
-				if((!patch.HasStoppedGrowing()) && decoration.CollidesAgainst(patch) && (patch.GetDecoration() == null))
+				// Enabled placing decoration on completed patches.
+				if(/*(!patch.HasStoppedGrowing()) &&*/ decoration.CollidesAgainst(patch))
+				{
+					if(patch.GetDecoration() == null)
+					{
+						if((bestCollider == null) || (bestCollider.transform.position.z > patch.transform.position.z))
+						{
+							bestCollider = patch;
+							hasCollided = true;
+						}
+					}
+					else
+					{
+						collidedPieces.Add(patch.GetDecoration());
+					}
+				}
+			}
+
+			decoration.SetCollider(bestCollider);
+			return hasCollided;
+		}
+		
+		return false;
+	}
+
+	public void GetCollision(GamePieceBase piece, out List<GamePieceBase> collidedPieces)
+	{
+		collidedPieces = new List<GamePieceBase>();
+
+		Vector3 pos = piece.transform.position;
+		if(!IsInsideGrid(pos))
+		{
+			return;
+		}
+
+		if(piece.GetComponent<DecorationCircleStopper>() != null)
+		{
+			bool hasCollided = false;
+			CirclePatch bestCollider = null;
+			DecorationCircleStopper decoration = piece.GetComponent<DecorationCircleStopper>();
+			for(int p = 0; p < Patches.Count; ++p)
+			{
+				CirclePatch patch = Patches[p].Patch;
+				// Enabled placing decoration on completed patches.
+				if(/*(!patch.HasStoppedGrowing()) &&*/ decoration.CollidesAgainst(patch))
 				{
 					if((bestCollider == null) || (bestCollider.transform.position.z > patch.transform.position.z))
 					{
@@ -74,12 +170,11 @@ public class Playfield : MonoBehaviour {
 					}
 				}
 			}
-			
-			decoration.SetCollider(bestCollider);
-			return hasCollided;
+			if(bestCollider)
+			{
+				collidedPieces.Add(bestCollider);
+			}
 		}
-		
-		return false;
 	}
 
 	public void Place(Player player, CirclePatch patch)
@@ -96,7 +191,8 @@ public class Playfield : MonoBehaviour {
 		}
 		return true;
 	}
-	
+
+	const bool kHideSymbols = false;
 	public void ActivatePlayer(Player player, bool hideOthersSymbols)
 	{
 		for(int p = 0; p < Patches.Count; ++p)
@@ -106,22 +202,34 @@ public class Playfield : MonoBehaviour {
 				CirclePatch patch = Patches[p].Patch;
 				if(!patch.HasStoppedGrowing())
 				{
-					patch.SetShowSymbol(true);
+					if(kHideSymbols)
+					{
+						patch.SetShowSymbol(true);
+					}
 					patch.NextSegment();
 				}
 				else if(hideOthersSymbols)
 				{
 					// Only show symbol on growing patches. 
-					patch.SetShowSymbol(false);
+					if(kHideSymbols)
+					{
+						patch.SetShowSymbol(false);
+					}
 				}
 			}
 			else if(hideOthersSymbols)
 			{
-				Patches[p].Patch.SetShowSymbol(false);
+				if(kHideSymbols)
+				{
+					Patches[p].Patch.SetShowSymbol(false);
+				}
 			}
 			else
 			{
-				Patches[p].Patch.SetShowSymbol(true);
+				if(kHideSymbols)
+				{
+					Patches[p].Patch.SetShowSymbol(true);
+				}
 			}
 		}
 	}
@@ -224,71 +332,67 @@ public class Playfield : MonoBehaviour {
 			{
 				CirclePatch patch2 = Patches[p2].Patch;
 				Player owner2 = Patches[p2].Owner;
-				if(patch2.HasStoppedGrowing())
+				if((patch1 == patch2) || (owner1 == owner2) || patch2.HasStoppedGrowing())
 				{
 					continue;
 				}
 				
-				if((patch1 != patch2) && patch1.CollidesAgainst(patch2))
+				if(patch1.CollidesAgainst(patch2))
 				{
-					if(owner1 != owner2)
+					// Take over
+					switch(patch1.GetSymbol())
 					{
-						// Take over
-						switch(patch1.GetSymbol())
+					case CirclePatch.Symbols.Square:
+						switch(patch2.GetSymbol())
 						{
-						case CirclePatch.Symbols.Square:
-							switch(patch2.GetSymbol())
-							{
-							case CirclePatch.Symbols.Triangle:
-
-								Patches[p2].Owner = owner1;
-								patch2.SetOwner(owner1);
-								break;
-							case CirclePatch.Symbols.Circle:
-								Patches[p1].Owner = owner2;
-								patch1.SetOwner(owner2);
-								break;
-							}
-							break;
 						case CirclePatch.Symbols.Triangle:
-							switch(patch2.GetSymbol())
-							{
-							case CirclePatch.Symbols.Square:
-								Patches[p1].Owner = owner2;
-								patch1.SetOwner(owner2);
-								break;
-							case CirclePatch.Symbols.Circle:
-								Patches[p2].Owner = owner1;
-								patch2.SetOwner(owner1);
-								break;
-							}
+							Patches[p2].Owner = owner1;
+							patch2.SetOwner(owner1);
 							break;
 						case CirclePatch.Symbols.Circle:
-							switch(patch2.GetSymbol())
-							{
-							case CirclePatch.Symbols.Square:
-								Patches[p2].Owner = owner1;
-								patch2.SetOwner(owner1);
-								break;
-							case CirclePatch.Symbols.Triangle:
-								Patches[p1].Owner = owner2;
-								patch1.SetOwner(owner2);
-								break;
-							}
+							Patches[p1].Owner = owner2;
+							patch1.SetOwner(owner2);
 							break;
 						}
-						// DISABLED DON'T TAKE OVER USING SIZE.
-						/*if(patch1.GetSize() > patch2.GetSize())
+						break;
+					case CirclePatch.Symbols.Triangle:
+						switch(patch2.GetSymbol())
 						{
-							patches[p2].Owner = owner1;
-							patch2.SwapColors(owner1.Colors, owner1.ComplementColor);
+						case CirclePatch.Symbols.Circle:
+							Patches[p2].Owner = owner1;
+							patch2.SetOwner(owner1);
+							break;
+						case CirclePatch.Symbols.Square:
+							Patches[p1].Owner = owner2;
+							patch1.SetOwner(owner2);
+							break;
 						}
-						else
+						break;
+					case CirclePatch.Symbols.Circle:
+						switch(patch2.GetSymbol())
 						{
-							patches[p1].Owner = owner2;
-							patch1.SwapColors(owner2.Colors, owner2.ComplementColor);
-						}*/
+						case CirclePatch.Symbols.Square:
+							Patches[p2].Owner = owner1;
+							patch2.SetOwner(owner1);
+							break;
+						case CirclePatch.Symbols.Triangle:
+							Patches[p1].Owner = owner2;
+							patch1.SetOwner(owner2);
+							break;
+						}
+						break;
 					}
+					// DISABLED DON'T TAKE OVER USING SIZE.
+					/*if(patch1.GetSize() > patch2.GetSize())
+					{
+						patches[p2].Owner = owner1;
+						patch2.SwapColors(owner1.Colors, owner1.ComplementColor);
+					}
+					else
+					{
+						patches[p1].Owner = owner2;
+						patch1.SwapColors(owner2.Colors, owner2.ComplementColor);
+					}*/
 					// DISABLED STOP GROW ON COLLIDE.
 					//patch1.SetCollided(true);
 					//patch2.SetCollided(true);
@@ -302,6 +406,8 @@ public class Playfield : MonoBehaviour {
 		CheckForCollision();
 
 		////////////////////////////////////////////////////////////////
+		int cols = playfieldCells.GetLength(1);
+		int rows = playfieldCells.GetLength(0);
 		for(int p = 0; p < Patches.Count; ++p)
 		{
 			CirclePatch patch = Patches[p].Patch;
@@ -311,13 +417,13 @@ public class Playfield : MonoBehaviour {
 			int row = (int)((pos.y + HalfHeight) / (1.0f / CELL_SIZE));
 			for(int y = row - ((int)(patch.GetSize() * CELL_SIZE)); y <= (row + ((int)(patch.GetSize() * CELL_SIZE))); ++y)
 			{
-				if((y < 0) || (y >= playfieldCells.GetLength(0)))
+				if((y < 0) || (y >= rows))
 				{
 					continue;
 				}
 				for(int x = col - ((int)(patch.GetSize() * CELL_SIZE)); x <= (col + ((int)(patch.GetSize() * CELL_SIZE))); ++x)
 				{
-					if((x < 0) || (x >= playfieldCells.GetLength(1)))
+					if((x < 0) || (x >= cols))
 					{
 						continue;
 					}
@@ -332,7 +438,7 @@ public class Playfield : MonoBehaviour {
 		if(Dirty)
 		{
 			// Regenerate mesh.
-			GenerateMesh();
+			//GenerateMesh();
 			Dirty = false;
 		}
 	}

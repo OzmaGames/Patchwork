@@ -4,9 +4,8 @@ using System.Collections.Generic;
 
 public class CirclePatch : GamePieceBase {
 
-	const int MAX_PATTERNS = 4;
-	const float FLASH_TIME = 1.0f;
-	const float FLASH_SPEED = 4.0f;
+	public const int MAX_PATTERNS = 4;
+	public const float FLASH_TIME = 1.0f;
 	const float GROWTH_SPEED = 0.5f;
 
 	public GameObject CirclePatchSizePrefab;
@@ -45,13 +44,18 @@ public class CirclePatch : GamePieceBase {
 
 	bool doneGrowing = false;
 	bool collided = false;
-	bool placed = false;
+	bool isPlaced = false;
 	float size = 0.0f;
 	float maxSize = 0.0f;
 
+	Color flashColorStart = Color.black;
+	Color flashColorEnd = Color.white;
 	bool isFlashing = false;
 	float flashValue = 0.0f;
 	float flashTimer = 0.0f;
+
+	Color highlightColor = Color.black;
+	bool doHighlight = false;
 
 	class PatchEdge
 	{
@@ -62,6 +66,51 @@ public class CirclePatch : GamePieceBase {
 	
 	List<PatchEdge> innerEdges = new List<PatchEdge>();
 	List<PatchEdge> outerEdges = new List<PatchEdge>();
+
+	[System.Serializable]
+	public class PatchConfig
+	{
+		public int NumSegments = 1;
+		public float SegmentSize = 1.0f;
+		public int[] PaletteIndices;
+		public int[] PatternIndices;
+
+		public PatchConfig(int numSegments, float segmentSize, int numPalettes, int numPatterns)
+		{
+			NumSegments = numSegments;
+			SegmentSize = segmentSize;
+			PaletteIndices = new int[numSegments];
+			PatternIndices = new int[numSegments];
+
+			int prevPatternIndex = -1;
+			for(int s = 0; s < NumSegments; ++s)
+			{
+				int paletteIndex = Random.Range(0, numPalettes);
+				int patternIndex = Random.Range(0, numPatterns);
+				if(patternIndex == prevPatternIndex)
+				{
+					patternIndex = (patternIndex + 1) % numPatterns;
+				}
+				prevPatternIndex = patternIndex;
+
+				PaletteIndices[s] = paletteIndex;
+				PatternIndices[s] = patternIndex;
+			}
+		}
+
+		public PatchConfig(int numSegments, float segmentSize, int[] paletteIndices, int[] patternIndices)
+		{
+			if((numSegments != paletteIndices.Length) || (numSegments != patternIndices.Length))
+			{
+				Debug.LogError("Unexpected length of segments.");
+				return;
+			}
+			NumSegments = numSegments;
+			SegmentSize = segmentSize;
+			PaletteIndices = paletteIndices;
+			PatternIndices = patternIndices;
+		}
+	}
 
 	public static void GenerateSegments(int numSegments, float segmentSize)
 	{
@@ -166,20 +215,6 @@ public class CirclePatch : GamePieceBase {
 		GeneratedMesh.RecalculateBounds();
 	}
 
-	static float Saturate(float x)
-	{
-		return Mathf.Clamp01(x);
-		//return Mathf.Min(0.0f, Mathf.Max(x, 1.0f));
-	}
-	static float SmuttStep(float x, float y, float z)
-	{
-		return Saturate((z - x) / (y - x));
-	}
-	static float Mix(float x, float y, float a)
-	{
-		return (x * (1.0f - a)) + (y * a);
-	}
-
 	static Texture2D CreatePatternTexture(int uniquePatternSeed)
 	{
 		const float granularity = 128.0f;
@@ -239,14 +274,14 @@ public class CirclePatch : GamePieceBase {
 		return false;
 	}
 
-	static int idas = 0;
-	public void Generate(int segments, Texture2D[] patternTextures, Gradient[] colors, Gradient complementColor)
+	static Symbols idas = Symbols.Square;
+	public void Generate(PatchConfig config, Texture2D[] patternTextures, Gradient[] colors, Gradient complementColor)
 	{
-		transform.position = new Vector3(0.0f, 0.0f, ZPos);
-		ZPos += ZPosAdd;
+		transform.position = new Vector3(0.0f, 0.0f, 0.0f);//Game.BGZPos);
+		//Game.BGZPos += Game.ZPosAdd;
 
 		// Setup initial values.
-		Segments = segments;
+		Segments = config.NumSegments;
 		CurrentSegment = 1;
 
 		InnerRadius = 0.0f;
@@ -263,7 +298,6 @@ public class CirclePatch : GamePieceBase {
 		renderer.materials = new Material[GeneratedMesh.subMeshCount];
 		Material material;
 		List<string> shaderKeywords;
-		int prevPatternIndex = -1;
 		for(int s = 0; s < GeneratedMesh.subMeshCount; ++s)
 		{
 			material = renderer.materials[s];
@@ -275,23 +309,20 @@ public class CirclePatch : GamePieceBase {
 			material.SetFloat("_CirclePatchRadius", OuterRadius);
 			material.SetFloat("_CirclePatchLayer", CurrentSegment + s);
 			material.SetFloat("_CurrentSegmentArcSize", 0.0f);
-			int paletteIndex = Random.Range(0, colors.Length);
-			material.SetColor("_BaseColor1", colors[paletteIndex].colorKeys[0].color);
-			material.SetColor("_BaseColor2", colors[paletteIndex].colorKeys[1].color);
-			material.SetColor("_ComplementColor1", complementColor.colorKeys[0].color);
-			material.SetColor("_ComplementColor2", complementColor.colorKeys[1].color);
-			int patternIndex = Random.Range(0, MAX_PATTERNS);
-			if(patternIndex == prevPatternIndex)
-			{
-				patternIndex = (patternIndex + 1) % MAX_PATTERNS;
-			}
-			shaderKeywords = new List<string> { "DO_SEGMENT_" + patternIndex };
-			material.shaderKeywords = shaderKeywords.ToArray();
-			prevPatternIndex = patternIndex;
 
 			// Setup patch segment.
 			if(s < Segments)
 			{
+				int paletteIndex = config.PaletteIndices[s];
+				material.SetColor("_BaseColor1", colors[paletteIndex].colorKeys[0].color);
+				material.SetColor("_BaseColor2", colors[paletteIndex].colorKeys[1].color);
+				material.SetColor("_ComplementColor1", complementColor.colorKeys[0].color);
+				material.SetColor("_ComplementColor2", complementColor.colorKeys[1].color);
+
+				int patternIndex = config.PatternIndices[s];
+				shaderKeywords = new List<string> { "DO_SEGMENT_" + patternIndex };
+				material.shaderKeywords = shaderKeywords.ToArray();
+
 				patchSegments[s].colorIndex = paletteIndex;
 				patchSegments[s].patternIndex = patternIndex;
 			}
@@ -303,12 +334,12 @@ public class CirclePatch : GamePieceBase {
 		maxSize = size;
 
 		CirclePatchSizePrefab = Resources.Load<GameObject>("Prefab/TextPrefab");
-		circlePatchSize = (GameObject)Instantiate(CirclePatchSizePrefab, new Vector3(transform.position.x, transform.position.y, transform.position.z + (ZPosAdd * 0.5f)), Quaternion.identity);
+		circlePatchSize = (GameObject)Instantiate(CirclePatchSizePrefab, new Vector3(transform.position.x, transform.position.y, transform.position.z + (Game.ZPosAdd * 0.5f)), Quaternion.identity);
 
 
 		//circlePatchSize = new GameObject(gameObject.name + "_Size");
 		circlePatchSize.transform.parent = gameObject.transform;
-		circlePatchSize.transform.localPosition = new Vector3(0.0f, 0.0f, ZPosAdd * 0.5f);
+		circlePatchSize.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.5f);
 		//TextMesh circlePatchSizeText = circlePatchSize.AddComponent<TextMesh>();
 		TextMesh circlePatchSizeText = circlePatchSize.GetComponent<TextMesh>();
 
@@ -316,32 +347,44 @@ public class CirclePatch : GamePieceBase {
 		float pixelRatio = (Camera.main.orthographicSize * 2.0f) / Camera.main.pixelHeight;
 		circlePatchSize.transform.localScale = new Vector3(pixelRatio * 10.0f, pixelRatio * 10.0f, pixelRatio * 0.1f);
 		circlePatchSizeText.fontSize = 30;
-		circlePatchSizeText.text = segments.ToString();
+		circlePatchSizeText.text = Segments.ToString();
 
-		// Creat symbol quad.
+		// Create symbol quad.
 		circlePatchSymbol = GameObject.CreatePrimitive(PrimitiveType.Quad);
-		if(idas == 0)
+		SetSymbol(idas);
+		switch(idas)
 		{
-			Symbol = Symbols.Square;
-			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolSquare");
-			idas = 1;
-		}
-		else if(idas == 1)
-		{
-			Symbol = Symbols.Triangle;
-			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolTriangle");
-			idas = 2;
-		}
-		else
-		{
-			Symbol = Symbols.Circle;
-			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolCircle");
-			idas = 0;
+		case Symbols.Square:
+			idas = Symbols.Triangle;
+			break;
+		case Symbols.Triangle:
+			idas = Symbols.Circle;
+			break;
+		default:
+			idas = Symbols.Square;
+			break;
 		}
 		circlePatchSymbol.renderer.material.shader = Shader.Find("Unlit/Transparent");
 		circlePatchSymbol.transform.parent = gameObject.transform;
-		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, ZPosAdd * 0.25f);
+		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f);
 		circlePatchSymbol.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+	}
+
+	public void SetSymbol(Symbols symbol)
+	{
+		Symbol = symbol;
+		switch(Symbol)
+		{
+		case Symbols.Square:
+			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolSquare");
+			break;
+		case Symbols.Triangle:
+			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolTriangle");
+			break;
+		case Symbols.Circle:
+			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolCircle");
+			break;
+		}
 	}
 
 	public void SetOwner(Player player)
@@ -378,13 +421,18 @@ public class CirclePatch : GamePieceBase {
 			material.SetFloat("_CirclePatchLayer", CurrentSegment);
 			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
 		}
-		placed = true;
+		transform.position = new Vector3(transform.position.x, transform.position.y, Game.BGZPos);
+		Game.BGZPos += Game.ZPosAdd;
+		isPlaced = true;
 	}
 
 	public void PlaceDecoration(DecorationCircleStopper decoration)
 	{
 		Decoration = decoration;
-		SetGrowthDone(true);
+		if(!HasStoppedGrowing())
+		{
+			SetGrowthDone(true);
+		}
 	}
 
 	public DecorationCircleStopper GetDecoration()
@@ -421,26 +469,64 @@ public class CirclePatch : GamePieceBase {
 		Owner.AddScore((int)size);
 
 		// Start flashing to notify that it is done.
-		StartFlash();
+		StartFlash(new Color(-0.5f, -0.5f, -0.5f), new Color(0.5f, 0.5f, 0.5f), FLASH_TIME);
 	}
 
-	void StartFlash()
+	public override void SetHighlight(bool enable, Color color)
 	{
+		doHighlight = enable;
+		highlightColor = color;
+	}
+
+	void UpdateHighlight()
+	{
+		MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+		Material material;
+		if(!doHighlight)
+		{
+			for(int s = 0; s < CurrentSegment; ++s)
+			{
+					material = renderer.materials[s];
+					material.SetColor("_AddColor", Color.black);
+			}
+			return;
+		}
+		for(int s = 0; s < CurrentSegment; ++s)
+		{
+				material = renderer.materials[s];
+				material.SetColor("_AddColor", highlightColor);
+		}
+	}
+
+	public override void StartFlash(Color startColor, Color endColor, float time)
+	{
+		flashColorStart = startColor;
+		flashColorEnd = endColor;
 		isFlashing = true;
 		flashValue = 0.0f;
-		flashTimer = 0.0f;
+		flashTimer = time;
+		if(Decoration)
+		{
+			Decoration.StartFlash(startColor, endColor, time);
+		}
 	}
 
 	void UpdateFlash()
 	{
-		if(flashTimer < FLASH_TIME)
+		if(!isFlashing)
+		{
+			return;
+		}
+		if(flashTimer > 0.0f)
 		{
 			Material material;
 			for(int s = 0; s < CurrentSegment; ++s)
 			{
 				material = renderer.materials[s];
-				material.SetColor("_AddColor", new Vector4(flashValue, flashValue, flashValue, 0.0f));
+				material.SetColor("_AddColor", Color.Lerp(flashColorStart, flashColorEnd, flashValue));
 			}
+
+			flashTimer -= Time.deltaTime;
 		}
 		else
 		{
@@ -453,12 +539,10 @@ public class CirclePatch : GamePieceBase {
 			isFlashing = false;
 		}
 		flashValue += FLASH_SPEED * Time.deltaTime;
-		if(flashValue > 0.5f)
+		if(flashValue > 1.0f)
 		{
-			flashValue = -0.5f;
+			flashValue = 0.0f;
 		}
-
-		flashTimer += Time.deltaTime;
 	}
 	
 	public void SetShowSymbol(bool show)
@@ -475,10 +559,15 @@ public class CirclePatch : GamePieceBase {
 	{
 		transform.position = new Vector3(x, y, transform.position.z);
 	}
-	
+
+	public override Bounds GetBounds()
+	{
+		return new Bounds(transform.position, new Vector3(size, size));
+	}
+
 	void Update ()
 	{
-		if(placed)
+		if(isPlaced)
 		{
 			if(!doneGrowing)
 			{
@@ -506,7 +595,11 @@ public class CirclePatch : GamePieceBase {
 					SetGrowthDone(true);
 				}
 			}
-			else if(isFlashing)
+			if(doHighlight)
+			{
+				UpdateHighlight();
+			}
+			if(isFlashing)
 			{
 				UpdateFlash();
 			}

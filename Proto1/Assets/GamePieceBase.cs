@@ -1,30 +1,19 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 
-public class GamePieceBase : MonoBehaviour {
+public abstract class GamePieceBase : MonoBehaviour
+{
+	public const float FLASH_SPEED = 4.0f;
 
-	public const float ZPosAdd = -0.001f;
-	public static float ZPos = -1.0f + ZPosAdd;
+	void Start () {}
+	void Update () {}
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+//	public abstract void CanPlaceAt();
+	public abstract void Place();
+	public abstract void SetPosition(float x, float y);
+//	public abstract void GetBounds(out float x, out float y, out float size);
+	public abstract Bounds GetBounds();
 
-	public virtual void CanPlaceAt()
-	{
-	}
-
-	public virtual void Place()
-	{
-	}
-
-	public virtual void SetPosition(float x, float y)
-	{
-	}
+	public abstract void StartFlash(Color startColor, Color endColor, float time);
+	public abstract void SetHighlight(bool enable, Color color);
 }

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Player : MonoBehaviour {
 
@@ -27,6 +28,9 @@ public class Player : MonoBehaviour {
 
 	public int Score = 0;
 
+	static Color WARNING_FLASH_COLOR_1 = new Color(0.5f, 0.0f, 0.0f);
+	static Color WARNING_FLASH_COLOR_2 = new Color(-0.5f, -0.5f, -0.5f);
+
 	GamePieceBase activePiece;	
 	bool myTurn = false;
 	bool isDone = false;
@@ -37,61 +41,23 @@ public class Player : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		Deck = gameObject.AddComponent<PlayerDeck>();
+		// Create deck.
+		GameObject deckObj = new GameObject(gameObject.name + "_Deck");
+		deckObj.transform.localPosition = new Vector3(0.0f, -5.0f, 0.0f);
+		Deck = deckObj.AddComponent<PlayerDeck>();
+		Deck.Generate(10, 4, 2, this);
 	}
-
-	CirclePatch CreatePatch(int segments)
-	{
-		GameObject patchObject = new GameObject(gameObject.name + "_Patch");
-		CirclePatch circlePatch = patchObject.AddComponent<CirclePatch>();
-		circlePatch.Generate(segments, PatternTextures, Colors, ComplementColor);
-		circlePatch.SetOwner(this);
-		return circlePatch;
-	}
-
-	DecorationCircleStopper CreateDecorationCircleStopper()
-	{
-		GameObject decorationObject = new GameObject(gameObject.name + "_Decoration");
-		DecorationCircleStopper decorationCircleStopper = decorationObject.AddComponent<DecorationCircleStopper>();
-		Texture2D decorationTexture = Decorations[Random.Range(0, Decorations.Length)];
-		decorationCircleStopper.Generate(1.0f, 1.0f, 1.0f, decorationTexture);
-		return decorationObject.GetComponent<DecorationCircleStopper>();
-	}
-
-	const int MAX_TURNS_BEFORE_DECORATION = 2;
-	int decorationRandomCounter = 0;
-	GamePieceBase GetGamePiece()
-	{
-		bool shouldGiveDecoration = false;
-		int r = Random.Range(0, MAX_TURNS_BEFORE_DECORATION);
-		if((decorationRandomCounter == 0) || (r != 0))
-		{
-			++decorationRandomCounter;
-		}
-		if(decorationRandomCounter == MAX_TURNS_BEFORE_DECORATION)
-		{
-			shouldGiveDecoration = true;
-		}
-		if(shouldGiveDecoration)
-		{
-			decorationRandomCounter = 0;
-
-			// Force a decoration
-			return CreateDecorationCircleStopper();
-		}
-
-		int segments = Random.Range(2, 7);
-		return CreatePatch(segments);
-	}
-
+	
 	public void ActivateTurn()
 	{
 		isDone = false;
 		myTurn = true;
-		activePiece = GetGamePiece();
 
 		// Highlight text.
 		GUINamePrefab.GetComponent<TextMesh>().color = Color.red;
+
+		// Show deck.
+		Deck.Show();
 	}
 
 	public void TurnOver()
@@ -101,6 +67,9 @@ public class Player : MonoBehaviour {
 
 		// Normal text.
 		GUINamePrefab.GetComponent<TextMesh>().color = Color.white;
+
+		// Hide deck.
+		Deck.Hide();
 	}
 
 	public void AddScore(int amount)
@@ -115,21 +84,60 @@ public class Player : MonoBehaviour {
 	void Update () {
 		if(myTurn && (!isDone))
 		{
+			Vector3 pz = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+			pz.z = 0.0f;
 			if(activePiece != null)
 			{
-				Vector3 pz = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-				pz.z = 0.0f;
 				activePiece.SetPosition(pz.x, pz.y);
 			}
 			if(Input.GetMouseButtonDown(0))
 			{
+				// Place a piece.
 				if(activePiece != null)
 				{
-					if(ActiveGame.CanPlaceAt(this, activePiece, activePiece.transform.position))
+					List<GamePieceBase> collidedPieces;
+					if(ActiveGame.CanPlaceAt(this, activePiece, activePiece.transform.position, out collidedPieces))
 					{
 						ActiveGame.Place(this, activePiece);
 						activePiece = null;
 						isDone = true;
+					}
+					else
+					{
+						CirclePatch myPatch = activePiece.GetComponent<CirclePatch>();
+						if(myPatch != null)
+						{
+							for(int i = 0; i < collidedPieces.Count; ++i)
+							{
+								CirclePatch patch = collidedPieces[i].GetComponent<CirclePatch>();
+								if(patch != null)
+								{
+									patch.StartFlash(WARNING_FLASH_COLOR_1, WARNING_FLASH_COLOR_2, CirclePatch.FLASH_TIME);
+								}
+							}
+						}
+						DecorationCircleStopper myDecoration = activePiece.GetComponent<DecorationCircleStopper>();
+						if(myDecoration != null)
+						{
+							//myDecoration.SetHighlight(true, new Color(0.5f, 0.0f, 0.0f));
+							for(int i = 0; i < collidedPieces.Count; ++i)
+							{
+								DecorationCircleStopper decoration = collidedPieces[i].GetComponent<DecorationCircleStopper>();
+								if(decoration != null)
+								{
+									decoration.StartFlash(WARNING_FLASH_COLOR_1, WARNING_FLASH_COLOR_2, CirclePatch.FLASH_TIME);
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					// Grab a piece.
+					activePiece = Deck.GetPiece(pz);
+					if(activePiece != null)
+					{
+						Deck.Hide();
 					}
 				}
 			}

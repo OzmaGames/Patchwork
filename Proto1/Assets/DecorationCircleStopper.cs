@@ -8,17 +8,36 @@ public class DecorationCircleStopper : GamePieceBase {
 
 	Texture2D BGTexture;
 	Mesh GeneratedMesh;
+	float HalfWidth = 0.0f;
+	float HalfHeight = 0.0f;
+
+	Player Owner;
 
 	CirclePatch owner;
 
-	// Use this for initialization
-	void Start () {
+	public bool active = false;
+
+	bool isPlaced = false;
+
+	Color flashColorStart = Color.black;
+	Color flashColorEnd = Color.white;
+	bool isFlashing = false;
+	float flashValue = 0.0f;
+	float flashTimer = 0.0f;
+	
+	Color highlightColor = Color.black;
+	bool doHighlight = false;
+
+	void Start()
+	{
 	}
 
 	public void Generate(float width, float height, float uvScale, Texture2D bgTexture)
 	{
-		transform.position = new Vector3(0.0f, 0.0f, ZPos);
-//		ZPos += ZPosAdd;
+		HalfWidth = width;
+		HalfHeight = height;
+		transform.position = new Vector3(0.0f, 0.0f, 0.0f);//	Game.FGZPos);
+//		Game.FGZPos += Game.ZPosAdd;
 
 		BGTexture = bgTexture;
 		
@@ -56,7 +75,7 @@ public class DecorationCircleStopper : GamePieceBase {
 		meshFilter.mesh = GeneratedMesh;
 		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
 		renderer.material.mainTexture = BGTexture;
-		renderer.material.shader = Shader.Find("Unlit/Transparent");
+		renderer.material.shader = Shader.Find("Custom/Decoration");
 	}
 
 	public bool CollidesAgainst(CirclePatch patch)
@@ -65,7 +84,7 @@ public class DecorationCircleStopper : GamePieceBase {
 		float y1 = transform.position.y;
 		float x2 = patch.transform.position.x;
 		float y2 = patch.transform.position.y;
-		float r1 = 0.5f;
+		float r1 = 0.125f;
 		float r2 = patch.GetSize() * 1.0f;//SegmentScale;
 		
 		float distance = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
@@ -84,11 +103,17 @@ public class DecorationCircleStopper : GamePieceBase {
 		owner = collider;
 	}
 
+	public void SetOwner(Player player)
+	{
+		Owner = player;
+	}
+
 	public override void Place()
 	{
 		owner.PlaceDecoration(this);
 		transform.parent = owner.transform;
 		transform.localPosition = new Vector3(0.0f, 0.0f, ZPosDecorationLayer);
+		isPlaced = true;
 	}
 
 	public override void SetPosition(float x, float y)
@@ -96,8 +121,93 @@ public class DecorationCircleStopper : GamePieceBase {
 		transform.position = new Vector3(x, y, transform.position.z);
 	}
 
-	// Update is called once per frame
-	void Update () {	
+	public override Bounds GetBounds()
+	{
+		return new Bounds(transform.position, new Vector3(HalfWidth, HalfHeight));
+	}
+
+	public override void SetHighlight(bool enable, Color color)
+	{
+		doHighlight = enable;
+		highlightColor = color;
+	}
+
+	void UpdateHighlight()
+	{
+		MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+		if(!doHighlight)
+		{
+			renderer.material.SetColor("_AddColor", Color.black);
+			return;
+		}
+		renderer.material.SetColor("_AddColor", highlightColor);
+	}
+
+	public override void StartFlash(Color startColor, Color endColor, float time)
+	{
+		flashColorStart = startColor;
+		flashColorEnd = endColor;
+		isFlashing = true;
+		flashValue = 0.0f;
+		flashTimer = time;
+	}
+
+	void UpdateFlash()
+	{
+		if(!isFlashing)
+		{
+			return;
+		}
+		if(flashTimer > 0.0f)
+		{
+			renderer.material.SetColor("_AddColor", Color.Lerp(flashColorStart, flashColorEnd, flashValue));
+			flashTimer -= Time.deltaTime;
+		}
+		else
+		{
+			renderer.material.SetColor("_AddColor", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+			isFlashing = false;
+		}
+		flashValue += FLASH_SPEED * Time.deltaTime;
+		if(flashValue > 1.0f)
+		{
+			flashValue = 0.0f;
+		}
+	}
+
+	void Update()
+	{
+		if(isPlaced)
+		{
+			if(doHighlight)
+			{
+				UpdateHighlight();
+			}
+			if(isFlashing)
+			{
+				UpdateFlash();
+			}
+		}
+		else if(active)
+		{
+			List<GamePieceBase> collidedPieces;
+			Owner.ActiveGame.GetCollision(this, out collidedPieces);
+			for(int i = 0; i < collidedPieces.Count; ++i)
+			{
+				CirclePatch patch = collidedPieces[i].GetComponent<CirclePatch>();
+				if(patch != null)
+				{
+					if(patch.GetDecoration() == null)
+					{
+						patch.StartFlash(new Color(0.5f, 0.5f, 0.5f), Color.black, 0.2f);
+					}
+					else
+					{
+					patch.StartFlash(new Color(0.5f, 0.0f, 0.0f), Color.black, 0.2f);
+					}
+				}
+			}
+		}
 	}
 
 }

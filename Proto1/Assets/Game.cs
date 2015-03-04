@@ -4,11 +4,26 @@ using System.Collections.Generic;
 
 public class Game : MonoBehaviour {
 
+	public const float BGLayerZ = -1.0f;
+	public const float FGLayerZ = -1.0f;
+	public const float UILayerZ = -1.0f;
+	public const float ZPosAdd = -0.001f;
+
+	public static float BGZPos = BGLayerZ + ZPosAdd;
+	public static float FGZPos = FGLayerZ + ZPosAdd;
+	public static float UIZPos = UILayerZ + ZPosAdd;
+
+	public GameObject GUIStatusPrefab;
+	public GameObject GUIRoundPrefab;
+
 	public Texture2D BGTexture;
 
 	public int NumberofPatchesPerPlayer = 8;
 	public int NumberOfDecorationsPerPlayer = 2;
 	public Vector2 PlayAreaHalfSize = new Vector2(25.0f, 25.0f);
+
+	public int NumRounds = 12;
+	int CurrentRound = 0;
 
 	[System.Serializable]
 	public class PlayerSetting
@@ -23,8 +38,23 @@ public class Game : MonoBehaviour {
 	}
 	public PlayerSetting[] PlayerSettings;
 
-	List<Player> players = new List<Player>();
-	List<Player>.Enumerator activePlayer;
+	class PlayerInfo
+	{
+		public PlayerInfo(Player player)
+		{
+			Player = player;
+		}
+
+		public Player Player;
+		public int Round = 0;
+		public int Score = 0;
+
+		// GUI.
+		public GameObject GUINamePrefab;
+		public GameObject GUIScorePrefab;
+	}
+	List<PlayerInfo> players = new List<PlayerInfo>();
+	List<PlayerInfo>.Enumerator activePlayer;
 	
 	GameObject Background;
 	Playfield Playfield;
@@ -46,6 +76,14 @@ public class Game : MonoBehaviour {
 		Playfield = playfieldObject.AddComponent<Playfield>();
 		Playfield.Generate(PlayAreaHalfSize.x - 1.0f, PlayAreaHalfSize.y - 1.0f, 10.0f, BGTexture);
 
+		// Fix aspect ratio of the text.
+		float pixelRatio = (Camera.main.orthographicSize * 2.0f) / Camera.main.pixelHeight;
+		GUIStatusPrefab.transform.localScale = new Vector3(pixelRatio * 10.0f, pixelRatio * 10.0f, pixelRatio * 0.1f);
+		GUIStatusPrefab.GetComponent<TextMesh>().fontSize = 40;
+		GUIRoundPrefab.transform.localScale = new Vector3(pixelRatio * 10.0f, pixelRatio * 10.0f, pixelRatio * 0.1f);
+		GUIRoundPrefab.GetComponent<TextMesh>().fontSize = 40;
+		GUIRoundPrefab.GetComponent<TextMesh>().text = "Round: " + (CurrentRound + 1) + " / " + NumRounds;
+
 		// Add players.
 		for(int i = 0; i < PlayerSettings.Length; ++i)
 		{
@@ -53,9 +91,14 @@ public class Game : MonoBehaviour {
 		}	
 	}
 
-	public bool CanPlaceAt(Player player, GamePieceBase piece, Vector3 pos)
+	public bool CanPlaceAt(Player player, GamePieceBase piece, Vector3 pos, out List<GamePieceBase> collidedPieces)
 	{
-		return Playfield.CanPlaceAt(player, piece, pos);
+		return Playfield.CanPlaceAt(player, piece, pos, out collidedPieces);
+	}
+
+	public void GetCollision(GamePieceBase piece, out List<GamePieceBase> collidedPieces)
+	{
+		Playfield.GetCollision(piece, out collidedPieces);
 	}
 
 	public void Place(Player player, GamePieceBase piece)
@@ -92,15 +135,30 @@ public class Game : MonoBehaviour {
 		player.PatternTextures = playerSetting.PatchPatterns;
 		player.Decorations = playerSetting.Decorations;
 
-		players.Add(player);
+		players.Add(new PlayerInfo(player));
 	}
 	
-	void ActivatePlayer(Player player)
+	void ActivatePlayer(PlayerInfo playerInfo)
 	{
-		player.ActivateTurn();
+		playerInfo.Player.ActivateTurn();
 
 		// Let the circles advance one more segment.
-		Playfield.ActivatePlayer(player, true);
+		Playfield.ActivatePlayer(playerInfo.Player, true);
+	}
+
+	void NextPlayer()
+	{
+		// Activate next player.
+		if(!activePlayer.MoveNext())
+		{
+			// Last player so rest back to first.
+			activePlayer = players.GetEnumerator();
+			activePlayer.MoveNext();
+		}
+		if((activePlayer.Current != null) && (activePlayer.Current.Round < 12))
+		{
+			ActivatePlayer(activePlayer.Current);
+		}
 	}
 
 	// Handles MagicMouse scrolling.
@@ -122,6 +180,7 @@ public class Game : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
+	bool done = false;
 	void Update () {
 		// Handle camera movement.
 		if((someX != 0.0f) || (someY != 0.0f))
@@ -147,30 +206,50 @@ public class Game : MonoBehaviour {
 			Camera.main.transform.position = newPos;
 		}
 
-		// Handle players turn.
-		Player currentPlayer = activePlayer.Current;
-		if(currentPlayer != null)
+		if(CurrentRound >= NumRounds)
 		{
-			if(currentPlayer.IsDone)
+			// GAME OVER!!!!
+			if(!done)
 			{
-				// Signal turn as done.
-				currentPlayer.TurnOver();
-
-				// Activate next player.
-				if(!activePlayer.MoveNext())
-				{
-					// Lasy player so rest back to first.
-					activePlayer = players.GetEnumerator();
-					activePlayer.MoveNext();
-				}
-				ActivatePlayer(activePlayer.Current);
+				GUIStatusPrefab.GetComponent<TextMesh>().text = "Game Over!";
+				GUIStatusPrefab.SetActive(true);
+				done = true;
 			}
 		}
 		else
 		{
-			activePlayer = players.GetEnumerator();
-			activePlayer.MoveNext();
-			ActivatePlayer(activePlayer.Current);
+			// Handle players turn.
+			PlayerInfo currentPlayerInfo = activePlayer.Current;
+			if(currentPlayerInfo != null)
+			{
+				if(currentPlayerInfo.Player.IsDone)
+				{
+					// Signal turn as done.
+					currentPlayerInfo.Player.TurnOver();
+					++currentPlayerInfo.Round;
+					
+					// Activate next player.
+					if(!activePlayer.MoveNext())
+					{
+						// Last player so rest back to first.
+						activePlayer = players.GetEnumerator();
+						activePlayer.MoveNext();
+
+						++CurrentRound;
+						GUIRoundPrefab.GetComponent<TextMesh>().text = "Round: " + (CurrentRound + 1) + " / " + NumRounds;
+					}
+					if(CurrentRound < NumRounds)
+					{
+						ActivatePlayer(activePlayer.Current);
+					}
+				}
+			}
+			else
+			{
+				activePlayer = players.GetEnumerator();
+				activePlayer.MoveNext();
+				ActivatePlayer(activePlayer.Current);
+			}
 		}
 	}
 }
