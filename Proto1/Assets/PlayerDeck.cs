@@ -103,7 +103,7 @@ public class PlayerDeck : MonoBehaviour {
 						decoration.transform.parent = null;
 						
 						// And return the selected piece.
-						decoration.active = true;
+						decoration.isActive = true;
 						return decoration;
 					}
 				}

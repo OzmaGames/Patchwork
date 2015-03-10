@@ -15,7 +15,7 @@ public class DecorationCircleStopper : GamePieceBase {
 
 	CirclePatch owner;
 
-	public bool active = false;
+	public bool isActive = false;
 
 	bool isPlaced = false;
 
@@ -188,7 +188,7 @@ public class DecorationCircleStopper : GamePieceBase {
 				UpdateFlash();
 			}
 		}
-		else if(active)
+		else if(isActive)
 		{
 			List<GamePieceBase> collidedPieces;
 			Owner.ActiveGame.GetCollision(this, out collidedPieces);

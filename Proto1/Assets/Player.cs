@@ -9,9 +9,7 @@ public class Player : MonoBehaviour {
 	public Texture2D[] PatternTextures;
 
 	[System.NonSerialized]
-	public GameObject GUINamePrefab;
-	[System.NonSerialized]
-	public GameObject GUIScorePrefab;
+	public GUI_PlayerStats GUIStats;
 	[System.NonSerialized]
 	public GameObject DecorationPrefab;
 	[System.NonSerialized]
@@ -54,7 +52,7 @@ public class Player : MonoBehaviour {
 		myTurn = true;
 
 		// Highlight text.
-		GUINamePrefab.GetComponent<TextMesh>().color = Color.red;
+		GUIStats.SetHighlight(true);
 
 		// Activate deck.
 		Deck.ActivateTurn();
@@ -67,7 +65,7 @@ public class Player : MonoBehaviour {
 		activePiece = null;
 
 		// Normal text.
-		GUINamePrefab.GetComponent<TextMesh>().color = Color.white;
+		GUIStats.SetHighlight(false);
 
 		// Hide deck.
 		Deck.Hide();
@@ -78,7 +76,7 @@ public class Player : MonoBehaviour {
 		Score += amount;
 
 		// Update score.
-		GUIScorePrefab.GetComponent<TextMesh>().text = "Score: " + Score;
+		GUIStats.SetScore("Score: " + Score);
 	}
 
 	void Update()
