@@ -8,11 +8,23 @@ public class PlayerDeck : MonoBehaviour {
 	Texture2D BGTexture;
 
 	Player Owner;
+	public int NumPatches = 0;
 	public int NumDecorations = 0;
+	public int NumPatchesOnHand = 0;
+	public int NumDecorationsOnHand = 0;
 	public Stack<CirclePatch.PatchConfig> PatchConfigs;
+	
+	class HandSlot
+	{
+		public Vector2 Pos = Vector2.zero;
+		public bool Free = true;
+		public GamePieceBase Piece = null;
 
-	List<CirclePatch> CirclePatches;
-	List<DecorationCircleStopper> Decorations;
+		public HandSlot()
+		{
+		}
+	}
+	HandSlot[] ActiveHand;
 
 
 	void Start()
@@ -35,79 +47,69 @@ public class PlayerDeck : MonoBehaviour {
 		gameObject.SetActive(false);
 	}
 
+	public void ActivateTurn()
+	{
+		FillActiveHand();
+	}
+
 	public GamePieceBase GetPiece(Vector2 position)
 	{
-		// Check patches.
-		for(int i = 0; i < CirclePatches.Count; ++i)
+		for(int i = 0; i < ActiveHand.Length; ++i)
 		{
-			CirclePatch patch = CirclePatches[i];
-
-			float x1 = position.x;
-			float y1 = position.y;
-			float x2 = patch.transform.position.x;
-			float y2 = patch.transform.position.y;
-			float r1 = 0.1f;
-			float r2 = patch.GetSize() * 1.0f;//SegmentScale;
-			
-			float distance = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
-			float sumRadius = ((r1 + r2) * (r1 + r2));
-			if(distance <= sumRadius)
+			HandSlot slot = ActiveHand[i];
+			if((!slot.Free) && (slot.Piece != null))
 			{
-				// Add a new patch to the visible hand.
-				if(PatchConfigs.Count > 0)
+				CirclePatch patch = slot.Piece.GetComponent<CirclePatch>();
+				if(patch != null)
 				{
-					CirclePatch.PatchConfig patchConfig = PatchConfigs.Pop();
-					CirclePatch newPatch = CreatePatch(patchConfig);
-					newPatch.transform.parent = transform;
-					newPatch.transform.localPosition = new Vector3(patch.transform.localPosition.x, patch.transform.localPosition.y, patch.transform.localPosition.z);
-					CirclePatches.Add(newPatch);
+					float x1 = position.x;
+					float y1 = position.y;
+					float x2 = patch.transform.position.x;
+					float y2 = patch.transform.position.y;
+					float r1 = 0.1f;
+					float r2 = patch.GetSize() * 1.0f;//SegmentScale;
+					
+					float distance = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
+					float sumRadius = ((r1 + r2) * (r1 + r2));
+					if(distance <= sumRadius)
+					{
+						// Remove from hand.
+						slot.Free = true;
+						slot.Piece = null;
+						patch.transform.parent = null;
+						
+						// And return the selected piece.
+						return patch;
+					}
 				}
 
-				// Remove from deck.
-				CirclePatches.RemoveAt(i);
-				patch.transform.parent = null;
-
-				// And return the selected piece.
-				return patch;
+				DecorationCircleStopper decoration = slot.Piece.GetComponent<DecorationCircleStopper>();
+				if(decoration != null)
+				{
+					float x1 = position.x;
+					float y1 = position.y;
+					float x2 = decoration.transform.position.x;
+					float y2 = decoration.transform.position.y;
+					float r1 = 0.1f;
+					float r2 = 0.5f;
+					
+					float distance = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
+					float sumRadius = ((r1 + r2) * (r1 + r2));
+					if(distance <= sumRadius)
+					{	
+						// Remove from hand.
+						slot.Free = true;
+						slot.Piece = null;
+						decoration.transform.parent = null;
+						
+						// And return the selected piece.
+						decoration.active = true;
+						return decoration;
+					}
+				}
 			}
 		}
 
-		// Check decorations.
-		for(int i = 0; i < Decorations.Count; ++i)
-		{
-			DecorationCircleStopper decoration = Decorations[i];
-			
-			float x1 = position.x;
-			float y1 = position.y;
-			float x2 = decoration.transform.position.x;
-			float y2 = decoration.transform.position.y;
-			float r1 = 0.1f;
-			float r2 = 0.5f;
-			
-			float distance = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
-			float sumRadius = ((r1 + r2) * (r1 + r2));
-			if(distance <= sumRadius)
-			{
-				// Add a new patch to the visible hand.
-				if(NumDecorations > 0)
-				{
-					DecorationCircleStopper newDecoration = CreateDecorationCircleStopper();
-					newDecoration.transform.parent = transform;
-					newDecoration.transform.localPosition = new Vector3(decoration.transform.localPosition.x, decoration.transform.localPosition.y, decoration.transform.localPosition.z);
-					Decorations.Add(newDecoration);
-					--NumDecorations;
-				}
-				
-				// Remove from deck.
-				Decorations.RemoveAt(i);
-				decoration.transform.parent = null;
-				
-				// And return the selected piece.
-				decoration.active = true;
-				return decoration;
-			}
-		}
-		
 		return null;
 	}
 
@@ -129,8 +131,84 @@ public class PlayerDeck : MonoBehaviour {
 		decorationCircleStopper.SetOwner(Owner);
 		return decorationObject.GetComponent<DecorationCircleStopper>();
 	}
+
+	public bool AddToHand(GamePieceBase piece)
+	{
+		bool roomToAdd = false;
+
+		CirclePatch patch = piece.GetComponent<CirclePatch>();
+		if(patch != null)
+		{
+			for(int i = 0; i < NumPatchesOnHand; ++i)
+			{
+				HandSlot slot = ActiveHand[i];
+				if(slot.Free)
+				{
+					piece.transform.parent = transform;
+					piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+					slot.Free = false;
+					slot.Piece = piece;
+					roomToAdd = true;
+					break;
+				}
+			}
+		}
+
+		DecorationCircleStopper decoration = piece.GetComponent<DecorationCircleStopper>();
+		if(decoration != null)
+		{
+			for(int i = 0; i < NumDecorationsOnHand; ++i)
+			{
+				HandSlot slot = ActiveHand[NumPatchesOnHand + i];
+				if(slot.Free)
+				{
+					piece.transform.parent = transform;
+					piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+					slot.Free = false;
+					slot.Piece = piece;
+					roomToAdd = true;
+					break;
+				}
+			}
+		}
+
+		return roomToAdd;
+	}
 	
-	public void Generate(int numPatches, int numDecorations, int numVisiblePatches, Player owner)
+	void FillActiveHand()
+	{
+		// Fill patches.
+		for(int i = 0; i < NumPatchesOnHand; ++i)
+		{
+			HandSlot slot = ActiveHand[i];
+			if((slot.Free) && (PatchConfigs.Count > 0))
+			{
+				CirclePatch.PatchConfig patchConfig = PatchConfigs.Pop();
+				CirclePatch newPatch = CreatePatch(patchConfig);
+				newPatch.transform.parent = transform;
+				newPatch.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+				slot.Free = false;
+				slot.Piece = newPatch;
+			}
+		}
+
+		// Fill decorations.
+		for(int i = 0; i < NumDecorationsOnHand; ++i)
+		{
+			HandSlot slot = ActiveHand[NumPatchesOnHand + i];
+			if((slot.Free) && (NumDecorations > 0))
+			{
+				--NumDecorations;
+				DecorationCircleStopper newDecoration = CreateDecorationCircleStopper();
+				newDecoration.transform.parent = transform;
+				newDecoration.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+				slot.Free = false;
+				slot.Piece = newDecoration;
+			}
+		}
+	}
+
+	public void Generate(int numPatches, int numDecorations, int numPatchesOnHand, int numDecorationsOnHand, Player owner)
 	{
 		Owner = owner;
 
@@ -143,7 +221,7 @@ public class PlayerDeck : MonoBehaviour {
 		List<Vector2> uvs = new List<Vector2>();
 		List<int> indices = new List<int>();
 
-		float width = 0.1f + (numVisiblePatches * 2.0f) + 0.1f + (1.0f * 2.0f) + 0.1f;
+		float width = 0.1f + (numPatchesOnHand * 2.0f) + 0.1f + (1.0f * 2.0f) + 0.1f;
 		float height = 0.1f + 2.0f + 0.1f;
 		float halfWidth = width / 2.0f;
 		float halfHeight = height / 2.0f;
@@ -177,38 +255,32 @@ public class PlayerDeck : MonoBehaviour {
 		renderer.material.shader = Shader.Find("Transparent/Diffuse");
 
 		// Generate patch configs.
+		NumPatches = numPatches;
 		NumDecorations = numDecorations;
+		NumPatchesOnHand = numPatchesOnHand;
+		NumDecorationsOnHand = numDecorationsOnHand;
 		PatchConfigs = new Stack<CirclePatch.PatchConfig>();
-		for(int i = 0; i < numPatches; ++i)
+		for(int i = 0; i < NumPatches; ++i)
 		{
 			int segments = Random.Range(2, 7);
 			PatchConfigs.Push(new CirclePatch.PatchConfig(segments, 1.0f, owner.Colors.Length, CirclePatch.MAX_PATTERNS));
 		}
 
-		// Create patches.
-		CirclePatches = new List<CirclePatch>();
+		// Setup active hand.
+		ActiveHand = new HandSlot[NumPatchesOnHand + NumDecorationsOnHand];
 		float posx = -halfWidth + 1.0f;
 		posx += 0.1f;
-		for(int i = 0; i < numVisiblePatches; ++i)
+		for(int i = 0; i < NumPatchesOnHand; ++i)
 		{
-			CirclePatch.PatchConfig patchConfig = PatchConfigs.Pop();
-			CirclePatch circlePatch = CreatePatch(patchConfig);
-			circlePatch.transform.parent = transform;
-			circlePatch.transform.localPosition = new Vector3(posx, 0.0f, 0.0f);
-			CirclePatches.Add(circlePatch);
+			ActiveHand[i] = new HandSlot();
+			ActiveHand[i].Pos = new Vector2(posx, 0.0f);
 			posx += 2.0f;
 		}
-
-		// Create decoration.
-		Decorations = new List<DecorationCircleStopper>();
 		posx += 0.1f;
-		for(int i = 0; i < 1; ++i)
+		for(int i = 0; i < NumDecorationsOnHand; ++i)
 		{
-			DecorationCircleStopper decoration = CreateDecorationCircleStopper();
-			decoration.transform.parent = transform;
-			decoration.transform.localPosition = new Vector3(posx, 0.0f, 0.0f);
-			Decorations.Add(decoration);
-			--NumDecorations;
+			ActiveHand[NumPatchesOnHand + i] = new HandSlot();
+			ActiveHand[NumPatchesOnHand + i].Pos = new Vector2(posx, 0.0f);
 			posx += 2.0f;
 		}
 

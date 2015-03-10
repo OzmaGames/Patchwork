@@ -45,7 +45,7 @@ public class Player : MonoBehaviour {
 		GameObject deckObj = new GameObject(gameObject.name + "_Deck");
 		deckObj.transform.localPosition = new Vector3(0.0f, -5.0f, 0.0f);
 		Deck = deckObj.AddComponent<PlayerDeck>();
-		Deck.Generate(10, 4, 2, this);
+		Deck.Generate(20, 20, 2, 1, this);
 	}
 	
 	public void ActivateTurn()
@@ -56,7 +56,8 @@ public class Player : MonoBehaviour {
 		// Highlight text.
 		GUINamePrefab.GetComponent<TextMesh>().color = Color.red;
 
-		// Show deck.
+		// Activate deck.
+		Deck.ActivateTurn();
 		Deck.Show();
 	}
 
@@ -80,8 +81,8 @@ public class Player : MonoBehaviour {
 		GUIScorePrefab.GetComponent<TextMesh>().text = "Score: " + Score;
 	}
 
-	// Update is called once per frame
-	void Update () {
+	void Update()
+	{
 		if(myTurn && (!isDone))
 		{
 			Vector3 pz = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -89,12 +90,10 @@ public class Player : MonoBehaviour {
 			if(activePiece != null)
 			{
 				activePiece.SetPosition(pz.x, pz.y);
-			}
-			if(Input.GetMouseButtonDown(0))
-			{
-				// Place a piece.
-				if(activePiece != null)
+
+				if(Input.GetMouseButtonDown(0))
 				{
+					// Place a piece.
 					List<GamePieceBase> collidedPieces;
 					if(ActiveGame.CanPlaceAt(this, activePiece, activePiece.transform.position, out collidedPieces))
 					{
@@ -131,7 +130,18 @@ public class Player : MonoBehaviour {
 						}
 					}
 				}
-				else
+				if(Input.GetMouseButtonDown(1))
+				{
+					if(Deck.AddToHand(activePiece))
+					{
+						activePiece = null;
+						Deck.Show();
+					}
+				}
+			}
+			else
+			{
+				if(Input.GetMouseButtonDown(0))
 				{
 					// Grab a piece.
 					activePiece = Deck.GetPiece(pz);
