@@ -151,4 +151,18 @@ public class Player : MonoBehaviour {
 			}
 		}
 	}
+
+	void OnGUI()
+	{
+		float width = 150.0f;
+		float height = 50.0f;
+		float x = (Screen.width - (width + 10.0f));
+		float y = 10.0f;
+		GUILayout.BeginArea(new Rect(x, y, width, height), "", "box");
+		GUILayout.BeginHorizontal();
+		GUILayout.Label(new Rect(10.0f, 10.0f, width, height), gameObject.name);
+		GUILayout.Label(new Rect(10.0f, 10.0f, width, height), Score.ToString());
+		GUILayout.EndHorizontal();
+		GUILayout.EndArea();
+	}
 }
