@@ -249,10 +249,10 @@ public class PlayerDeck : MonoBehaviour {
 		// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
-		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-		renderer.material.mainTexture = BGTexture;
-		renderer.material.color = new Color(0.0f, 0.0f, 0.0f, 0.4f);
-		renderer.material.shader = Shader.Find("Transparent/Diffuse");
+		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+		meshRenderer.material.mainTexture = BGTexture;
+		meshRenderer.material.color = new Color(0.0f, 0.0f, 0.0f, 0.4f);
+		meshRenderer.material.shader = Shader.Find("Transparent/Diffuse");
 
 		// Generate patch configs.
 		NumPatches = numPatches;

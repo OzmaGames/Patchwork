@@ -9,8 +9,6 @@ public class Player : MonoBehaviour {
 	public Texture2D[] PatternTextures;
 
 	[System.NonSerialized]
-	public GUI_PlayerStats GUIStats;
-	[System.NonSerialized]
 	public GameObject DecorationPrefab;
 	[System.NonSerialized]
 	public Game ActiveGame;
@@ -52,7 +50,7 @@ public class Player : MonoBehaviour {
 		myTurn = true;
 
 		// Highlight text.
-		GUIStats.SetHighlight(true);
+		//GUIStats.SetHighlight(true);
 
 		// Activate deck.
 		Deck.ActivateTurn();
@@ -65,7 +63,7 @@ public class Player : MonoBehaviour {
 		activePiece = null;
 
 		// Normal text.
-		GUIStats.SetHighlight(false);
+		//GUIStats.SetHighlight(false);
 
 		// Hide deck.
 		Deck.Hide();
@@ -74,9 +72,6 @@ public class Player : MonoBehaviour {
 	public void AddScore(int amount)
 	{
 		Score += amount;
-
-		// Update score.
-		GUIStats.SetScore("Score: " + Score);
 	}
 
 	void Update()
@@ -150,19 +145,5 @@ public class Player : MonoBehaviour {
 				}
 			}
 		}
-	}
-
-	void OnGUI()
-	{
-		float width = 150.0f;
-		float height = 50.0f;
-		float x = (Screen.width - (width + 10.0f));
-		float y = 10.0f;
-		GUILayout.BeginArea(new Rect(x, y, width, height), "", "box");
-		GUILayout.BeginHorizontal();
-		GUILayout.Label(new Rect(10.0f, 10.0f, width, height), gameObject.name);
-		GUILayout.Label(new Rect(10.0f, 10.0f, width, height), Score.ToString());
-		GUILayout.EndHorizontal();
-		GUILayout.EndArea();
 	}
 }

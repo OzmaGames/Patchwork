@@ -252,9 +252,9 @@ public class Playfield : MonoBehaviour {
 		// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
-		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-		renderer.material.mainTexture = BGTexture;
-		renderer.material.shader = Shader.Find("Custom/Playfield");
+		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+		meshRenderer.material.mainTexture = BGTexture;
+		meshRenderer.material.shader = Shader.Find("Custom/Playfield");
 	}
 
 	void GenerateMesh()

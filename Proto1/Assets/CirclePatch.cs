@@ -294,13 +294,13 @@ public class CirclePatch : GamePieceBase {
 		// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
-		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-		renderer.materials = new Material[GeneratedMesh.subMeshCount];
+		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+		meshRenderer.materials = new Material[GeneratedMesh.subMeshCount];
 		Material material;
 		List<string> shaderKeywords;
 		for(int s = 0; s < GeneratedMesh.subMeshCount; ++s)
 		{
-			material = renderer.materials[s];
+			material = meshRenderer.materials[s];
 			material.shader = Shader.Find("Custom/CirclePatch");
 			material.mainTexture = CreatePatternTexture((int)(Random.value * 255.0f));
 			material.SetTexture("_FabricTexture", PatternTextures[0]);
@@ -327,7 +327,7 @@ public class CirclePatch : GamePieceBase {
 				patchSegments[s].patternIndex = patternIndex;
 			}
 		}
-		material = renderer.materials[0];
+		material = meshRenderer.materials[0];
 		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
 		CurrentSegment = 1;
 		size = CurrentSegment * SegmentScale;
@@ -364,7 +364,7 @@ public class CirclePatch : GamePieceBase {
 			idas = Symbols.Square;
 			break;
 		}
-		circlePatchSymbol.renderer.material.shader = Shader.Find("Unlit/Transparent");
+		circlePatchSymbol.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
 		circlePatchSymbol.transform.parent = gameObject.transform;
 		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f);
 		circlePatchSymbol.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
@@ -376,13 +376,13 @@ public class CirclePatch : GamePieceBase {
 		switch(Symbol)
 		{
 		case Symbols.Square:
-			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolSquare");
+			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolSquare");
 			break;
 		case Symbols.Triangle:
-			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolTriangle");
+			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolTriangle");
 			break;
 		case Symbols.Circle:
-			circlePatchSymbol.renderer.material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolCircle");
+			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolCircle");
 			break;
 		}
 	}
@@ -396,6 +396,7 @@ public class CirclePatch : GamePieceBase {
 	public void SwapColors(Gradient[] colors, Gradient complementColor)
 	{
 		Material material;
+		Renderer renderer = GetComponent<Renderer>();
 		for(int s = 0; s < Segments; ++s)
 		{
 			material = renderer.materials[s];
@@ -413,6 +414,7 @@ public class CirclePatch : GamePieceBase {
 		size = CurrentSegment * SegmentScale;
 		maxSize = size;
 		Material material;
+		Renderer renderer = GetComponent<Renderer>();
 		for(int s = 0; s < CurrentSegment; ++s)
 		{
 			material = renderer.materials[s];
@@ -464,7 +466,7 @@ public class CirclePatch : GamePieceBase {
 	public void SetGrowthDone(bool enable)
 	{
 		doneGrowing = enable;
-		circlePatchSize.renderer.enabled = false;
+		circlePatchSize.GetComponent<Renderer>().enabled = false;
 		SetShowSymbol(false);
 		Owner.AddScore((int)size);
 
@@ -480,21 +482,21 @@ public class CirclePatch : GamePieceBase {
 
 	void UpdateHighlight()
 	{
-		MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+		MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
 		Material material;
 		if(!doHighlight)
 		{
 			for(int s = 0; s < CurrentSegment; ++s)
 			{
-					material = renderer.materials[s];
-					material.SetColor("_AddColor", Color.black);
+				material = meshRenderer.materials[s];
+				material.SetColor("_AddColor", Color.black);
 			}
 			return;
 		}
 		for(int s = 0; s < CurrentSegment; ++s)
 		{
-				material = renderer.materials[s];
-				material.SetColor("_AddColor", highlightColor);
+			material = meshRenderer.materials[s];
+			material.SetColor("_AddColor", highlightColor);
 		}
 	}
 
@@ -520,6 +522,7 @@ public class CirclePatch : GamePieceBase {
 		if(flashTimer > 0.0f)
 		{
 			Material material;
+			Renderer renderer = GetComponent<Renderer>();
 			for(int s = 0; s < CurrentSegment; ++s)
 			{
 				material = renderer.materials[s];
@@ -531,6 +534,7 @@ public class CirclePatch : GamePieceBase {
 		else
 		{
 			Material material;
+			Renderer renderer = GetComponent<Renderer>();
 			for(int s = 0; s < CurrentSegment; ++s)
 			{
 				material = renderer.materials[s];
@@ -547,7 +551,7 @@ public class CirclePatch : GamePieceBase {
 	
 	public void SetShowSymbol(bool show)
 	{
-		circlePatchSymbol.renderer.enabled = show;
+		circlePatchSymbol.GetComponent<Renderer>().enabled = show;
 	}
 
 	public bool HasStoppedGrowing()
@@ -573,11 +577,11 @@ public class CirclePatch : GamePieceBase {
 			{
 				if(size < maxSize)
 				{
-					MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+					MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
 					Material material;
 					for(int s = 0; s < CurrentSegment; ++s)
 					{
-						material = renderer.materials[s];
+						material = meshRenderer.materials[s];
 						material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
 						material.SetFloat("_CirclePatchRadius", OuterRadius);
 						material.SetFloat("_CirclePatchLayer", CurrentSegment);

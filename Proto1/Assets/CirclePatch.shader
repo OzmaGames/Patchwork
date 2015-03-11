@@ -34,7 +34,7 @@
 		{
 			CGPROGRAM			
 // Upgrade NOTE: excluded shader from DX11, Xbox360, OpenGL ES 2.0 because it uses unsized arrays
-#pragma exclude_renderers d3d11 xbox360 gles
+//#pragma exclude_renderers d3d11 xbox360 gles
 			#pragma multi_compile DO_SEGMENT_O DO_SEGMENT_1 DO_SEGMENT_2 DO_SEGMENT_3
 			#pragma vertex vert
 			#pragma fragment frag
@@ -95,12 +95,12 @@
 			
 			float3 FGColorFromPalette(float index)
 			{
-				return mix(_ComplementColor1, _ComplementColor2, index).rgb;
+				return lerp(_ComplementColor1, _ComplementColor2, index).rgb; // Was mix()
 			}
 
 			float3 BGColorFromPalette(float index)
 			{
-				return mix(_BaseColor1, _BaseColor2, index).rgb;
+				return lerp(_BaseColor1, _BaseColor2, index).rgb; // Was mix()
 			}
 			
 			half4 frag(v2f i) : COLOR

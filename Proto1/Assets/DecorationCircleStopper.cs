@@ -73,9 +73,9 @@ public class DecorationCircleStopper : GamePieceBase {
 		// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
-		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-		renderer.material.mainTexture = BGTexture;
-		renderer.material.shader = Shader.Find("Custom/Decoration");
+		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+		meshRenderer.material.mainTexture = BGTexture;
+		meshRenderer.material.shader = Shader.Find("Custom/Decoration");
 	}
 
 	public bool CollidesAgainst(CirclePatch patch)
@@ -134,13 +134,13 @@ public class DecorationCircleStopper : GamePieceBase {
 
 	void UpdateHighlight()
 	{
-		MeshRenderer renderer = gameObject.GetComponent<MeshRenderer>();
+		MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
 		if(!doHighlight)
 		{
-			renderer.material.SetColor("_AddColor", Color.black);
+			meshRenderer.material.SetColor("_AddColor", Color.black);
 			return;
 		}
-		renderer.material.SetColor("_AddColor", highlightColor);
+		meshRenderer.material.SetColor("_AddColor", highlightColor);
 	}
 
 	public override void StartFlash(Color startColor, Color endColor, float time)
@@ -160,12 +160,12 @@ public class DecorationCircleStopper : GamePieceBase {
 		}
 		if(flashTimer > 0.0f)
 		{
-			renderer.material.SetColor("_AddColor", Color.Lerp(flashColorStart, flashColorEnd, flashValue));
+			GetComponent<Renderer>().material.SetColor("_AddColor", Color.Lerp(flashColorStart, flashColorEnd, flashValue));
 			flashTimer -= Time.deltaTime;
 		}
 		else
 		{
-			renderer.material.SetColor("_AddColor", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+			GetComponent<Renderer>().material.SetColor("_AddColor", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
 			isFlashing = false;
 		}
 		flashValue += FLASH_SPEED * Time.deltaTime;

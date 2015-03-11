@@ -13,8 +13,6 @@ public class Game : MonoBehaviour {
 	public static float FGZPos = FGLayerZ + ZPosAdd;
 	public static float UIZPos = UILayerZ + ZPosAdd;
 
-	public GameObject GUIStatusPrefab;
-
 	public Texture2D BGTexture;
 
 	public GUISkin GameGUISkin;
@@ -37,7 +35,6 @@ public class Game : MonoBehaviour {
 	public class PlayerSetting
 	{
 		public string Name;
-		public GameObject GUIStatsPrefab;
 		public Texture2D[] PatchPatterns;
 		public Texture2D[] Decorations;
 		public int PaletteIndex;
@@ -54,10 +51,6 @@ public class Game : MonoBehaviour {
 		public Player Player;
 		public int Round = 0;
 		public int Score = 0;
-
-		// GUI.
-		//public GameObject GUINamePrefab;
-		//public GameObject GUIScorePrefab;
 	}
 
 	GameObject Background;
@@ -150,10 +143,6 @@ public class Game : MonoBehaviour {
 			GameObject playerObject = new GameObject(playerSetting.Name);
 			Player player = playerObject.AddComponent<Player>();
 
-			player.GUIStats = playerSetting.GUIStatsPrefab.GetComponent<GUI_PlayerStats>();
-			player.GUIStats.SetName(playerSetting.Name);
-			player.GUIStats.SetScore("Score: " + player.Score);
-
 			player.ActiveGame = ActiveGame;
 			player.Colors = ActiveGame.Palette[playerSetting.PaletteIndex].Colors;
 			player.ComplementColor = ActiveGame.Palette[playerSetting.PaletteIndex].ComplementColor;
@@ -177,20 +166,10 @@ public class Game : MonoBehaviour {
 
 		public override void Start()
 		{
-			// Show GUI.
-			for(int i = 0; i < Players.Count; ++i)
-			{
-				Players[i].Player.GUIStats.Show();
-			}
 		}
 
 		public override void Stop()
 		{
-			// Hide GUI.
-			for(int i = 0; i < Players.Count; ++i)
-			{
-				Players[i].Player.GUIStats.Hide();
-			}
 		}
 		
 		public override void Update()
@@ -266,9 +245,28 @@ public class Game : MonoBehaviour {
 			float height = 50.0f;
 			float x = (Screen.width * 0.5f) - (width * 0.5f);
 			float y = 10.0f;
+
 			GUI.BeginGroup(new Rect(x, y, width, height), "", "box");
 			GUI.Label(new Rect(10.0f, 10.0f, width, height), "Round: " + (CurrentRound + 1) + " / " + ActiveGame.NumRounds);
 			GUI.EndGroup();
+
+			width = 150.0f;
+			height = 80.0f;
+			x = (Screen.width - (width + 10.0f));
+			y = 10.0f;
+			
+			GUILayout.BeginArea(new Rect(x, y, width, height), "", "box");
+			GUILayout.BeginVertical(GUILayout.ExpandHeight(true));
+			for(int i = 0; i < Players.Count; ++i)
+			{
+				Player player = Players[i].Player;
+				GUILayout.BeginHorizontal();
+				GUILayout.Label(player.gameObject.name);
+				GUILayout.Label(player.Score.ToString());
+				GUILayout.EndHorizontal();
+			}
+			GUILayout.EndVertical();
+			GUILayout.EndArea();
 		}
 
 		void ActivatePlayer(PlayerInfo playerInfo)
@@ -299,17 +297,10 @@ public class Game : MonoBehaviour {
 	{
 		public override void Start()
 		{
-			// Fix aspect ratio of the text.
-			float pixelRatio = (Camera.main.orthographicSize * 2.0f) / Camera.main.pixelHeight;
-			ActiveGame.GUIStatusPrefab.transform.localScale = new Vector3(pixelRatio * 10.0f, pixelRatio * 10.0f, pixelRatio * 0.1f);
-			ActiveGame.GUIStatusPrefab.GetComponent<TextMesh>().fontSize = 40;
-			ActiveGame.GUIStatusPrefab.GetComponent<TextMesh>().text = "Game Over!";
-			ActiveGame.GUIStatusPrefab.SetActive(false);
 		}
 		
 		public override void Stop()
 		{
-			ActiveGame.GUIStatusPrefab.SetActive(false);
 		}
 		
 		public override void Update()

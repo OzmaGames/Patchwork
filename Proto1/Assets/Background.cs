@@ -45,9 +45,9 @@ public class Background : MonoBehaviour {
 		// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
-		MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-		renderer.material.mainTexture = BGTexture;
-		renderer.material.shader = Shader.Find("Unlit/Texture");
+		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+		meshRenderer.material.mainTexture = BGTexture;
+		meshRenderer.material.shader = Shader.Find("Unlit/Texture");
 	}
 	
 	// Update is called once per frame
