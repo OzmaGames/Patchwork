@@ -23,6 +23,8 @@ public class Game : MonoBehaviour {
 
 	public int NumRounds = 12;
 
+	public GameObject WelcomeScreen;
+
 	[System.Serializable]
 	public class PlayerPalette
 	{
@@ -98,13 +100,57 @@ public class Game : MonoBehaviour {
 				AddPlayer(ActiveGame.PlayerSettings[i]);
 			}*/
 		}
+
+		void OnClick(int player)
+		{
+			Debug.Log("asdjia");
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Ok").GetComponent<UnityEngine.UI.Button>().onClick.RemoveListener(delegate{OnClick(0);});
+			ActiveGame.WelcomeScreen.SetActive(false);
+			string playerName = ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>().text;
+			ActiveGame.PlayerSettings[Players.Count].Name = playerName;
+			AddPlayer(ActiveGame.PlayerSettings[Players.Count]);
+		}
+		
+		void WelcomePlayerOne()
+		{
+			ActiveGame.WelcomeScreen.SetActive(true);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome1").gameObject.SetActive(true);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome2").gameObject.SetActive(false);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_PlayerOne").gameObject.SetActive(true);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_PlayerTwo").gameObject.SetActive(false);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>().text = "";
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Theme").gameObject.SetActive(true);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_GetTheme").gameObject.SetActive(false);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Ok").GetComponent<UnityEngine.UI.Button>().onClick.AddListener(delegate{OnClick(0);});
+		}
+
+		void WelcomePlayerTwo()
+		{
+			ActiveGame.WelcomeScreen.SetActive(true);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome1").gameObject.SetActive(false);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome2").gameObject.SetActive(true);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_PlayerOne").gameObject.SetActive(false);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_PlayerTwo").gameObject.SetActive(true);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>().text = "";
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Theme").gameObject.SetActive(false);
+			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_GetTheme").gameObject.SetActive(true);
+		}
 		
 		public override void Stop()
 		{
+			ActiveGame.WelcomeScreen.SetActive(false);
 		}
 		
 		public override void Update()
 		{
+			if((Players.Count == 0) && (!ActiveGame.WelcomeScreen.activeSelf))
+			{
+				WelcomePlayerOne();
+			}
+			else if((Players.Count == 1) && (!ActiveGame.WelcomeScreen.activeSelf))
+			{
+				WelcomePlayerTwo();
+			}
 			if(Players.Count >= ActiveGame.PlayerSettings.Length)
 			{
 				// Start the game.
@@ -115,7 +161,7 @@ public class Game : MonoBehaviour {
 		string textFieldString = "";
 		public override void OnGUI()
 		{
-			int width = 200;
+			/*int width = 200;
 			int height = 120;
 			GUILayout.BeginArea(new Rect((Screen.width / 2) - (width / 2), (Screen.height / 2) - (height / 2), width, height), "", "box");
 			GUILayout.BeginVertical(GUILayout.ExpandHeight(true));
@@ -135,7 +181,7 @@ public class Game : MonoBehaviour {
 				GUILayout.EndHorizontal();
 			}
 			GUILayout.EndVertical();
-			GUILayout.EndArea();
+			GUILayout.EndArea();*/
 		}
 
 		void AddPlayer(PlayerSetting playerSetting)
