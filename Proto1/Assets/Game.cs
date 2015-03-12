@@ -92,11 +92,11 @@ public class Game : MonoBehaviour {
 
 		public override void Start()
 		{
-			// Add players.
+			/*// Add players.
 			for(int i = 0; i < ActiveGame.PlayerSettings.Length; ++i)
 			{
 				AddPlayer(ActiveGame.PlayerSettings[i]);
-			}
+			}*/
 		}
 		
 		public override void Stop()
@@ -341,7 +341,7 @@ public class Game : MonoBehaviour {
 		Background = new GameObject("Background");
 		Background.transform.localPosition = new Vector3(0.0f, 0.0f, 0.0f);
 		Background bg = Background.AddComponent<Background>();
-		bg.Generate(PlayAreaHalfSize.x - 1.0f, PlayAreaHalfSize.y - 1.0f, 10.0f, BGTexture);		
+		bg.Generate(PlayAreaHalfSize.x - 1.0f, PlayAreaHalfSize.y - 1.0f, 15.0f, BGTexture);		
 		
 		// Create playfield.
 		GameObject playfieldObject = new GameObject("Playfield");
