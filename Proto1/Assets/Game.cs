@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -22,8 +23,6 @@ public class Game : MonoBehaviour {
 	public Vector2 PlayAreaHalfSize = new Vector2(25.0f, 25.0f);
 
 	public int NumRounds = 12;
-
-	public GameObject WelcomeScreen;
 
 	[System.Serializable]
 	public class PlayerPalette
@@ -68,19 +67,44 @@ public class Game : MonoBehaviour {
 		public abstract void OnGUI();
 	}
 
+	public GameObject MenuBGPrefab;
+	public GameObject LogoPrefab;
 	class IntroGameState : State
 	{
+		const float WAIT_TIME = 2.0f;
+		float waitTimer = 0.0f;
+		PatchworkLogo logo;
+
 		public override void Start()
 		{
+			ActiveGame.MenuBGPrefab.SetActive(true);
+			logo = ActiveGame.LogoPrefab.GetComponent<PatchworkLogo>();
+			logo.gameObject.SetActive(true);
+			logo.Show();
+			waitTimer = 0.0f;
 		}
 
 		public override void Stop()
 		{
 		}
-		
+
 		public override void Update()
 		{
-			ActiveGame.SetState(new StartGameState());
+			switch(logo.Visible)
+			{
+			case PatchworkLogo.VisibleState.Visible:
+				waitTimer += Time.deltaTime;
+				if(waitTimer >= WAIT_TIME)
+				{
+					logo.Hide();
+				}
+				break;
+
+			case PatchworkLogo.VisibleState.Hidden:
+				logo.gameObject.SetActive(false);
+				ActiveGame.SetState(new StartGameState());
+				break;
+			}
 		}
 		
 		public override void OnGUI()
@@ -88,12 +112,16 @@ public class Game : MonoBehaviour {
 		}
 	}
 
+	public GameObject WelcomePrefab;
 	class StartGameState : State
 	{
+		UIWelcome uiWelcome;
 		List<PlayerInfo> Players = new List<PlayerInfo>();
 
 		public override void Start()
 		{
+			uiWelcome = ActiveGame.WelcomePrefab.GetComponent<UIWelcome>();
+			uiWelcome.gameObject.SetActive(true);
 			/*// Add players.
 			for(int i = 0; i < ActiveGame.PlayerSettings.Length; ++i)
 			{
@@ -101,61 +129,52 @@ public class Game : MonoBehaviour {
 			}*/
 		}
 
-		void OnClick(int player)
+		void OnSubmit(string name, int palette)
 		{
-			Debug.Log("asdjia");
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Ok").GetComponent<UnityEngine.UI.Button>().onClick.RemoveListener(delegate{OnClick(0);});
-			ActiveGame.WelcomeScreen.SetActive(false);
-			string playerName = ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>().text;
-			ActiveGame.PlayerSettings[Players.Count].Name = playerName;
+			ActiveGame.PlayerSettings[Players.Count].Name = name;
+			ActiveGame.PlayerSettings[Players.Count].PaletteIndex = palette;
 			AddPlayer(ActiveGame.PlayerSettings[Players.Count]);
-		}
-		
-		void WelcomePlayerOne()
-		{
-			ActiveGame.WelcomeScreen.SetActive(true);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome1").gameObject.SetActive(true);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome2").gameObject.SetActive(false);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_PlayerOne").gameObject.SetActive(true);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_PlayerTwo").gameObject.SetActive(false);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>().text = "";
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Theme").gameObject.SetActive(true);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_GetTheme").gameObject.SetActive(false);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Ok").GetComponent<UnityEngine.UI.Button>().onClick.AddListener(delegate{OnClick(0);});
+			if(Players.Count == 1)
+			{
+				uiWelcome.WelcomePlayerTwo(OnSubmit);
+			}
+			if(Players.Count >= ActiveGame.PlayerSettings.Length)
+			{
+				uiWelcome.Hide();
+			}
 		}
 
-		void WelcomePlayerTwo()
-		{
-			ActiveGame.WelcomeScreen.SetActive(true);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome1").gameObject.SetActive(false);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome2").gameObject.SetActive(true);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_PlayerOne").gameObject.SetActive(false);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_PlayerTwo").gameObject.SetActive(true);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>().text = "";
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_Theme").gameObject.SetActive(false);
-			ActiveGame.WelcomeScreen.transform.FindChild("Welcome_GetTheme").gameObject.SetActive(true);
-		}
-		
 		public override void Stop()
 		{
-			ActiveGame.WelcomeScreen.SetActive(false);
+			ActiveGame.WelcomePrefab.SetActive(false);
 		}
 		
 		public override void Update()
 		{
-			if((Players.Count == 0) && (!ActiveGame.WelcomeScreen.activeSelf))
+			switch(uiWelcome.Visible)
 			{
-				WelcomePlayerOne();
+			case UIWelcome.VisibleState.Visible:
+				break;
+				
+			case UIWelcome.VisibleState.Hidden:
+				if(Players.Count == 0)
+				{
+					uiWelcome.WelcomePlayerOne(OnSubmit);
+				}
+				else if(Players.Count == 1)
+				{
+					uiWelcome.WelcomePlayerTwo(OnSubmit);
+				}
+				else if(Players.Count >= ActiveGame.PlayerSettings.Length)
+				{
+					// Start the game.
+					uiWelcome.gameObject.SetActive(false);
+					ActiveGame.MenuBGPrefab.SetActive(false);
+					ActiveGame.SetState(new MainGameState(Players));
+				}
+				break;
 			}
-			else if((Players.Count == 1) && (!ActiveGame.WelcomeScreen.activeSelf))
-			{
-				WelcomePlayerTwo();
-			}
-			if(Players.Count >= ActiveGame.PlayerSettings.Length)
-			{
-				// Start the game.
-				ActiveGame.SetState(new MainGameState(Players));
-			}
+
 		}
 		
 		string textFieldString = "";
@@ -199,11 +218,17 @@ public class Game : MonoBehaviour {
 		}
 	}
 
+	public GameObject PlayerStatsPrefab;
 	class MainGameState : State
 	{
 		int CurrentRound = 0;
 		List<PlayerInfo> Players = new List<PlayerInfo>();
 		List<PlayerInfo>.Enumerator ActivePlayer;
+
+		UnityEngine.UI.Text txtPlayer1Name;
+		UnityEngine.UI.Text txtPlayer1Score;
+		UnityEngine.UI.Text txtPlayer2Name;
+		UnityEngine.UI.Text txtPlayer2Score;
 
 		public MainGameState(List<PlayerInfo> players)
 		{
@@ -212,6 +237,11 @@ public class Game : MonoBehaviour {
 
 		public override void Start()
 		{
+			ActiveGame.PlayerStatsPrefab.SetActive(true);
+			txtPlayer1Name = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Name").GetComponent<UnityEngine.UI.Text>();
+			txtPlayer1Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
+			txtPlayer2Name = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Name").GetComponent<UnityEngine.UI.Text>();
+			txtPlayer2Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
 		}
 
 		public override void Stop()
@@ -283,11 +313,17 @@ public class Game : MonoBehaviour {
 					ActivatePlayer(ActivePlayer.Current);
 				}
 			}
+
+			// Update UI.
+			txtPlayer1Name.text = Players[0].Player.gameObject.name;
+			txtPlayer1Score.text = Players[0].Player.Score.ToString();
+			txtPlayer2Name.text = Players[1].Player.gameObject.name;
+			txtPlayer2Score.text = Players[1].Player.Score.ToString();
 		}
 		
 		public override void OnGUI()
 		{
-			float width = 170.0f;
+			/*float width = 170.0f;
 			float height = 50.0f;
 			float x = (Screen.width * 0.5f) - (width * 0.5f);
 			float y = 10.0f;
@@ -312,7 +348,7 @@ public class Game : MonoBehaviour {
 				GUILayout.EndHorizontal();
 			}
 			GUILayout.EndVertical();
-			GUILayout.EndArea();
+			GUILayout.EndArea();*/
 		}
 
 		void ActivatePlayer(PlayerInfo playerInfo)

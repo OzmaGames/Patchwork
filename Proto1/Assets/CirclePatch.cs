@@ -25,11 +25,11 @@ public class CirclePatch : GamePieceBase {
 
 	public enum Symbols
 	{
-		Square,
-		Triangle,
-		Circle
+		Scissor,
+		Thread,
+		Needle
 	}
-	private Symbols Symbol = Symbols.Square;
+	private Symbols Symbol = Symbols.Scissor;
 
 	public Texture2D[] PatternTextures;
 
@@ -274,7 +274,7 @@ public class CirclePatch : GamePieceBase {
 		return false;
 	}
 
-	static Symbols idas = Symbols.Square;
+	static Symbols idas = Symbols.Scissor;
 	public void Generate(PatchConfig config, Texture2D[] patternTextures, Gradient[] colors, Gradient complementColor)
 	{
 		transform.position = new Vector3(0.0f, 0.0f, 0.0f);//Game.BGZPos);
@@ -354,14 +354,14 @@ public class CirclePatch : GamePieceBase {
 		SetSymbol(idas);
 		switch(idas)
 		{
-		case Symbols.Square:
-			idas = Symbols.Triangle;
+		case Symbols.Scissor:
+			idas = Symbols.Thread;
 			break;
-		case Symbols.Triangle:
-			idas = Symbols.Circle;
+		case Symbols.Thread:
+			idas = Symbols.Needle;
 			break;
 		default:
-			idas = Symbols.Square;
+			idas = Symbols.Scissor;
 			break;
 		}
 		circlePatchSymbol.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
@@ -375,14 +375,14 @@ public class CirclePatch : GamePieceBase {
 		Symbol = symbol;
 		switch(Symbol)
 		{
-		case Symbols.Square:
-			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolSquare");
+		case Symbols.Scissor:
+			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/symbol_scissor");
 			break;
-		case Symbols.Triangle:
-			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolTriangle");
+		case Symbols.Thread:
+			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/symbol_thread");
 			break;
-		case Symbols.Circle:
-			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/SymbolCircle");
+		case Symbols.Needle:
+			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/symbol_needle");
 			break;
 		}
 	}

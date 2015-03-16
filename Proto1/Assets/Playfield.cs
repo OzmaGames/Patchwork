@@ -342,40 +342,40 @@ public class Playfield : MonoBehaviour {
 					// Take over
 					switch(patch1.GetSymbol())
 					{
-					case CirclePatch.Symbols.Square:
+					case CirclePatch.Symbols.Scissor:
 						switch(patch2.GetSymbol())
 						{
-						case CirclePatch.Symbols.Triangle:
+						case CirclePatch.Symbols.Thread:
 							Patches[p2].Owner = owner1;
 							patch2.SetOwner(owner1);
 							break;
-						case CirclePatch.Symbols.Circle:
+						case CirclePatch.Symbols.Needle:
 							Patches[p1].Owner = owner2;
 							patch1.SetOwner(owner2);
 							break;
 						}
 						break;
-					case CirclePatch.Symbols.Triangle:
+					case CirclePatch.Symbols.Thread:
 						switch(patch2.GetSymbol())
 						{
-						case CirclePatch.Symbols.Circle:
+						case CirclePatch.Symbols.Needle:
 							Patches[p2].Owner = owner1;
 							patch2.SetOwner(owner1);
 							break;
-						case CirclePatch.Symbols.Square:
+						case CirclePatch.Symbols.Scissor:
 							Patches[p1].Owner = owner2;
 							patch1.SetOwner(owner2);
 							break;
 						}
 						break;
-					case CirclePatch.Symbols.Circle:
+					case CirclePatch.Symbols.Needle:
 						switch(patch2.GetSymbol())
 						{
-						case CirclePatch.Symbols.Square:
+						case CirclePatch.Symbols.Scissor:
 							Patches[p2].Owner = owner1;
 							patch2.SetOwner(owner1);
 							break;
-						case CirclePatch.Symbols.Triangle:
+						case CirclePatch.Symbols.Thread:
 							Patches[p1].Owner = owner2;
 							patch1.SetOwner(owner2);
 							break;

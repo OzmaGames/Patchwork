@@ -1,21 +1,51 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class PatchworkLogo : MonoBehaviour {
-
-	// Use this for initialization
-	void Start () {
-		Animator animator = GetComponent<Animator>();
-//		animator.Play(Animator.StringToHash("logo_hide"));
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-
-	void NotifyShow()
+public class PatchworkLogo : MonoBehaviour
+{
+	public enum VisibleState
 	{
-		Debug.Log("ADJAOSDJO");
+		Hidden,
+		Showing,
+		Visible,
+		Hiding
+	}
+	VisibleState visible = VisibleState.Hidden;
+	public VisibleState Visible
+	{
+		get { return visible; }
+	}
+
+	void Start()
+	{
+	}
+
+	void Update()
+	{
+	}
+
+	public void Show()
+	{
+		visible = VisibleState.Showing;
+		Animator animator = GetComponent<Animator>();
+		animator.SetBool("Visible", true);
+
+	}
+
+	public void Hide()
+	{
+		visible = VisibleState.Hiding;
+		Animator animator = GetComponent<Animator>();
+		animator.SetBool("Visible", false);
+	}
+
+	public void OnVisible()
+	{
+		visible = VisibleState.Visible;
+	}
+
+	public void OnHidden()
+	{
+		visible = VisibleState.Hidden;
 	}
 }
