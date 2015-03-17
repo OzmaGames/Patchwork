@@ -16,8 +16,6 @@ public class Game : MonoBehaviour {
 
 	public Texture2D BGTexture;
 
-	public GUISkin GameGUISkin;
-
 	public int NumberofPatchesPerPlayer = 8;
 	public int NumberOfDecorationsPerPlayer = 2;
 	public Vector2 PlayAreaHalfSize = new Vector2(25.0f, 25.0f);
@@ -64,7 +62,6 @@ public class Game : MonoBehaviour {
 		public abstract void Start();
 		public abstract void Stop();
 		public abstract void Update();
-		public abstract void OnGUI();
 	}
 
 	public GameObject MenuBGPrefab;
@@ -106,22 +103,20 @@ public class Game : MonoBehaviour {
 				break;
 			}
 		}
-		
-		public override void OnGUI()
-		{
-		}
 	}
 
-	public GameObject WelcomePrefab;
+	public GameObject WindowPrefab;
 	class StartGameState : State
 	{
-		UIWelcome uiWelcome;
+		UIWindow uiWindow;
 		List<PlayerInfo> Players = new List<PlayerInfo>();
 
 		public override void Start()
 		{
-			uiWelcome = ActiveGame.WelcomePrefab.GetComponent<UIWelcome>();
-			uiWelcome.gameObject.SetActive(true);
+			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
+			uiWindow.gameObject.SetActive(true);
+			uiWindow.Show("GameOver"/*"PlayerConfig1"*/, OnSubmit);
+
 			/*// Add players.
 			for(int i = 0; i < ActiveGame.PlayerSettings.Length; ++i)
 			{
@@ -129,80 +124,50 @@ public class Game : MonoBehaviour {
 			}*/
 		}
 
-		void OnSubmit(string name, int palette)
+		void OnSubmit(UIPage page)
 		{
-			ActiveGame.PlayerSettings[Players.Count].Name = name;
-			ActiveGame.PlayerSettings[Players.Count].PaletteIndex = palette;
-			AddPlayer(ActiveGame.PlayerSettings[Players.Count]);
-			if(Players.Count == 1)
+			if(page.GetType() == typeof(UIPlayerConfig))
 			{
-				uiWelcome.WelcomePlayerTwo(OnSubmit);
-			}
-			if(Players.Count >= ActiveGame.PlayerSettings.Length)
-			{
-				uiWelcome.Hide();
+				UIPlayerConfig playerConfig = page as UIPlayerConfig;
+				ActiveGame.PlayerSettings[Players.Count].Name = playerConfig.PlayerConfig.Name;
+				ActiveGame.PlayerSettings[Players.Count].PaletteIndex = playerConfig.PlayerConfig.Palette;
+				AddPlayer(ActiveGame.PlayerSettings[Players.Count]);
+
+				if(playerConfig.gameObject.name == "PlayerConfig1")
+				{
+					uiWindow.transform.FindChild("PlayerConfig2").GetComponent<UIPlayerConfig>().DisablePalette(playerConfig.PlayerConfig.Palette);
+				}
 			}
 		}
 
 		public override void Stop()
 		{
-			ActiveGame.WelcomePrefab.SetActive(false);
+			//ActiveGame.WelcomePrefab.SetActive(false);
 		}
 		
 		public override void Update()
 		{
-			switch(uiWelcome.Visible)
+			switch(uiWindow.Visible)
 			{
-			case UIWelcome.VisibleState.Visible:
+			case UIWindow.VisibleState.Visible:
 				break;
 				
-			case UIWelcome.VisibleState.Hidden:
-				if(Players.Count == 0)
+			case UIWindow.VisibleState.Hidden:
+				if(uiWindow.IsDone)
 				{
-					uiWelcome.WelcomePlayerOne(OnSubmit);
-				}
-				else if(Players.Count == 1)
-				{
-					uiWelcome.WelcomePlayerTwo(OnSubmit);
-				}
-				else if(Players.Count >= ActiveGame.PlayerSettings.Length)
-				{
-					// Start the game.
-					uiWelcome.gameObject.SetActive(false);
-					ActiveGame.MenuBGPrefab.SetActive(false);
-					ActiveGame.SetState(new MainGameState(Players));
+					if(Players.Count >= ActiveGame.PlayerSettings.Length)
+					{
+						// Start the game.
+						uiWindow.gameObject.SetActive(false);
+						ActiveGame.MenuBGPrefab.SetActive(false);
+						ActiveGame.SetState(new MainGameState(Players));
+					}
 				}
 				break;
 			}
 
 		}
 		
-		string textFieldString = "";
-		public override void OnGUI()
-		{
-			/*int width = 200;
-			int height = 120;
-			GUILayout.BeginArea(new Rect((Screen.width / 2) - (width / 2), (Screen.height / 2) - (height / 2), width, height), "", "box");
-			GUILayout.BeginVertical(GUILayout.ExpandHeight(true));
-			if(Players.Count < ActiveGame.PlayerSettings.Length)
-			{
-				GUILayout.Label("Player " + (Players.Count + 1) + " Name");
-				textFieldString = GUILayout.TextField(textFieldString);
-				GUILayout.BeginHorizontal();
-				GUILayout.FlexibleSpace();
-				if(GUILayout.Button("Next"))
-				{
-					ActiveGame.PlayerSettings[Players.Count].Name = textFieldString;
-					AddPlayer(ActiveGame.PlayerSettings[Players.Count]);
-					textFieldString = "";
-					//Application.LoadLevel(1);
-				}
-				GUILayout.EndHorizontal();
-			}
-			GUILayout.EndVertical();
-			GUILayout.EndArea();*/
-		}
-
 		void AddPlayer(PlayerSetting playerSetting)
 		{
 			GameObject playerObject = new GameObject(playerSetting.Name);
@@ -242,6 +207,7 @@ public class Game : MonoBehaviour {
 			txtPlayer1Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
 			txtPlayer2Name = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Name").GetComponent<UnityEngine.UI.Text>();
 			txtPlayer2Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
+			UpdateUI();
 		}
 
 		public override void Stop()
@@ -314,41 +280,16 @@ public class Game : MonoBehaviour {
 				}
 			}
 
+			UpdateUI();
+		}
+
+		void UpdateUI()
+		{
 			// Update UI.
 			txtPlayer1Name.text = Players[0].Player.gameObject.name;
 			txtPlayer1Score.text = Players[0].Player.Score.ToString();
 			txtPlayer2Name.text = Players[1].Player.gameObject.name;
 			txtPlayer2Score.text = Players[1].Player.Score.ToString();
-		}
-		
-		public override void OnGUI()
-		{
-			/*float width = 170.0f;
-			float height = 50.0f;
-			float x = (Screen.width * 0.5f) - (width * 0.5f);
-			float y = 10.0f;
-
-			GUI.BeginGroup(new Rect(x, y, width, height), "", "box");
-			GUI.Label(new Rect(10.0f, 10.0f, width, height), "Round: " + (CurrentRound + 1) + " / " + ActiveGame.NumRounds);
-			GUI.EndGroup();
-
-			width = 150.0f;
-			height = 80.0f;
-			x = (Screen.width - (width + 10.0f));
-			y = 10.0f;
-			
-			GUILayout.BeginArea(new Rect(x, y, width, height), "", "box");
-			GUILayout.BeginVertical(GUILayout.ExpandHeight(true));
-			for(int i = 0; i < Players.Count; ++i)
-			{
-				Player player = Players[i].Player;
-				GUILayout.BeginHorizontal();
-				GUILayout.Label(player.gameObject.name);
-				GUILayout.Label(player.Score.ToString());
-				GUILayout.EndHorizontal();
-			}
-			GUILayout.EndVertical();
-			GUILayout.EndArea();*/
 		}
 
 		void ActivatePlayer(PlayerInfo playerInfo)
@@ -389,7 +330,7 @@ public class Game : MonoBehaviour {
 		{
 		}
 		
-		public override void OnGUI()
+		public void OnGUI()
 		{
 			float width = 150.0f;
 			float height = 50.0f;
@@ -469,8 +410,6 @@ public class Game : MonoBehaviour {
 			someX = 0.0f;
 			someY = 0.0f;
 		}
-		GUI.skin = GameGUISkin;
-		CurrentState.OnGUI();
 	}
 	
 	void Update()
