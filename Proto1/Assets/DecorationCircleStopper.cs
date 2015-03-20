@@ -74,8 +74,8 @@ public class DecorationCircleStopper : GamePieceBase {
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
 		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
-		meshRenderer.material.mainTexture = BGTexture;
 		meshRenderer.material.shader = Shader.Find("Custom/Decoration");
+		meshRenderer.material.mainTexture = BGTexture;
 	}
 
 	public bool CollidesAgainst(CirclePatch patch)
@@ -114,6 +114,7 @@ public class DecorationCircleStopper : GamePieceBase {
 		transform.parent = owner.transform;
 		transform.localPosition = new Vector3(0.0f, 0.0f, ZPosDecorationLayer);
 		isPlaced = true;
+		owner = null;
 	}
 
 	public override void SetPosition(float x, float y)
@@ -175,6 +176,14 @@ public class DecorationCircleStopper : GamePieceBase {
 		}
 	}
 
+	void OnDestroy()
+	{
+		BGTexture = null;
+		GeneratedMesh = null;
+		Owner = null;
+		owner = null;
+	}
+
 	void Update()
 	{
 		if(isPlaced)
@@ -191,7 +200,7 @@ public class DecorationCircleStopper : GamePieceBase {
 		else if(isActive)
 		{
 			List<GamePieceBase> collidedPieces;
-			Owner.ActiveGame.GetCollision(this, out collidedPieces);
+			Owner.ActivePlayfield.GetCollision(this, out collidedPieces);
 			for(int i = 0; i < collidedPieces.Count; ++i)
 			{
 				CirclePatch patch = collidedPieces[i].GetComponent<CirclePatch>();

@@ -20,7 +20,7 @@ public class UIRules : UIPage
 	{
 	}
 	
-	public override void Show()
+	public override void Show(InitData data)
 	{
 	}
 

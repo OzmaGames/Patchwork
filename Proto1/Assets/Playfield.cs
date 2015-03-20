@@ -177,10 +177,14 @@ public class Playfield : MonoBehaviour {
 		}
 	}
 
-	public void Place(Player player, CirclePatch patch)
+	public void Place(Player player, GamePieceBase piece)
 	{
-
-		Patches.Add(new PlacedPatch(player, patch));
+		if(piece.GetComponent<CirclePatch>() != null)
+		{
+			CirclePatch patch = piece.GetComponent<CirclePatch>();
+			Patches.Add(new PlacedPatch(player, patch));
+		}
+		piece.Place();
 	}
 
 	public bool IsInsideGrid(Vector3 pos)
@@ -190,6 +194,21 @@ public class Playfield : MonoBehaviour {
 			return false;
 		}
 		return true;
+	}
+
+	public bool CanPlaceDecoration()
+	{
+		// Check for collision.
+		for(int p = 0; p < Patches.Count; ++p)
+		{
+			CirclePatch patch = Patches[p].Patch;
+			if(patch.GetDecoration() == null)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	const bool kHideSymbols = false;
@@ -250,11 +269,11 @@ public class Playfield : MonoBehaviour {
 		GenerateMesh();
 
 		// Setup mesh.
-		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
+		/*MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
 		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
-		meshRenderer.material.mainTexture = BGTexture;
 		meshRenderer.material.shader = Shader.Find("Custom/Playfield");
+		meshRenderer.material.mainTexture = BGTexture;*/
 	}
 
 	void GenerateMesh()
@@ -401,8 +420,21 @@ public class Playfield : MonoBehaviour {
 		}
 	}
 
-	// Update is called once per frame
-	void Update () {
+	void OnDestroy()
+	{
+		for(int i = 0; i < Patches.Count; ++i)
+		{
+			Destroy(Patches[i].Patch.gameObject);
+		}
+		Patches.Clear();
+		Patches = null;
+		GeneratedMesh = null;
+		BGTexture = null;
+		playfieldCells = null; 
+	}
+
+	void Update()
+	{
 		CheckForCollision();
 
 		////////////////////////////////////////////////////////////////

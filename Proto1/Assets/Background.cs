@@ -7,11 +7,6 @@ public class Background : MonoBehaviour {
 	Mesh GeneratedMesh;
 	Texture2D BGTexture;
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-
 	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture)
 	{
 		BGTexture = bgTexture;
@@ -46,12 +41,8 @@ public class Background : MonoBehaviour {
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
 		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
-		meshRenderer.material.mainTexture = BGTexture;
 		meshRenderer.material.shader = Shader.Find("Unlit/Texture");
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
+		meshRenderer.material.mainTexture = BGTexture;
+		meshRenderer.material.color = Color.cyan;
 	}
 }

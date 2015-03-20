@@ -26,39 +26,7 @@ public class UIWindow : MonoBehaviour
 	}
 
 	public delegate void SubmitDelegate(UIPage page);
-	SubmitDelegate OnSubmit;
-	public void OnClickSubmit()
-	{
-		UnityEngine.UI.InputField txtName = transform.FindChild("PlayerCommon").FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>();
-		UnityEngine.UI.ToggleGroup tglgPalette = transform.FindChild("PlayerCommon").FindChild("Welcome_ThemeGroup").GetComponent<UnityEngine.UI.ToggleGroup>();
-		if(tglgPalette.AnyTogglesOn() && (txtName.text.Length > 0))
-		{
-			int palette = 0;
-			string name = txtName.text;
-			System.Collections.Generic.IEnumerable<UnityEngine.UI.Toggle> tglPalettes = tglgPalette.ActiveToggles();
-			foreach(UnityEngine.UI.Toggle tglPalette in tglPalettes)
-			{
-				if(tglPalette.name == "Welcome_ThemeKaleido")
-				{
-					palette = 0;
-					tglPalette.enabled = false;
-					tglPalette.gameObject.SetActive(false);
-					tglgPalette.UnregisterToggle(tglPalette);
-					break;
-				}
-				else if(tglPalette.name == "Welcome_ThemePeacock")
-				{
-					palette = 1;
-					tglPalette.enabled = false;
-					tglPalette.gameObject.SetActive(false);
-					tglgPalette.UnregisterToggle(tglPalette);
-					break;
-				}
-			}
-//			OnSubmit(txtName.text, palette);
-		}
-	}
-
+	/*public event*/ SubmitDelegate OnSubmit;
 	public void Submit()
 	{
 		UIPage page = activePage.GetComponent<UIPage>();
@@ -70,6 +38,17 @@ public class UIWindow : MonoBehaviour
 		}
 	}
 
+	public void PlayNow()
+	{
+		OnSubmit = null;
+		isDone = true;
+	}
+	
+	public void Quit()
+	{
+		Application.Quit();
+	}
+	
 	GameObject activePage;
 	int currentPage = 0;
 	public void NextPage()
@@ -78,8 +57,8 @@ public class UIWindow : MonoBehaviour
 		{
 			if((currentPage + 1) >= transform.childCount)
 			{
+				OnSubmit = null;
 				isDone = true;
-				Hide();
 			}
 			else
 			{
@@ -91,7 +70,7 @@ public class UIWindow : MonoBehaviour
 			{
 				activePage = transform.GetChild(currentPage).gameObject;
 				activePage.SetActive(true);
-				activePage.GetComponent<UIPage>().Show();
+				activePage.GetComponent<UIPage>().Show(showData);
 			}
 		}
 	}
@@ -102,7 +81,8 @@ public class UIWindow : MonoBehaviour
 		get { return isDone; }
 	}
 
-	public void Show(string pageName, SubmitDelegate onSubmit)
+	UIPage.InitData showData;
+	public void Show(string pageName, UIPage.InitData data, SubmitDelegate onSubmit)
 	{
 		isDone = false;
 		if(pageName.Length > 0)
@@ -114,9 +94,10 @@ public class UIWindow : MonoBehaviour
 		{
 			activePage = transform.GetChild(currentPage).gameObject;
 		}
-		activePage.SetActive(true);
-		activePage.GetComponent<UIPage>().Show();
 		OnSubmit = onSubmit;
+		showData = data;
+		activePage.SetActive(true);
+		activePage.GetComponent<UIPage>().Show(showData);
 
 		if((visible != VisibleState.Visible) || (visible != VisibleState.Showing))
 		{

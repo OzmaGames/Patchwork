@@ -8,20 +8,22 @@ public class CirclePatch : GamePieceBase {
 	public const float FLASH_TIME = 1.0f;
 	const float GROWTH_SPEED = 0.5f;
 
-	public GameObject CirclePatchSizePrefab;
 	GameObject circlePatchSize;
 	GameObject circlePatchSymbol;
 
+	Texture2D[] circlePatchSizes;
+
 	static Mesh GeneratedMesh;
+	static GameObject CirclePatchSizePrefab;
 
 	public int Segments = 1;
-	private int CurrentSegment = 0;
-	private float SegmentScale = 1.0f;
-	private float InnerRadius = 1.0f;
-	private float OuterRadius = 1.0f;
-	private float CurrentSegmentArcSize = 0.0f;
+	int CurrentSegment = 0;
+	float SegmentScale = 1.0f;
+	float InnerRadius = 1.0f;
+	float OuterRadius = 1.0f;
+	float CurrentSegmentArcSize = 0.0f;
 
-	private DecorationCircleStopper Decoration;
+	DecorationCircleStopper Decoration;
 
 	public enum Symbols
 	{
@@ -29,7 +31,8 @@ public class CirclePatch : GamePieceBase {
 		Thread,
 		Needle
 	}
-	private Symbols Symbol = Symbols.Scissor;
+	 Symbols Symbol = Symbols.Scissor;
+	static Texture2D[] SymbolTexturePrefabs;
 
 	public Texture2D[] PatternTextures;
 
@@ -114,6 +117,12 @@ public class CirclePatch : GamePieceBase {
 
 	public static void GenerateSegments(int numSegments, float segmentSize)
 	{
+		CirclePatchSizePrefab = Resources.Load<GameObject>("Prefab/TextPrefab");
+		SymbolTexturePrefabs = new Texture2D[3];
+		SymbolTexturePrefabs[0] = Resources.Load<Texture2D>("textures/symbol_scissor");
+		SymbolTexturePrefabs[1] = Resources.Load<Texture2D>("textures/symbol_thread");
+		SymbolTexturePrefabs[2] = Resources.Load<Texture2D>("textures/symbol_needle");
+
 		GeneratedMesh = new Mesh();
 		GeneratedMesh.subMeshCount = numSegments;
 
@@ -333,9 +342,7 @@ public class CirclePatch : GamePieceBase {
 		size = CurrentSegment * SegmentScale;
 		maxSize = size;
 
-		CirclePatchSizePrefab = Resources.Load<GameObject>("Prefab/TextPrefab");
 		circlePatchSize = (GameObject)Instantiate(CirclePatchSizePrefab, new Vector3(transform.position.x, transform.position.y, transform.position.z + (Game.ZPosAdd * 0.5f)), Quaternion.identity);
-
 
 		//circlePatchSize = new GameObject(gameObject.name + "_Size");
 		circlePatchSize.transform.parent = gameObject.transform;
@@ -351,6 +358,7 @@ public class CirclePatch : GamePieceBase {
 
 		// Create symbol quad.
 		circlePatchSymbol = GameObject.CreatePrimitive(PrimitiveType.Quad);
+		circlePatchSymbol.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
 		SetSymbol(idas);
 		switch(idas)
 		{
@@ -364,7 +372,6 @@ public class CirclePatch : GamePieceBase {
 			idas = Symbols.Scissor;
 			break;
 		}
-		circlePatchSymbol.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
 		circlePatchSymbol.transform.parent = gameObject.transform;
 		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f);
 		circlePatchSymbol.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
@@ -376,13 +383,13 @@ public class CirclePatch : GamePieceBase {
 		switch(Symbol)
 		{
 		case Symbols.Scissor:
-			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/symbol_scissor");
+			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = SymbolTexturePrefabs[0];
 			break;
 		case Symbols.Thread:
-			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/symbol_thread");
+			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = SymbolTexturePrefabs[1];
 			break;
 		case Symbols.Needle:
-			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = Resources.Load<Texture2D>("Textures/symbol_needle");
+			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = SymbolTexturePrefabs[2];
 			break;
 		}
 	}
@@ -567,6 +574,19 @@ public class CirclePatch : GamePieceBase {
 	public override Bounds GetBounds()
 	{
 		return new Bounds(transform.position, new Vector3(size, size));
+	}
+
+	void OnDestroy()
+	{
+		circlePatchSize = null;
+		circlePatchSymbol = null;
+		circlePatchSizes = null;
+		Decoration = null;
+		PatternTextures = null;
+		patchSegments = null;
+		Owner = null;
+		innerEdges = null;
+		outerEdges = null;
 	}
 
 	void Update ()

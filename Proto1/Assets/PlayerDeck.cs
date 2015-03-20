@@ -19,6 +19,7 @@ public class PlayerDeck : MonoBehaviour {
 		public Vector2 Pos = Vector2.zero;
 		public bool Free = true;
 		public GamePieceBase Piece = null;
+		public bool Disabled = false;
 
 		public HandSlot()
 		{
@@ -31,14 +32,48 @@ public class PlayerDeck : MonoBehaviour {
 	{
 	}
 	
+	void OnDestroy()
+	{
+		GeneratedMesh = null;
+		BGTexture = null;
+		Owner = null;
+		PatchConfigs.Clear();
+		PatchConfigs = null;
+		for(int i = 0; i < ActiveHand.Length; ++i)
+		{
+			if(ActiveHand[i].Piece != null)
+			{
+				Destroy(ActiveHand[i].Piece.gameObject);
+				ActiveHand[i].Piece = null;
+			}
+		}
+		ActiveHand = null;
+	}
+	
 	void Update()
 	{
 	}
 
 	public void Show()
 	{
-		transform.parent = Camera.main.transform;
-		transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y, 1.0f);
+//		transform.parent = Camera.main.transform;
+//		transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y, 1.0f);
+		if(!Owner.ActivePlayfield.CanPlaceDecoration())
+		{
+			for(int i = 0; i < NumDecorationsOnHand; ++i)
+			{
+				HandSlot slot = ActiveHand[NumPatchesOnHand + i];
+				slot.Disabled = true;
+			}
+		}
+		else
+		{
+			for(int i = 0; i < NumDecorationsOnHand; ++i)
+			{
+				HandSlot slot = ActiveHand[NumPatchesOnHand + i];
+				slot.Disabled = false;
+			}
+		}
 		gameObject.SetActive(true);
 	}
 
@@ -57,7 +92,7 @@ public class PlayerDeck : MonoBehaviour {
 		for(int i = 0; i < ActiveHand.Length; ++i)
 		{
 			HandSlot slot = ActiveHand[i];
-			if((!slot.Free) && (slot.Piece != null))
+			if((!slot.Free) && (slot.Piece != null) && (!slot.Disabled))
 			{
 				CirclePatch patch = slot.Piece.GetComponent<CirclePatch>();
 				if(patch != null)
@@ -144,8 +179,9 @@ public class PlayerDeck : MonoBehaviour {
 				HandSlot slot = ActiveHand[i];
 				if(slot.Free)
 				{
-					piece.transform.parent = transform;
-					piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+					piece.transform.SetParent(transform.FindChild(i == 0 ? "Patch1" : "Patch2").transform);
+					piece.transform.localPosition = Vector3.zero;
+					//piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
 					slot.Free = false;
 					slot.Piece = piece;
 					roomToAdd = true;
@@ -162,8 +198,10 @@ public class PlayerDeck : MonoBehaviour {
 				HandSlot slot = ActiveHand[NumPatchesOnHand + i];
 				if(slot.Free)
 				{
-					piece.transform.parent = transform;
-					piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+					piece.transform.SetParent(transform.FindChild("Decoration").transform);
+					piece.transform.localPosition = Vector3.zero;
+					//piece.transform.parent = transform;
+					//piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
 					slot.Free = false;
 					slot.Piece = piece;
 					roomToAdd = true;
@@ -185,8 +223,10 @@ public class PlayerDeck : MonoBehaviour {
 			{
 				CirclePatch.PatchConfig patchConfig = PatchConfigs.Pop();
 				CirclePatch newPatch = CreatePatch(patchConfig);
-				newPatch.transform.parent = transform;
-				newPatch.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+				//newPatch.transform.parent = transform;
+				//newPatch.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+				newPatch.transform.SetParent(transform.FindChild(i == 0 ? "Patch1" : "Patch2"));
+				newPatch.transform.localPosition = Vector3.zero;
 				slot.Free = false;
 				slot.Piece = newPatch;
 			}
@@ -200,20 +240,22 @@ public class PlayerDeck : MonoBehaviour {
 			{
 				--NumDecorations;
 				DecorationCircleStopper newDecoration = CreateDecorationCircleStopper();
-				newDecoration.transform.parent = transform;
-				newDecoration.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+				//newDecoration.transform.parent = transform;
+				//newDecoration.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
+				newDecoration.transform.SetParent(transform.FindChild("Decoration").transform);
+				newDecoration.transform.localPosition = Vector3.zero;
 				slot.Free = false;
 				slot.Piece = newDecoration;
 			}
 		}
 	}
 
-	public void Generate(int numPatches, int numDecorations, int numPatchesOnHand, int numDecorationsOnHand, Player owner)
+	public void Generate(int numPatches, int numDecorations, int numPatchesOnHand, int numDecorationsOnHand, Player owner, Texture2D bgTexture)
 	{
 		Owner = owner;
 
 		// Generate background.
-		BGTexture = null;//bgTexture;
+		BGTexture = bgTexture;
 
 		GeneratedMesh = new Mesh();
 		
@@ -246,13 +288,13 @@ public class PlayerDeck : MonoBehaviour {
 		GeneratedMesh.RecalculateNormals();
 		GeneratedMesh.RecalculateBounds();
 		
-		// Setup mesh.
+		/*// Setup mesh.
 		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
 		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
-		meshRenderer.material.mainTexture = BGTexture;
-		meshRenderer.material.color = new Color(0.0f, 0.0f, 0.0f, 0.4f);
 		meshRenderer.material.shader = Shader.Find("Transparent/Diffuse");
+		meshRenderer.material.mainTexture = BGTexture;
+		meshRenderer.material.color = new Color(0.0f, 0.0f, 0.0f, 0.4f);*/
 
 		// Generate patch configs.
 		NumPatches = numPatches;

@@ -1,9 +1,20 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using System.Collections.Generic;
 
 public class UIPlayerConfig : UIPage
 {
+	public class InitDataPlayerConfig : UIPage.InitData
+	{
+		public InitDataPlayerConfig(List<Game.PlayerInfo> players)
+		{
+			Players = players;
+		}
+		
+		public List<Game.PlayerInfo> Players;
+	}
+	
 	public class SubmitDataPlayerConfig : SubmitData
 	{
 		public SubmitDataPlayerConfig(string name, int palette)
@@ -25,31 +36,44 @@ public class UIPlayerConfig : UIPage
 	{
 	}
 
+	public GameObject PaletteGroup;
+	public GameObject Name;
 	public void DisablePalette(int paletteIndex)
 	{
-		UnityEngine.UI.InputField txtName = transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>();
-		UnityEngine.UI.ToggleGroup tglgPalette = transform.FindChild("Welcome_ThemeGroup").GetComponent<UnityEngine.UI.ToggleGroup>();
+		UnityEngine.UI.InputField txtName = Name.GetComponent<UnityEngine.UI.InputField>();
+		UnityEngine.UI.ToggleGroup tglgPalette = PaletteGroup.GetComponent<UnityEngine.UI.ToggleGroup>();
 		if(paletteIndex == 0)
 		{
 			UnityEngine.UI.Toggle tglPalette = tglgPalette.transform.FindChild("Welcome_ThemeKaleido").GetComponent<UnityEngine.UI.Toggle>();
 			tglPalette.enabled = false;
 			tglPalette.gameObject.SetActive(false);
 			tglgPalette.UnregisterToggle(tglPalette);
+
+			tglPalette = tglgPalette.transform.FindChild("Welcome_ThemePeacock").GetComponent<UnityEngine.UI.Toggle>();
+			tglPalette.enabled = true;
+			tglPalette.gameObject.SetActive(true);
+			tglgPalette.RegisterToggle(tglPalette);
 		}
 		else if(paletteIndex == 1)
 		{
-			UnityEngine.UI.Toggle tglPalette = tglgPalette.transform.FindChild("Welcome_ThemePeacock").GetComponent<UnityEngine.UI.Toggle>();
+			UnityEngine.UI.Toggle tglPalette = tglgPalette.transform.FindChild("Welcome_ThemeKaleido").GetComponent<UnityEngine.UI.Toggle>();
+			tglPalette.enabled = true;
+			tglPalette.gameObject.SetActive(true);
+			tglgPalette.RegisterToggle(tglPalette);
+
+			tglPalette = tglgPalette.transform.FindChild("Welcome_ThemePeacock").GetComponent<UnityEngine.UI.Toggle>();
 			tglPalette.enabled = false;
 			tglPalette.gameObject.SetActive(false);
 			tglgPalette.UnregisterToggle(tglPalette);
+			
 		}
 		ResetUI();
 	}
 
 	public override bool IsValid()
 	{
-		UnityEngine.UI.InputField txtName = transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>();
-		UnityEngine.UI.ToggleGroup tglgPalette = transform.FindChild("Welcome_ThemeGroup").GetComponent<UnityEngine.UI.ToggleGroup>();
+		UnityEngine.UI.InputField txtName = Name.GetComponent<UnityEngine.UI.InputField>();
+		UnityEngine.UI.ToggleGroup tglgPalette = PaletteGroup.GetComponent<UnityEngine.UI.ToggleGroup>();
 		if(tglgPalette.AnyTogglesOn() && (txtName.text.Length > 0))
 		{
 			return true;
@@ -60,8 +84,8 @@ public class UIPlayerConfig : UIPage
 
 	public override void Submit()
 	{
-		UnityEngine.UI.InputField txtName = transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>();
-		UnityEngine.UI.ToggleGroup tglgPalette = transform.FindChild("Welcome_ThemeGroup").GetComponent<UnityEngine.UI.ToggleGroup>();
+		UnityEngine.UI.InputField txtName = Name.GetComponent<UnityEngine.UI.InputField>();
+		UnityEngine.UI.ToggleGroup tglgPalette = PaletteGroup.GetComponent<UnityEngine.UI.ToggleGroup>();
 		if(tglgPalette.AnyTogglesOn() && (txtName.text.Length > 0))
 		{
 			int palette = 0;
@@ -72,17 +96,17 @@ public class UIPlayerConfig : UIPage
 				if(tglPalette.name == "Welcome_ThemeKaleido")
 				{
 					palette = 0;
-					tglPalette.enabled = false;
-					tglPalette.gameObject.SetActive(false);
-					tglgPalette.UnregisterToggle(tglPalette);
+					//tglPalette.enabled = false;
+					//tglPalette.gameObject.SetActive(false);
+					//tglgPalette.UnregisterToggle(tglPalette);
 					break;
 				}
 				else if(tglPalette.name == "Welcome_ThemePeacock")
 				{
 					palette = 1;
-					tglPalette.enabled = false;
-					tglPalette.gameObject.SetActive(false);
-					tglgPalette.UnregisterToggle(tglPalette);
+					//tglPalette.enabled = false;
+					//tglPalette.gameObject.SetActive(false);
+					//tglgPalette.UnregisterToggle(tglPalette);
 					break;
 				}
 			}
@@ -90,7 +114,7 @@ public class UIPlayerConfig : UIPage
 		}
 	}
 
-	public override void Show()
+	public override void Show(InitData data)
 	{
 		ResetUI();
 	}
@@ -101,15 +125,15 @@ public class UIPlayerConfig : UIPage
 
 	void ResetUI()
 	{
-		UnityEngine.UI.ToggleGroup tglgPalette = transform.FindChild("Welcome_ThemeGroup").GetComponent<UnityEngine.UI.ToggleGroup>();
+		UnityEngine.UI.ToggleGroup tglgPalette = PaletteGroup.GetComponent<UnityEngine.UI.ToggleGroup>();
 		tglgPalette.SetAllTogglesOff();
 		UnityEngine.UI.Toggle[] toggles = tglgPalette.GetComponentsInChildren<UnityEngine.UI.Toggle>();
-		if(toggles.Length == 1)
+		if(toggles.Length > 0)
 		{
 			toggles[0].isOn = true;
 		}
 
-		UnityEngine.UI.InputField txtName = transform.FindChild("Welcome_Name").GetComponent<UnityEngine.UI.InputField>();
+		UnityEngine.UI.InputField txtName = Name.GetComponent<UnityEngine.UI.InputField>();
 		txtName.text = "";
 		txtName.Select();
 		//UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(txtName.gameObject, null);
