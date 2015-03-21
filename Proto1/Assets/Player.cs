@@ -183,14 +183,11 @@ public class Player : MonoBehaviour {
 			}
 			else
 			{
-				if(Input.GetMouseButtonDown(0))
+				// Grab a piece.
+				activePiece = Deck.GetPiece(pz);
+				if(activePiece != null)
 				{
-					// Grab a piece.
-					activePiece = Deck.GetPiece(pz);
-					if(activePiece != null)
-					{
-						Deck.Hide();
-					}
+					Deck.Hide();
 				}
 			}
 		}

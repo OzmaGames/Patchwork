@@ -2,7 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class PlayerDeck : MonoBehaviour {
+public class PlayerDeck : MonoBehaviour
+{
 
 	Mesh GeneratedMesh;
 	Texture2D BGTexture;
@@ -74,11 +75,27 @@ public class PlayerDeck : MonoBehaviour {
 				slot.Disabled = false;
 			}
 		}
+		for(int i = 0; i < (NumPatchesOnHand + NumDecorationsOnHand); ++i)
+		{
+			HandSlot slot = ActiveHand[i];
+			if(slot.Piece != null)
+			{
+				slot.Piece.gameObject.SetActive(true);
+			}
+		}
 		gameObject.SetActive(true);
 	}
 
 	public void Hide()
 	{
+		for(int i = 0; i < (NumPatchesOnHand + NumDecorationsOnHand); ++i)
+		{
+			HandSlot slot = ActiveHand[i];
+			if(slot.Piece != null)
+			{
+				slot.Piece.gameObject.SetActive(false);
+			}
+		}
 		gameObject.SetActive(false);
 	}
 
@@ -87,9 +104,57 @@ public class PlayerDeck : MonoBehaviour {
 		FillActiveHand();
 	}
 
+	static void SetLayerRecursively(GameObject obj, int layer)
+	{
+		obj.layer = layer;
+		for(int i = 0; i < obj.transform.childCount; ++i)
+		{
+			SetLayerRecursively(obj.transform.GetChild(i).gameObject, layer);
+		}
+	}
+
+	HandSlot selectedSlot;
+	public void SelectPiece(int index)
+	{
+		HandSlot slot = ActiveHand[index];
+		if((!slot.Free) && (slot.Piece != null) && (!slot.Disabled))
+		{
+			CirclePatch patch = slot.Piece.GetComponent<CirclePatch>();
+			if(patch != null)
+			{
+				Debug.Log("Patch" + index);
+			}
+
+			DecorationCircleStopper decoration = slot.Piece.GetComponent<DecorationCircleStopper>();
+			if(decoration != null)
+			{
+				Debug.Log("Decoration");
+			}
+
+			selectedSlot = slot;
+		}
+	}
+
 	public GamePieceBase GetPiece(Vector2 position)
 	{
-		for(int i = 0; i < ActiveHand.Length; ++i)
+		if(selectedSlot != null)
+		{
+			GamePieceBase piece = selectedSlot.Piece;
+			SetLayerRecursively(piece.gameObject, 0);
+			piece.SetPosition(position.x, position.y);
+			piece.transform.parent = null;
+
+			// Remove from hand.
+			selectedSlot.Free = true;
+			selectedSlot.Piece = null;
+
+			// Deselect.
+			selectedSlot = null;
+
+			// And return the selected piece.
+			return piece;
+		}
+/*		for(int i = 0; i < ActiveHand.Length; ++i)
 		{
 			HandSlot slot = ActiveHand[i];
 			if((!slot.Free) && (slot.Piece != null) && (!slot.Disabled))
@@ -97,6 +162,7 @@ public class PlayerDeck : MonoBehaviour {
 				CirclePatch patch = slot.Piece.GetComponent<CirclePatch>();
 				if(patch != null)
 				{
+					Debug.Log("asdladk");
 					float x1 = position.x;
 					float y1 = position.y;
 					float x2 = patch.transform.position.x;
@@ -143,7 +209,7 @@ public class PlayerDeck : MonoBehaviour {
 					}
 				}
 			}
-		}
+		}*/
 
 		return null;
 	}
@@ -179,8 +245,11 @@ public class PlayerDeck : MonoBehaviour {
 				HandSlot slot = ActiveHand[i];
 				if(slot.Free)
 				{
-					piece.transform.SetParent(transform.FindChild(i == 0 ? "Patch1" : "Patch2").transform);
-					piece.transform.localPosition = Vector3.zero;
+					SetLayerRecursively(piece.gameObject, 8 + i);
+					piece.transform.position = Vector3.zero;
+//					piece.transform.position = transform.FindChild(i == 0 ? "Patch1" : "Patch2").GetComponent<RectTransform>().position;
+//					piece.transform.SetParent(transform.FindChild(i == 0 ? "Patch1" : "Patch2").transform);
+//					piece.transform.localPosition = Vector3.zero;
 					//piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
 					slot.Free = false;
 					slot.Piece = piece;
@@ -198,8 +267,11 @@ public class PlayerDeck : MonoBehaviour {
 				HandSlot slot = ActiveHand[NumPatchesOnHand + i];
 				if(slot.Free)
 				{
-					piece.transform.SetParent(transform.FindChild("Decoration").transform);
-					piece.transform.localPosition = Vector3.zero;
+					SetLayerRecursively(piece.gameObject, 10);
+					piece.transform.position = Vector3.zero;
+//					piece.transform.position = transform.FindChild("Decoration").GetComponent<RectTransform>().position;
+//					piece.transform.SetParent(transform.FindChild("Decoration").transform);
+//					piece.transform.localPosition = Vector3.zero;
 					//piece.transform.parent = transform;
 					//piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
 					slot.Free = false;
@@ -225,8 +297,11 @@ public class PlayerDeck : MonoBehaviour {
 				CirclePatch newPatch = CreatePatch(patchConfig);
 				//newPatch.transform.parent = transform;
 				//newPatch.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
-				newPatch.transform.SetParent(transform.FindChild(i == 0 ? "Patch1" : "Patch2"));
-				newPatch.transform.localPosition = Vector3.zero;
+				SetLayerRecursively(newPatch.gameObject, 8 + i);
+				newPatch.transform.position = Vector3.zero;
+//				newPatch.transform.position = transform.FindChild(i == 0 ? "Patch1" : "Patch2").GetComponent<RectTransform>().position;
+//				newPatch.transform.SetParent(transform.FindChild(i == 0 ? "Patch1" : "Patch2"));
+//				newPatch.transform.localPosition = Vector3.zero;
 				slot.Free = false;
 				slot.Piece = newPatch;
 			}
@@ -242,8 +317,11 @@ public class PlayerDeck : MonoBehaviour {
 				DecorationCircleStopper newDecoration = CreateDecorationCircleStopper();
 				//newDecoration.transform.parent = transform;
 				//newDecoration.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
-				newDecoration.transform.SetParent(transform.FindChild("Decoration").transform);
-				newDecoration.transform.localPosition = Vector3.zero;
+				SetLayerRecursively(newDecoration.gameObject, 10);
+				newDecoration.transform.position = Vector3.zero;
+//				newDecoration.transform.position = transform.FindChild("Decoration").GetComponent<RectTransform>().position;
+				//newDecoration.transform.SetParent(transform.FindChild("Decoration").transform);
+				//newDecoration.transform.localPosition = Vector3.zero;
 				slot.Free = false;
 				slot.Piece = newDecoration;
 			}

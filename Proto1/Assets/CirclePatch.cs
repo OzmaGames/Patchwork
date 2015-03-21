@@ -342,10 +342,12 @@ public class CirclePatch : GamePieceBase {
 		size = CurrentSegment * SegmentScale;
 		maxSize = size;
 
-		circlePatchSize = (GameObject)Instantiate(CirclePatchSizePrefab, new Vector3(transform.position.x, transform.position.y, transform.position.z + (Game.ZPosAdd * 0.5f)), Quaternion.identity);
+//		circlePatchSize = (GameObject)Instantiate(CirclePatchSizePrefab, new Vector3(transform.position.x, transform.position.y, transform.position.z + (Game.ZPosAdd * 0.5f)), Quaternion.identity);
+		circlePatchSize = Instantiate(CirclePatchSizePrefab);
 
 		//circlePatchSize = new GameObject(gameObject.name + "_Size");
-		circlePatchSize.transform.parent = gameObject.transform;
+		circlePatchSize.transform.SetParent(gameObject.transform, false);
+//		circlePatchSize.transform.parent = gameObject.transform;
 		circlePatchSize.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.5f);
 		//TextMesh circlePatchSizeText = circlePatchSize.AddComponent<TextMesh>();
 		TextMesh circlePatchSizeText = circlePatchSize.GetComponent<TextMesh>();
@@ -353,7 +355,7 @@ public class CirclePatch : GamePieceBase {
 		// Fix aspect ratio of the text.
 		float pixelRatio = (Camera.main.orthographicSize * 2.0f) / Camera.main.pixelHeight;
 		circlePatchSize.transform.localScale = new Vector3(pixelRatio * 10.0f, pixelRatio * 10.0f, pixelRatio * 0.1f);
-		circlePatchSizeText.fontSize = 30;
+//		circlePatchSizeText.fontSize = 30;
 		circlePatchSizeText.text = Segments.ToString();
 
 		// Create symbol quad.
