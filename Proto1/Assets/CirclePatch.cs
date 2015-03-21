@@ -14,7 +14,6 @@ public class CirclePatch : GamePieceBase {
 	Texture2D[] circlePatchSizes;
 
 	static Mesh GeneratedMesh;
-	static GameObject CirclePatchSizePrefab;
 
 	public int Segments = 1;
 	int CurrentSegment = 0;
@@ -118,7 +117,6 @@ public class CirclePatch : GamePieceBase {
 
 	public static void GenerateSegments(int numSegments, float segmentSize)
 	{
-		CirclePatchSizePrefab = Resources.Load<GameObject>("Prefab/TextPrefab");
 		SymbolTexturePrefabs = new Texture2D[3];
 		SymbolTexturePrefabs[0] = Resources.Load<Texture2D>("textures/symbol_scissor");
 		SymbolTexturePrefabs[1] = Resources.Load<Texture2D>("textures/symbol_thread");
@@ -349,20 +347,6 @@ public class CirclePatch : GamePieceBase {
 		CurrentSegment = 1;
 		size = CurrentSegment * SegmentScale;
 		maxSize = size;
-
-//		circlePatchSize = (GameObject)Instantiate(CirclePatchSizePrefab, new Vector3(transform.position.x, transform.position.y, transform.position.z + (Game.ZPosAdd * 0.5f)), Quaternion.identity);
-		/*circlePatchSize = Instantiate(CirclePatchSizePrefab);
-
-		//circlePatchSize = new GameObject(gameObject.name + "_Size");
-		circlePatchSize.transform.SetParent(gameObject.transform, false);
-//		circlePatchSize.transform.parent = gameObject.transform;
-		circlePatchSize.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.5f);
-		TextMesh circlePatchSizeText = circlePatchSize.GetComponent<TextMesh>();
-
-		// Fix aspect ratio of the text.
-		float pixelRatio = (Camera.main.orthographicSize * 2.0f) / Camera.main.pixelHeight;
-		circlePatchSize.transform.localScale = new Vector3(pixelRatio * 10.0f, pixelRatio * 10.0f, pixelRatio * 0.1f);
-		circlePatchSizeText.text = Segments.ToString();*/
 
 		// Create symbol quad.
 		circlePatchSymbol = GameObject.CreatePrimitive(PrimitiveType.Quad);
