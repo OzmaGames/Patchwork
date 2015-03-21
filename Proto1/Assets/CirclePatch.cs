@@ -33,6 +33,7 @@ public class CirclePatch : GamePieceBase {
 	}
 	 Symbols Symbol = Symbols.Scissor;
 	static Texture2D[] SymbolTexturePrefabs;
+	static Texture2D[] PatchSizeNumberPrefabs;
 
 	public Texture2D[] PatternTextures;
 
@@ -122,6 +123,13 @@ public class CirclePatch : GamePieceBase {
 		SymbolTexturePrefabs[0] = Resources.Load<Texture2D>("textures/symbol_scissor");
 		SymbolTexturePrefabs[1] = Resources.Load<Texture2D>("textures/symbol_thread");
 		SymbolTexturePrefabs[2] = Resources.Load<Texture2D>("textures/symbol_needle");
+		PatchSizeNumberPrefabs = new Texture2D[6];
+		PatchSizeNumberPrefabs[0] = Resources.Load<Texture2D>("textures/patch_star_1");
+		PatchSizeNumberPrefabs[1] = Resources.Load<Texture2D>("textures/patch_star_2");
+		PatchSizeNumberPrefabs[2] = Resources.Load<Texture2D>("textures/patch_star_3");
+		PatchSizeNumberPrefabs[3] = Resources.Load<Texture2D>("textures/patch_star_4");
+		PatchSizeNumberPrefabs[4] = Resources.Load<Texture2D>("textures/patch_star_5");
+		PatchSizeNumberPrefabs[5] = Resources.Load<Texture2D>("textures/patch_star_6");
 
 		GeneratedMesh = new Mesh();
 		GeneratedMesh.subMeshCount = numSegments;
@@ -343,20 +351,18 @@ public class CirclePatch : GamePieceBase {
 		maxSize = size;
 
 //		circlePatchSize = (GameObject)Instantiate(CirclePatchSizePrefab, new Vector3(transform.position.x, transform.position.y, transform.position.z + (Game.ZPosAdd * 0.5f)), Quaternion.identity);
-		circlePatchSize = Instantiate(CirclePatchSizePrefab);
+		/*circlePatchSize = Instantiate(CirclePatchSizePrefab);
 
 		//circlePatchSize = new GameObject(gameObject.name + "_Size");
 		circlePatchSize.transform.SetParent(gameObject.transform, false);
 //		circlePatchSize.transform.parent = gameObject.transform;
 		circlePatchSize.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.5f);
-		//TextMesh circlePatchSizeText = circlePatchSize.AddComponent<TextMesh>();
 		TextMesh circlePatchSizeText = circlePatchSize.GetComponent<TextMesh>();
 
 		// Fix aspect ratio of the text.
 		float pixelRatio = (Camera.main.orthographicSize * 2.0f) / Camera.main.pixelHeight;
 		circlePatchSize.transform.localScale = new Vector3(pixelRatio * 10.0f, pixelRatio * 10.0f, pixelRatio * 0.1f);
-//		circlePatchSizeText.fontSize = 30;
-		circlePatchSizeText.text = Segments.ToString();
+		circlePatchSizeText.text = Segments.ToString();*/
 
 		// Create symbol quad.
 		circlePatchSymbol = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -374,9 +380,17 @@ public class CirclePatch : GamePieceBase {
 			idas = Symbols.Scissor;
 			break;
 		}
-		circlePatchSymbol.transform.parent = gameObject.transform;
-		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f);
+		circlePatchSymbol.transform.SetParent(gameObject.transform, false);
+		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f );
 		circlePatchSymbol.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+
+		// Create size quad.
+		circlePatchSize = GameObject.CreatePrimitive(PrimitiveType.Quad);
+		circlePatchSize.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
+		circlePatchSize.GetComponent<Renderer>().material.mainTexture = PatchSizeNumberPrefabs[Segments - 1];
+		circlePatchSize.transform.SetParent(gameObject.transform, false);
+		circlePatchSize.transform.localPosition = new Vector3(0.5f, 0.5f, Game.ZPosAdd * 0.35f);
+		circlePatchSize.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
 	}
 
 	public void SetSymbol(Symbols symbol)

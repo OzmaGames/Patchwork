@@ -29,6 +29,7 @@ public class Game : MonoBehaviour {
 	public PlayerPalette[] Palette;
 
 	public Texture2D[] Symbols;
+	public Texture2D[] PatchSizeNumbers;
 
 	public GameObject DeckObjectPrefab;
 
@@ -38,6 +39,7 @@ public class Game : MonoBehaviour {
 		public string Name;
 		public Texture2D[] PatchPatterns;
 		public Texture2D[] Decorations;
+		[System.NonSerialized]
 		public PlayerPalette Palette;
 	}
 	public PlayerSetting[] PlayerSettings;
