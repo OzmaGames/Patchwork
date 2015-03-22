@@ -257,7 +257,7 @@ public class Playfield : MonoBehaviour {
 	{
 		// Generate playfield cells.
 		BGTexture = bgTexture;	
-		GeneratedMesh = new Mesh();
+		//GeneratedMesh = new Mesh();
 		HalfHeight = halfHeight;
 		HalfWidth = halfWidth;
 		int width = (int)(HalfHeight) * (2 * (int)(CELL_SIZE));
@@ -265,11 +265,11 @@ public class Playfield : MonoBehaviour {
 		playfieldCells = new Cell[height, width];
 
 		// Initial generation of mesh.
-		GeneratedMesh.MarkDynamic();
+		/*GeneratedMesh.MarkDynamic();
 		GenerateMesh();
 
 		// Setup mesh.
-		/*MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
+		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
 		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
 		meshRenderer.material.shader = Shader.Find("Custom/Playfield");

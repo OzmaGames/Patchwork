@@ -46,7 +46,7 @@ public class Player : MonoBehaviour {
 		DeckObject = Instantiate(DeckObjectPrefab);
 		DeckObject.transform.SetParent(GameObject.Find("Canvas").transform, false);
 		Deck = DeckObject.GetComponent<PlayerDeck>();
-		Deck.Generate(20, 20, 2, 1, this, null);
+		Deck.Generate(20, 20, this);
 
 		/*GameObject deckObj = new GameObject(gameObject.name + "_Deck");
 		deckObj.transform.localPosition = new Vector3(0.0f, -5.0f, 0.0f);
@@ -102,8 +102,12 @@ public class Player : MonoBehaviour {
 
 	public void ConfirmPlacement()
 	{
-		ActivePlayfield.Place(this, activePiece);
+		// Save local refernece to piece and clear active piece.
+		GamePieceBase piece = activePiece;
 		activePiece = null;
+
+		// Place and tell game we're done.
+		ActivePlayfield.Place(this, piece);
 		isDone = true;
 
 		var btnAccept = ConfirmPlacementPrefab.transform.FindChild("Accept").GetComponent<UnityEngine.UI.Button>();
@@ -115,17 +119,22 @@ public class Player : MonoBehaviour {
 
 	public void DeclinePlacement()
 	{
-		if(Deck.AddToHand(activePiece))
-		{
-			activePiece = null;
-			Deck.Show();
-		}
+		PutBackInHand();
 
 		var btnAccept = ConfirmPlacementPrefab.transform.FindChild("Accept").GetComponent<UnityEngine.UI.Button>();
 		var btnDecline = ConfirmPlacementPrefab.transform.FindChild("Decline").GetComponent<UnityEngine.UI.Button>();
 		btnAccept.onClick.RemoveAllListeners();
 		btnDecline.onClick.RemoveAllListeners();
 		ConfirmPlacementPrefab.SetActive(false);
+	}
+
+	void PutBackInHand()
+	{
+		if(Deck.AddToHand(activePiece))
+		{
+			activePiece = null;
+			Deck.Show();
+		}
 	}
 
 	void Update()
@@ -169,12 +178,19 @@ public class Player : MonoBehaviour {
 						if(myDecoration != null)
 						{
 							//myDecoration.SetHighlight(true, new Color(0.5f, 0.0f, 0.0f));
-							for(int i = 0; i < collidedPieces.Count; ++i)
+							if(collidedPieces.Count == 0)
 							{
-								DecorationCircleStopper decoration = collidedPieces[i].GetComponent<DecorationCircleStopper>();
-								if(decoration != null)
+								PutBackInHand();
+							}
+							else
+							{
+								for(int i = 0; i < collidedPieces.Count; ++i)
 								{
-									decoration.StartFlash(WARNING_FLASH_COLOR_1, WARNING_FLASH_COLOR_2, CirclePatch.FLASH_TIME);
+									DecorationCircleStopper decoration = collidedPieces[i].GetComponent<DecorationCircleStopper>();
+									if(decoration != null)
+									{
+										decoration.StartFlash(WARNING_FLASH_COLOR_1, WARNING_FLASH_COLOR_2, CirclePatch.FLASH_TIME);
+									}
 								}
 							}
 						}

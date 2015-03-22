@@ -33,6 +33,7 @@ public class CirclePatch : GamePieceBase {
 	 Symbols Symbol = Symbols.Scissor;
 	static Texture2D[] SymbolTexturePrefabs;
 	static Texture2D[] PatchSizeNumberPrefabs;
+	static Texture2D[] RandomPatternTextures;
 
 	public Texture2D[] PatternTextures;
 
@@ -128,6 +129,13 @@ public class CirclePatch : GamePieceBase {
 		PatchSizeNumberPrefabs[3] = Resources.Load<Texture2D>("textures/patch_star_4");
 		PatchSizeNumberPrefabs[4] = Resources.Load<Texture2D>("textures/patch_star_5");
 		PatchSizeNumberPrefabs[5] = Resources.Load<Texture2D>("textures/patch_star_6");
+		RandomPatternTextures = new Texture2D[6];
+		RandomPatternTextures[0] = CreatePatternTexture((int)(Random.value * 255.0f));
+		RandomPatternTextures[1] = CreatePatternTexture((int)(Random.value * 255.0f));
+		RandomPatternTextures[2] = CreatePatternTexture((int)(Random.value * 255.0f));
+		RandomPatternTextures[3] = CreatePatternTexture((int)(Random.value * 255.0f));
+		RandomPatternTextures[4] = CreatePatternTexture((int)(Random.value * 255.0f));
+		RandomPatternTextures[5] = CreatePatternTexture((int)(Random.value * 255.0f));
 
 		GeneratedMesh = new Mesh();
 		GeneratedMesh.subMeshCount = numSegments;
@@ -250,7 +258,6 @@ public class CirclePatch : GamePieceBase {
 		return tex;
 	}
 
-	// Use this for initialization
 	void Start ()
 	{
 	}
@@ -317,7 +324,7 @@ public class CirclePatch : GamePieceBase {
 		{
 			material = meshRenderer.materials[s];
 			material.shader = Shader.Find("Custom/CirclePatch");
-			material.mainTexture = CreatePatternTexture((int)(Random.value * 255.0f));
+			material.mainTexture = RandomPatternTextures[Random.Range(0,6)];
 			material.SetTexture("_FabricTexture", PatternTextures[0]);
 			material.SetTexture("_PatternTexture2", PatternTextures[1]);
 			material.SetVector("_CirclePatchSize", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
@@ -350,6 +357,7 @@ public class CirclePatch : GamePieceBase {
 
 		// Create symbol quad.
 		circlePatchSymbol = GameObject.CreatePrimitive(PrimitiveType.Quad);
+		circlePatchSymbol.name = gameObject.name + "_Symbol";
 		circlePatchSymbol.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
 		SetSymbol(idas);
 		switch(idas)
@@ -370,6 +378,7 @@ public class CirclePatch : GamePieceBase {
 
 		// Create size quad.
 		circlePatchSize = GameObject.CreatePrimitive(PrimitiveType.Quad);
+		circlePatchSize.name = gameObject.name + "_Size";
 		circlePatchSize.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
 		circlePatchSize.GetComponent<Renderer>().material.mainTexture = PatchSizeNumberPrefabs[Segments - 1];
 		circlePatchSize.transform.SetParent(gameObject.transform, false);
@@ -415,6 +424,16 @@ public class CirclePatch : GamePieceBase {
 		}
 	}
 	
+	public override void AddToDeck()
+	{
+		transform.position = Vector3.zero;
+	}
+
+	public override void RemoveFromDeck()
+	{
+		transform.position = new Vector3(transform.position.x, transform.position.y, Game.BGZPos);
+	}
+
 	public override void Place()
 	{
 		CurrentSegment = 1;

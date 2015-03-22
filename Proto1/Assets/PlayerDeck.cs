@@ -5,22 +5,19 @@ using System.Collections.Generic;
 public class PlayerDeck : MonoBehaviour
 {
 
-	Mesh GeneratedMesh;
-	Texture2D BGTexture;
-
 	Player Owner;
 	public int NumPatches = 0;
 	public int NumDecorations = 0;
-	public int NumPatchesOnHand = 0;
-	public int NumDecorationsOnHand = 0;
 	public Stack<CirclePatch.PatchConfig> PatchConfigs;
-	
+
+	public GameObject PatchPrefab;
+	public GameObject DecorationPrefab;
+	public GameObject[] PatchesOnHand;
+	public GameObject[] DecorationsOnHand;
+
 	class HandSlot
 	{
-		public Vector2 Pos = Vector2.zero;
-		public bool Free = true;
 		public GamePieceBase Piece = null;
-		public bool Disabled = false;
 
 		public HandSlot()
 		{
@@ -35,8 +32,6 @@ public class PlayerDeck : MonoBehaviour
 	
 	void OnDestroy()
 	{
-		GeneratedMesh = null;
-		BGTexture = null;
 		Owner = null;
 		PatchConfigs.Clear();
 		PatchConfigs = null;
@@ -57,30 +52,26 @@ public class PlayerDeck : MonoBehaviour
 
 	public void Show()
 	{
-//		transform.parent = Camera.main.transform;
-//		transform.localPosition = new Vector3(transform.localPosition.x, transform.localPosition.y, 1.0f);
 		if(!Owner.ActivePlayfield.CanPlaceDecoration())
 		{
-			for(int i = 0; i < NumDecorationsOnHand; ++i)
+			for(int i = 0; i < DecorationsOnHand.Length; ++i)
 			{
-				HandSlot slot = ActiveHand[NumPatchesOnHand + i];
-				slot.Disabled = true;
+				DecorationsOnHand[i].GetComponent<UnityEngine.UI.Button>().interactable = false;
 			}
 		}
 		else
 		{
-			for(int i = 0; i < NumDecorationsOnHand; ++i)
+			for(int i = 0; i < DecorationsOnHand.Length; ++i)
 			{
-				HandSlot slot = ActiveHand[NumPatchesOnHand + i];
-				slot.Disabled = false;
+				DecorationsOnHand[i].GetComponent<UnityEngine.UI.Button>().interactable = true;
 			}
 		}
-		for(int i = 0; i < (NumPatchesOnHand + NumDecorationsOnHand); ++i)
+		for(int i = 0; i < (PatchesOnHand.Length + DecorationsOnHand.Length); ++i)
 		{
-			HandSlot slot = ActiveHand[i];
-			if(slot.Piece != null)
+			GamePieceBase piece = ActiveHand[i].Piece;
+			if(piece != null)
 			{
-				slot.Piece.gameObject.SetActive(true);
+				piece.gameObject.SetActive(true);
 			}
 		}
 		gameObject.SetActive(true);
@@ -88,7 +79,7 @@ public class PlayerDeck : MonoBehaviour
 
 	public void Hide()
 	{
-		for(int i = 0; i < (NumPatchesOnHand + NumDecorationsOnHand); ++i)
+		for(int i = 0; i < (PatchesOnHand.Length + DecorationsOnHand.Length); ++i)
 		{
 			HandSlot slot = ActiveHand[i];
 			if(slot.Piece != null)
@@ -117,20 +108,8 @@ public class PlayerDeck : MonoBehaviour
 	public void SelectPiece(int index)
 	{
 		HandSlot slot = ActiveHand[index];
-		if((!slot.Free) && (slot.Piece != null) && (!slot.Disabled))
+		if(slot.Piece != null)
 		{
-			CirclePatch patch = slot.Piece.GetComponent<CirclePatch>();
-			if(patch != null)
-			{
-				Debug.Log("Patch" + index);
-			}
-
-			DecorationCircleStopper decoration = slot.Piece.GetComponent<DecorationCircleStopper>();
-			if(decoration != null)
-			{
-				Debug.Log("Decoration");
-			}
-
 			selectedSlot = slot;
 		}
 	}
@@ -143,9 +122,9 @@ public class PlayerDeck : MonoBehaviour
 			SetLayerRecursively(piece.gameObject, 0);
 			piece.SetPosition(position.x, position.y);
 			piece.transform.parent = null;
+			piece.RemoveFromDeck();
 
 			// Remove from hand.
-			selectedSlot.Free = true;
 			selectedSlot.Piece = null;
 
 			// Deselect.
@@ -154,70 +133,15 @@ public class PlayerDeck : MonoBehaviour
 			// And return the selected piece.
 			return piece;
 		}
-/*		for(int i = 0; i < ActiveHand.Length; ++i)
-		{
-			HandSlot slot = ActiveHand[i];
-			if((!slot.Free) && (slot.Piece != null) && (!slot.Disabled))
-			{
-				CirclePatch patch = slot.Piece.GetComponent<CirclePatch>();
-				if(patch != null)
-				{
-					Debug.Log("asdladk");
-					float x1 = position.x;
-					float y1 = position.y;
-					float x2 = patch.transform.position.x;
-					float y2 = patch.transform.position.y;
-					float r1 = 0.1f;
-					float r2 = patch.GetSize() * 1.0f;//SegmentScale;
-					
-					float distance = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
-					float sumRadius = ((r1 + r2) * (r1 + r2));
-					if(distance <= sumRadius)
-					{
-						// Remove from hand.
-						slot.Free = true;
-						slot.Piece = null;
-						patch.transform.parent = null;
-						
-						// And return the selected piece.
-						return patch;
-					}
-				}
-
-				DecorationCircleStopper decoration = slot.Piece.GetComponent<DecorationCircleStopper>();
-				if(decoration != null)
-				{
-					float x1 = position.x;
-					float y1 = position.y;
-					float x2 = decoration.transform.position.x;
-					float y2 = decoration.transform.position.y;
-					float r1 = 0.1f;
-					float r2 = 0.5f;
-					
-					float distance = ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
-					float sumRadius = ((r1 + r2) * (r1 + r2));
-					if(distance <= sumRadius)
-					{	
-						// Remove from hand.
-						slot.Free = true;
-						slot.Piece = null;
-						decoration.transform.parent = null;
-						
-						// And return the selected piece.
-						decoration.isActive = true;
-						return decoration;
-					}
-				}
-			}
-		}*/
 
 		return null;
 	}
 
 	CirclePatch CreatePatch(CirclePatch.PatchConfig patchConfig)
 	{
-		GameObject patchObject = new GameObject(gameObject.name + "_Patch");
-		CirclePatch circlePatch = patchObject.AddComponent<CirclePatch>();
+		GameObject patchObject = Instantiate(PatchPrefab);
+		patchObject.name = gameObject.name + "_Patch";
+		CirclePatch circlePatch = patchObject.GetComponent<CirclePatch>();
 		circlePatch.Generate(patchConfig, Owner.PatternTextures, Owner.Colors, Owner.ComplementColor);
 		circlePatch.SetOwner(Owner);
 		return circlePatch;
@@ -225,12 +149,13 @@ public class PlayerDeck : MonoBehaviour
 	
 	DecorationCircleStopper CreateDecorationCircleStopper()
 	{
-		GameObject decorationObject = new GameObject(gameObject.name + "_Decoration");
-		DecorationCircleStopper decorationCircleStopper = decorationObject.AddComponent<DecorationCircleStopper>();
+		GameObject decorationObject = Instantiate(DecorationPrefab);
+		decorationObject.name = gameObject.name + "_Decoration";
+		DecorationCircleStopper decorationCircleStopper = decorationObject.GetComponent<DecorationCircleStopper>();
 		Texture2D decorationTexture = Owner.Decorations[Random.Range(0, Owner.Decorations.Length)];
 		decorationCircleStopper.Generate(1.0f, 1.0f, 1.0f, decorationTexture);
 		decorationCircleStopper.SetOwner(Owner);
-		return decorationObject.GetComponent<DecorationCircleStopper>();
+		return decorationCircleStopper;
 	}
 
 	public bool AddToHand(GamePieceBase piece)
@@ -240,18 +165,14 @@ public class PlayerDeck : MonoBehaviour
 		CirclePatch patch = piece.GetComponent<CirclePatch>();
 		if(patch != null)
 		{
-			for(int i = 0; i < NumPatchesOnHand; ++i)
+			for(int i = 0; i < PatchesOnHand.Length; ++i)
 			{
 				HandSlot slot = ActiveHand[i];
-				if(slot.Free)
+				if(slot.Piece == null)
 				{
 					SetLayerRecursively(piece.gameObject, 8 + i);
-					piece.transform.position = Vector3.zero;
-//					piece.transform.position = transform.FindChild(i == 0 ? "Patch1" : "Patch2").GetComponent<RectTransform>().position;
-//					piece.transform.SetParent(transform.FindChild(i == 0 ? "Patch1" : "Patch2").transform);
-//					piece.transform.localPosition = Vector3.zero;
-					//piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
-					slot.Free = false;
+					piece.SetPosition(0.0f, 0.0f); 
+					piece.AddToDeck();
 					slot.Piece = piece;
 					roomToAdd = true;
 					break;
@@ -262,19 +183,14 @@ public class PlayerDeck : MonoBehaviour
 		DecorationCircleStopper decoration = piece.GetComponent<DecorationCircleStopper>();
 		if(decoration != null)
 		{
-			for(int i = 0; i < NumDecorationsOnHand; ++i)
+			for(int i = 0; i < DecorationsOnHand.Length; ++i)
 			{
-				HandSlot slot = ActiveHand[NumPatchesOnHand + i];
-				if(slot.Free)
+				HandSlot slot = ActiveHand[PatchesOnHand.Length + i];
+				if(slot.Piece == null)
 				{
 					SetLayerRecursively(piece.gameObject, 10);
-					piece.transform.position = Vector3.zero;
-//					piece.transform.position = transform.FindChild("Decoration").GetComponent<RectTransform>().position;
-//					piece.transform.SetParent(transform.FindChild("Decoration").transform);
-//					piece.transform.localPosition = Vector3.zero;
-					//piece.transform.parent = transform;
-					//piece.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
-					slot.Free = false;
+					piece.SetPosition(0.0f, 0.0f); 
+					piece.AddToDeck();
 					slot.Piece = piece;
 					roomToAdd = true;
 					break;
@@ -288,97 +204,43 @@ public class PlayerDeck : MonoBehaviour
 	void FillActiveHand()
 	{
 		// Fill patches.
-		for(int i = 0; i < NumPatchesOnHand; ++i)
+		for(int i = 0; i < PatchesOnHand.Length; ++i)
 		{
 			HandSlot slot = ActiveHand[i];
-			if((slot.Free) && (PatchConfigs.Count > 0))
+			if((slot.Piece == null) && (PatchConfigs.Count > 0))
 			{
 				CirclePatch.PatchConfig patchConfig = PatchConfigs.Pop();
 				CirclePatch newPatch = CreatePatch(patchConfig);
-				//newPatch.transform.parent = transform;
-				//newPatch.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
 				SetLayerRecursively(newPatch.gameObject, 8 + i);
-				newPatch.transform.position = Vector3.zero;
-//				newPatch.transform.position = transform.FindChild(i == 0 ? "Patch1" : "Patch2").GetComponent<RectTransform>().position;
-//				newPatch.transform.SetParent(transform.FindChild(i == 0 ? "Patch1" : "Patch2"));
-//				newPatch.transform.localPosition = Vector3.zero;
-				slot.Free = false;
+				newPatch.SetPosition(0.0f, 0.0f); 
+				newPatch.AddToDeck();
 				slot.Piece = newPatch;
 			}
 		}
 
 		// Fill decorations.
-		for(int i = 0; i < NumDecorationsOnHand; ++i)
+		for(int i = 0; i < DecorationsOnHand.Length; ++i)
 		{
-			HandSlot slot = ActiveHand[NumPatchesOnHand + i];
-			if((slot.Free) && (NumDecorations > 0))
+			HandSlot slot = ActiveHand[PatchesOnHand.Length + i];
+			if((slot.Piece == null) && (NumDecorations > 0))
 			{
 				--NumDecorations;
 				DecorationCircleStopper newDecoration = CreateDecorationCircleStopper();
-				//newDecoration.transform.parent = transform;
-				//newDecoration.transform.localPosition = new Vector3(slot.Pos.x, slot.Pos.y, 0.0f);
 				SetLayerRecursively(newDecoration.gameObject, 10);
-				newDecoration.transform.position = Vector3.zero;
-//				newDecoration.transform.position = transform.FindChild("Decoration").GetComponent<RectTransform>().position;
-				//newDecoration.transform.SetParent(transform.FindChild("Decoration").transform);
-				//newDecoration.transform.localPosition = Vector3.zero;
-				slot.Free = false;
+				newDecoration.SetPosition(0.0f, 0.0f); 
+				newDecoration.AddToDeck();
 				slot.Piece = newDecoration;
 			}
 		}
 	}
 
-	public void Generate(int numPatches, int numDecorations, int numPatchesOnHand, int numDecorationsOnHand, Player owner, Texture2D bgTexture)
+	public void Generate(int numPatches, int numDecorations, Player owner)
 	{
 		Owner = owner;
-
-		// Generate background.
-		BGTexture = bgTexture;
-
-		GeneratedMesh = new Mesh();
-		
-		List<Vector3> vertices = new List<Vector3>();
-		List<Vector2> uvs = new List<Vector2>();
-		List<int> indices = new List<int>();
-
-		float width = 0.1f + (numPatchesOnHand * 2.0f) + 0.1f + (1.0f * 2.0f) + 0.1f;
-		float height = 0.1f + 2.0f + 0.1f;
-		float halfWidth = width / 2.0f;
-		float halfHeight = height / 2.0f;
-
-		vertices.Add(new Vector3(-halfWidth, halfHeight));
-		vertices.Add(new Vector3(-halfWidth, -halfHeight));
-		vertices.Add(new Vector3(halfWidth, -halfHeight));
-		vertices.Add(new Vector3(halfWidth, halfHeight));
-		uvs.Add(new Vector3(0.0f, 1.0f));
-		uvs.Add(new Vector3(0.0f, 0.0f));
-		uvs.Add(new Vector3(1.0f, 0.0f));
-		uvs.Add(new Vector3(1.0f, 1.0f));
-		indices.Add(2);
-		indices.Add(1);
-		indices.Add(0);
-		indices.Add(0);
-		indices.Add(3);
-		indices.Add(2);
-		GeneratedMesh.vertices = vertices.ToArray();
-		GeneratedMesh.uv = uvs.ToArray();
-		GeneratedMesh.triangles = indices.ToArray();
-		GeneratedMesh.RecalculateNormals();
-		GeneratedMesh.RecalculateBounds();
-		
-		/*// Setup mesh.
-		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
-		meshFilter.mesh = GeneratedMesh;
-		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
-		meshRenderer.material.shader = Shader.Find("Transparent/Diffuse");
-		meshRenderer.material.mainTexture = BGTexture;
-		meshRenderer.material.color = new Color(0.0f, 0.0f, 0.0f, 0.4f);*/
 
 		// Generate patch configs.
 		NumPatches = numPatches;
 		NumDecorations = numDecorations;
-		NumPatchesOnHand = numPatchesOnHand;
-		NumDecorationsOnHand = numDecorationsOnHand;
 		PatchConfigs = new Stack<CirclePatch.PatchConfig>();
 		for(int i = 0; i < NumPatches; ++i)
 		{
@@ -387,21 +249,10 @@ public class PlayerDeck : MonoBehaviour
 		}
 
 		// Setup active hand.
-		ActiveHand = new HandSlot[NumPatchesOnHand + NumDecorationsOnHand];
-		float posx = -halfWidth + 1.0f;
-		posx += 0.1f;
-		for(int i = 0; i < NumPatchesOnHand; ++i)
+		ActiveHand = new HandSlot[PatchesOnHand.Length + DecorationsOnHand.Length];
+		for(int i = 0; i < ActiveHand.Length; ++i)
 		{
 			ActiveHand[i] = new HandSlot();
-			ActiveHand[i].Pos = new Vector2(posx, 0.0f);
-			posx += 2.0f;
-		}
-		posx += 0.1f;
-		for(int i = 0; i < NumDecorationsOnHand; ++i)
-		{
-			ActiveHand[NumPatchesOnHand + i] = new HandSlot();
-			ActiveHand[NumPatchesOnHand + i].Pos = new Vector2(posx, 0.0f);
-			posx += 2.0f;
 		}
 
 		// Start hidden.

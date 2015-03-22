@@ -108,6 +108,18 @@ public class DecorationCircleStopper : GamePieceBase {
 		Owner = player;
 	}
 
+	public override void AddToDeck()
+	{
+		isActive = false;
+		transform.position = Vector3.zero;
+	}
+	
+	public override void RemoveFromDeck()
+	{
+		transform.position = new Vector3(transform.position.x, transform.position.y, Game.BGZPos);
+		isActive = true;
+	}
+	
 	public override void Place()
 	{
 		owner.PlaceDecoration(this);

@@ -5,6 +5,9 @@ public abstract class GamePieceBase : MonoBehaviour
 {
 	public const float FLASH_SPEED = 4.0f;
 
+	public abstract void AddToDeck();
+	public abstract void RemoveFromDeck();
+
 //	public abstract void CanPlaceAt();
 	public abstract void Place();
 	public abstract void SetPosition(float x, float y);

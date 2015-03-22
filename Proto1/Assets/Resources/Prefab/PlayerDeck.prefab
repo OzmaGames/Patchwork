@@ -170,7 +170,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: .960784316, g: .960784316, b: .960784316, a: 1}
     m_PressedColor: {r: .784313738, g: .784313738, b: .784313738, a: 1}
-    m_DisabledColor: {r: .784313738, g: .784313738, b: .784313738, a: .501960814}
+    m_DisabledColor: {r: .784313738, g: .784313738, b: .784313738, a: .274509817}
     m_ColorMultiplier: 1
     m_FadeDuration: .100000001
   m_SpriteState:
@@ -214,8 +214,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NumPatches: 0
   NumDecorations: 0
-  NumPatchesOnHand: 0
-  NumDecorationsOnHand: 0
+  PatchPrefab: {fileID: 100000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+  DecorationPrefab: {fileID: 100000, guid: 7393fb028d0554bf69b479296b9cdb43, type: 2}
+  PatchesOnHand:
+  - {fileID: 194840}
+  - {fileID: 109480}
+  DecorationsOnHand:
+  - {fileID: 108434}
 --- !u!114 &11438662
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -238,7 +243,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: .960784316, g: .960784316, b: .960784316, a: 1}
     m_PressedColor: {r: .784313738, g: .784313738, b: .784313738, a: 1}
-    m_DisabledColor: {r: .784313738, g: .784313738, b: .784313738, a: .501960814}
+    m_DisabledColor: {r: .784313738, g: .784313738, b: .784313738, a: .274509817}
     m_ColorMultiplier: 1
     m_FadeDuration: .100000001
   m_SpriteState:
@@ -311,7 +316,7 @@ MonoBehaviour:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: .960784316, g: .960784316, b: .960784316, a: 1}
     m_PressedColor: {r: .784313738, g: .784313738, b: .784313738, a: 1}
-    m_DisabledColor: {r: .784313738, g: .784313738, b: .784313738, a: .501960814}
+    m_DisabledColor: {r: .784313738, g: .784313738, b: .784313738, a: .274509817}
     m_ColorMultiplier: 1
     m_FadeDuration: .100000001
   m_SpriteState:
