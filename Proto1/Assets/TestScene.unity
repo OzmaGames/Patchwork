@@ -635,10 +635,10 @@ MonoBehaviour:
     - {fileID: 2800000, guid: b984c890616c9453d9f27c37a27b313a, type: 3}
   MenuBGPrefab: {fileID: 1935872088}
   LogoPrefab: {fileID: 425887693}
+  QuitPrefab: {fileID: 423320396}
   WindowPrefab: {fileID: 1736654349}
   PlayerStatsPrefab: {fileID: 1578275042}
   TurnPrefab: {fileID: 816955867}
-  QuitPrefab: {fileID: 423320396}
   HelpPrefab: {fileID: 0}
   ConfirmPlacementPrefab: {fileID: 2024404692}
 --- !u!4 &18623757
@@ -3631,6 +3631,7 @@ GameObject:
   - 222: {fileID: 816955870}
   - 114: {fileID: 816955869}
   - 114: {fileID: 816955871}
+  - 225: {fileID: 816955872}
   m_Layer: 5
   m_Name: Turn
   m_TagString: Untagged
@@ -3701,6 +3702,17 @@ MonoBehaviour:
   m_EffectColor: {r: 0, g: 0, b: 0, a: .5}
   m_EffectDistance: {x: 2, y: 2}
   m_UseGraphicAlpha: 1
+--- !u!225 &816955872
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 816955867}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &842404511
 GameObject:
   m_ObjectHideFlags: 0
@@ -6543,6 +6555,7 @@ GameObject:
   m_Component:
   - 224: {fileID: 1578275043}
   - 114: {fileID: 1578275044}
+  - 225: {fileID: 1578275045}
   m_Layer: 5
   m_Name: PlayerStats
   m_TagString: Untagged
@@ -6589,6 +6602,17 @@ MonoBehaviour:
   m_Spacing: 0
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
+--- !u!225 &1578275045
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1578275042}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &1592774281
 GameObject:
   m_ObjectHideFlags: 0

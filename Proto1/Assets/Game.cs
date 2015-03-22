@@ -78,6 +78,7 @@ public class Game : MonoBehaviour {
 
 		public override void Start()
 		{
+			ActiveGame.QuitPrefab.SetActive(false);
 			menubg = ActiveGame.MenuBGPrefab.GetComponent<UIMenuBG>();
 			menubg.gameObject.SetActive(true);
 			menubg.Show();
@@ -111,6 +112,7 @@ public class Game : MonoBehaviour {
 		}
 	}
 
+	public GameObject QuitPrefab;
 	public GameObject WindowPrefab;
 	class StartGameState : State
 	{
@@ -119,6 +121,7 @@ public class Game : MonoBehaviour {
 
 		public override void Start()
 		{
+			ActiveGame.QuitPrefab.SetActive(true);
 			menubg = ActiveGame.MenuBGPrefab.GetComponent<UIMenuBG>();
 			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
 			uiWindow.gameObject.SetActive(true);
@@ -179,7 +182,6 @@ public class Game : MonoBehaviour {
 
 	public GameObject PlayerStatsPrefab;
 	public GameObject TurnPrefab;
-	public GameObject QuitPrefab;
 	public GameObject HelpPrefab;
 	public GameObject ConfirmPlacementPrefab;
 	class MainGameState : State
@@ -217,14 +219,12 @@ public class Game : MonoBehaviour {
 			txtPlayer2Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
 			ActiveGame.TurnPrefab.SetActive(true);
 			txtTurn = ActiveGame.TurnPrefab.GetComponent<UnityEngine.UI.Text>();
-			ActiveGame.QuitPrefab.SetActive(true);
 //			ActiveGame.HelpPrefab.SetActive(true);
 			UpdateUI();
 		}
 
 		public override void Stop()
 		{
-			ActiveGame.QuitPrefab.SetActive(false);
 //			ActiveGame.HelpPrefab.SetActive(false);
 			ActiveGame.PlayerStatsPrefab.SetActive(false);
 			ActiveGame.TurnPrefab.SetActive(false);
