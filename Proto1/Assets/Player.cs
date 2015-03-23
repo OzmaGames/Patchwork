@@ -35,12 +35,7 @@ public class Player : MonoBehaviour {
 	GamePieceBase activePiece;	
 	bool myTurn = false;
 	bool isDone = false;
-	public bool IsDone
-	{
-		get { return isDone; }
-	}
 
-	// Use this for initialization
 	void Start () {
 		// Create deck.
 		DeckObject = Instantiate(DeckObjectPrefab);
@@ -61,7 +56,23 @@ public class Player : MonoBehaviour {
 
 	public void TurnOver()
 	{
+		isDone = true;
 		myTurn = false;
+
+		// Clean up.
+		if(activePiece != null)
+		{
+			if(Deck.AddToHand(activePiece))
+			{
+				activePiece = null;
+			}
+
+			var btnAccept = ConfirmPlacementPrefab.transform.FindChild("Accept").GetComponent<UnityEngine.UI.Button>();
+			var btnDecline = ConfirmPlacementPrefab.transform.FindChild("Decline").GetComponent<UnityEngine.UI.Button>();
+			btnAccept.onClick.RemoveAllListeners();
+			btnDecline.onClick.RemoveAllListeners();
+			ConfirmPlacementPrefab.SetActive(false);
+		}
 
 		// Hide deck.
 		Deck.Hide();
@@ -163,6 +174,11 @@ public class Player : MonoBehaviour {
 		}
 	}
 
+	public bool IsDone()
+	{
+		return isDone && ActivePlayfield.IsDone();
+	}
+
 	void Update()
 	{
 		if(myTurn && (!isDone) && (ConfirmPlacementPrefab.activeSelf == false))
@@ -175,6 +191,12 @@ public class Player : MonoBehaviour {
 
 			Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
 			mouseWorldPosition.z = 0.0f;
+			Vector3 vp = Camera.main.WorldToViewportPoint(mouseWorldPosition);
+			vp.x = Mathf.Clamp(vp.x, 0.045f, 0.955f);
+			vp.y = Mathf.Clamp(vp.y, 0.07f, 0.93f);
+			Vector3 vpWorld = Camera.main.ViewportToWorldPoint(vp);
+			mouseWorldPosition.x = vpWorld.x;
+			mouseWorldPosition.y = vpWorld.y;
 			if(activePiece != null)
 			{
 				if(Input.GetMouseButton(0))

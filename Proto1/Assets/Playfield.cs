@@ -449,6 +449,19 @@ public class Playfield : MonoBehaviour {
 		playfieldCells = null; 
 	}
 
+	public bool IsDone()
+	{
+		for(int p = 0; p < Patches.Count; ++p)
+		{
+			CirclePatch patch = Patches[p].Patch;
+			if(!patch.HasSegmentStoppedGrowing())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	void Update()
 	{
 		CheckForCollision();

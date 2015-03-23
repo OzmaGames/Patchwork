@@ -181,6 +181,7 @@ public class Game : MonoBehaviour {
 		}
 	}
 
+	bool abortGameSession = false;
 	public GameObject QuitPrefab;
 	public GameObject PlayerStatsPrefab;
 	public GameObject TurnPrefab;
@@ -201,6 +202,8 @@ public class Game : MonoBehaviour {
 
 		public override void Start()
 		{
+			ActiveGame.abortGameSession = false;
+
 			ActiveGame.QuitPrefab.SetActive(true);
 
 			// Create playfield.
@@ -261,8 +264,14 @@ public class Game : MonoBehaviour {
 				Camera.main.transform.position = newPos;
 			}*/
 			
-			if(CurrentRound >= ActiveGame.NumRounds)
+			if((CurrentRound >= ActiveGame.NumRounds) || (ActiveGame.abortGameSession))
 			{
+				PlayerInfo currentPlayerInfo = ActivePlayer.Current;
+				if(currentPlayerInfo != null)
+				{
+					currentPlayerInfo.Player.TurnOver();
+				}
+
 				// GAME OVER!!!!
 				ActivePlayfield.HideSymbols();
 				ActiveGame.SetState(new GameOverState(Players, ActivePlayfield));
@@ -274,7 +283,7 @@ public class Game : MonoBehaviour {
 				PlayerInfo currentPlayerInfo = ActivePlayer.Current;
 				if(currentPlayerInfo != null)
 				{
-					if(currentPlayerInfo.Player.IsDone)
+					if(currentPlayerInfo.Player.IsDone())
 					{
 						// Signal turn as done.
 						currentPlayerInfo.Player.TurnOver();
@@ -327,7 +336,7 @@ public class Game : MonoBehaviour {
 			txtPlayer1Score.text = Players[0].Player.Score.ToString();
 			txtPlayer2Name.text = Players[1].Player.gameObject.name;
 			txtPlayer2Score.text = Players[1].Player.Score.ToString();
-			txtTurn.text = "turn " + CurrentRound + "/" + ActiveGame.NumRounds;
+			txtTurn.text = "turn " + (CurrentRound + 1) + "/" + ActiveGame.NumRounds;
 		}
 
 		void AddPlayer(PlayerSetting playerSetting)
@@ -498,6 +507,12 @@ public class Game : MonoBehaviour {
 	void Update()
 	{
 		CurrentState.Update();
+	}
+
+	public void AbortGameSession()
+	{
+		abortGameSession = true;
+
 	}
 
 	public void Quit()

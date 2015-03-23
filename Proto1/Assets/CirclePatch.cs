@@ -48,6 +48,7 @@ public class CirclePatch : GamePieceBase {
 
 	Player Owner;
 
+	bool segmentDoneGrowing = false;
 	bool doneGrowing = false;
 	bool collided = false;
 	bool isPlaced = false;
@@ -472,11 +473,12 @@ public class CirclePatch : GamePieceBase {
 
 	public void NextSegment()
 	{
-		if(CurrentSegment < Segments)
+		if(!HasStoppedGrowing())
 		{
 			++CurrentSegment;
 			maxSize = (CurrentSegment * SegmentScale);
 			CurrentSegmentArcSize = 0.0f;
+			SetSegmentGrowthDone(false);
 		}
 	}
 
@@ -490,11 +492,44 @@ public class CirclePatch : GamePieceBase {
 	{
 		return collided;
 	}
+
+	void Grow()
+	{
+		MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+		Material material;
+		for(int s = 0; s < CurrentSegment; ++s)
+		{
+			material = meshRenderer.materials[s];
+			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
+			material.SetFloat("_CirclePatchRadius", OuterRadius);
+			material.SetFloat("_CirclePatchLayer", CurrentSegment);
+			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
+		}
+		//CurrentSegmentArcSize += 10.0f;
+		//if(CurrentSegmentArcSize > 360.0f)
+		{
+			size += GROWTH_SPEED * Time.deltaTime;
+			//CurrentSegmentArcSize = 0.0f;
+		}
+	}
+	
+	public void SetSegmentGrowthDone(bool enable)
+	{
+		segmentDoneGrowing = enable;
+		if((segmentDoneGrowing) && (CurrentSegment >= Segments))
+		{
+			SetGrowthDone(true);
+		}
+	}
+	
+	public bool HasSegmentStoppedGrowing()
+	{
+		return segmentDoneGrowing;
+	}
 	
 	public void SetGrowthDone(bool enable)
 	{
 		doneGrowing = enable;
-		circlePatchSize.GetComponent<Renderer>().enabled = false;
 		SetShowSymbol(false);
 		Owner.AddScore((int)size);
 
@@ -502,6 +537,11 @@ public class CirclePatch : GamePieceBase {
 		StartFlash(new Color(-0.5f, -0.5f, -0.5f), new Color(0.5f, 0.5f, 0.5f), FLASH_TIME);
 	}
 
+	public bool HasStoppedGrowing()
+	{
+		return doneGrowing;
+	}
+	
 	public override void SetHighlight(bool enable, Color color)
 	{
 		doHighlight = enable;
@@ -583,11 +623,6 @@ public class CirclePatch : GamePieceBase {
 		circlePatchSize.GetComponent<Renderer>().enabled = show;
 	}
 
-	public bool HasStoppedGrowing()
-	{
-		return doneGrowing;
-	}
-
 	public override void SetPosition(float x, float y)
 	{
 		transform.position = new Vector3(x, y, transform.position.z);
@@ -615,30 +650,15 @@ public class CirclePatch : GamePieceBase {
 	{
 		if(isPlaced)
 		{
-			if(!doneGrowing)
+			if(!HasStoppedGrowing())
 			{
 				if(size < maxSize)
 				{
-					MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-					Material material;
-					for(int s = 0; s < CurrentSegment; ++s)
-					{
-						material = meshRenderer.materials[s];
-						material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
-						material.SetFloat("_CirclePatchRadius", OuterRadius);
-						material.SetFloat("_CirclePatchLayer", CurrentSegment);
-						material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
-					}
-					//CurrentSegmentArcSize += 10.0f;
-					//if(CurrentSegmentArcSize > 360.0f)
-					{
-						size += GROWTH_SPEED * Time.deltaTime;
-						//CurrentSegmentArcSize = 0.0f;
-					}
+					Grow();
 				}
-				else if(CurrentSegment >= Segments)
+				else
 				{
-					SetGrowthDone(true);
+					SetSegmentGrowthDone(true);
 				}
 			}
 			if(doHighlight)
@@ -652,6 +672,7 @@ public class CirclePatch : GamePieceBase {
 		}
 		else
 		{
+			// Handle placement of score along the screen bounds.
 			Vector3 scoreLocalPos = new Vector3(0.5f, 0.5f, circlePatchSize.transform.localPosition.z);
 			circlePatchSize.transform.localPosition = scoreLocalPos;
 			Vector3 vp = Camera.main.WorldToViewportPoint(circlePatchSize.transform.position);
@@ -659,7 +680,7 @@ public class CirclePatch : GamePieceBase {
 			{
 				scoreLocalPos.x -= 1.0f;
 			}
-			if(vp.y > 0.97f)
+			if(vp.y > 0.965f)
 			{
 				scoreLocalPos.y -= 1.0f;
 			}
