@@ -39,8 +39,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c1315db4c73c4ac3863c54f7eca33b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CirclePatchSizePrefab: {fileID: 100000, guid: 088ac805b622440d2a9cd4b452eee66e,
-    type: 2}
+  AddColor: {r: 0, g: 0, b: 0, a: 1}
   Segments: 1
   PatternTextures: []
 --- !u!1001 &100100000
@@ -54,4 +53,3 @@ Prefab:
   m_ParentPrefab: {fileID: 0}
   m_RootGameObject: {fileID: 100000}
   m_IsPrefabParent: 1
-  m_IsExploded: 1

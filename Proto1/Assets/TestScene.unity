@@ -184,7 +184,7 @@ MonoBehaviour:
   PlayerNormalColor: {r: 1, g: 1, b: 1, a: 1}
   BGTexture: {fileID: 2800000, guid: fe89dc739a7964cd6b383221c644b5c3, type: 3}
   PlayAreaHalfSize: {x: 25, y: 25}
-  NumRounds: 1
+  NumRounds: 12
   Palette:
   - Colors:
     - key0:

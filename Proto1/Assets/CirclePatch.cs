@@ -13,6 +13,8 @@ public class CirclePatch : GamePieceBase {
 
 	Texture2D[] circlePatchSizes;
 
+	public Color AddColor = Color.black;
+
 	static Mesh GeneratedMesh;
 
 	public int Segments = 1;
