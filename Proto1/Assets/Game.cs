@@ -14,6 +14,9 @@ public class Game : MonoBehaviour {
 	public static float FGZPos = FGLayerZ + ZPosAdd;
 	public static float UIZPos = UILayerZ + ZPosAdd;
 
+	public Color PlayerHighlightColor;
+	public Color PlayerNormalColor;
+
 	public Texture2D BGTexture;
 
 	public Vector2 PlayAreaHalfSize = new Vector2(25.0f, 25.0f);
@@ -112,7 +115,6 @@ public class Game : MonoBehaviour {
 		}
 	}
 
-	public GameObject QuitPrefab;
 	public GameObject WindowPrefab;
 	class StartGameState : State
 	{
@@ -121,7 +123,6 @@ public class Game : MonoBehaviour {
 
 		public override void Start()
 		{
-			ActiveGame.QuitPrefab.SetActive(true);
 			menubg = ActiveGame.MenuBGPrefab.GetComponent<UIMenuBG>();
 			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
 			uiWindow.gameObject.SetActive(true);
@@ -180,6 +181,7 @@ public class Game : MonoBehaviour {
 		}
 	}
 
+	public GameObject QuitPrefab;
 	public GameObject PlayerStatsPrefab;
 	public GameObject TurnPrefab;
 	public GameObject HelpPrefab;
@@ -199,6 +201,8 @@ public class Game : MonoBehaviour {
 
 		public override void Start()
 		{
+			ActiveGame.QuitPrefab.SetActive(true);
+
 			// Create playfield.
 			GameObject playfieldObject = new GameObject("Playfield");
 			playfieldObject.transform.localPosition = new Vector3(0.0f, 0.0f, -0.5f);
@@ -228,6 +232,7 @@ public class Game : MonoBehaviour {
 //			ActiveGame.HelpPrefab.SetActive(false);
 			ActiveGame.PlayerStatsPrefab.SetActive(false);
 			ActiveGame.TurnPrefab.SetActive(false);
+			ActiveGame.QuitPrefab.SetActive(false);
 		}
 		
 		public override void Update()
@@ -304,18 +309,18 @@ public class Game : MonoBehaviour {
 		{
 			if(ActivePlayer.Current == Players[0])
 			{
-				txtPlayer1Name.color = Color.red;
-				txtPlayer2Name.color = Color.white;
+				txtPlayer1Name.color = ActiveGame.PlayerHighlightColor;
+				txtPlayer2Name.color = ActiveGame.PlayerNormalColor;
 			}
 			else if(ActivePlayer.Current == Players[1])
 			{
-				txtPlayer1Name.color = Color.white;
-				txtPlayer2Name.color = Color.red;
+				txtPlayer1Name.color = ActiveGame.PlayerNormalColor;
+				txtPlayer2Name.color = ActiveGame.PlayerHighlightColor;
 			}
 			else
 			{
-				txtPlayer1Name.color = Color.white;
-				txtPlayer2Name.color = Color.white;
+				txtPlayer1Name.color = ActiveGame.PlayerNormalColor;
+				txtPlayer2Name.color = ActiveGame.PlayerNormalColor;
 			}
 			txtPlayer1Name.text = Players[0].Player.gameObject.name;
 			txtPlayer1Score.text = Players[0].Player.Score.ToString();
