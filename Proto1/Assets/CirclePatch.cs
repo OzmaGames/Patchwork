@@ -580,6 +580,7 @@ public class CirclePatch : GamePieceBase {
 	public void SetShowSymbol(bool show)
 	{
 		circlePatchSymbol.GetComponent<Renderer>().enabled = show;
+		circlePatchSize.GetComponent<Renderer>().enabled = show;
 	}
 
 	public bool HasStoppedGrowing()
@@ -648,6 +649,21 @@ public class CirclePatch : GamePieceBase {
 			{
 				UpdateFlash();
 			}
+		}
+		else
+		{
+			Vector3 scoreLocalPos = new Vector3(0.5f, 0.5f, circlePatchSize.transform.localPosition.z);
+			circlePatchSize.transform.localPosition = scoreLocalPos;
+			Vector3 vp = Camera.main.WorldToViewportPoint(circlePatchSize.transform.position);
+			if(vp.x > 0.97f)
+			{
+				scoreLocalPos.x -= 1.0f;
+			}
+			if(vp.y > 0.97f)
+			{
+				scoreLocalPos.y -= 1.0f;
+			}
+			circlePatchSize.transform.localPosition = scoreLocalPos;
 		}
 	}
 }

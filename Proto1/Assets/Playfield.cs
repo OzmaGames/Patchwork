@@ -252,6 +252,22 @@ public class Playfield : MonoBehaviour {
 			}
 		}
 	}
+
+	public void ShowSymbols()
+	{
+		for(int p = 0; p < Patches.Count; ++p)
+		{
+			Patches[p].Patch.SetShowSymbol(true);
+		}
+	}
+
+	public void HideSymbols()
+	{
+		for(int p = 0; p < Patches.Count; ++p)
+		{
+			Patches[p].Patch.SetShowSymbol(false);
+		}
+	}
 	
 	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture)
 	{

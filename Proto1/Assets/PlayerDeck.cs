@@ -17,7 +17,8 @@ public class PlayerDeck : MonoBehaviour
 
 	class HandSlot
 	{
-		public GamePieceBase Piece = null;
+		public GamePieceBase Piece;
+		public GameObject uiButton;
 
 		public HandSlot()
 		{
@@ -108,7 +109,7 @@ public class PlayerDeck : MonoBehaviour
 	public void SelectPiece(int index)
 	{
 		HandSlot slot = ActiveHand[index];
-		if(slot.Piece != null)
+		if((slot.Piece != null) && (slot.uiButton.GetComponent<UnityEngine.UI.Button>().interactable))
 		{
 			selectedSlot = slot;
 		}
@@ -250,9 +251,15 @@ public class PlayerDeck : MonoBehaviour
 
 		// Setup active hand.
 		ActiveHand = new HandSlot[PatchesOnHand.Length + DecorationsOnHand.Length];
-		for(int i = 0; i < ActiveHand.Length; ++i)
+		for(int i = 0; i < PatchesOnHand.Length; ++i)
 		{
 			ActiveHand[i] = new HandSlot();
+			ActiveHand[i].uiButton = PatchesOnHand[i];
+		}
+		for(int i = 0; i < DecorationsOnHand.Length; ++i)
+		{
+			ActiveHand[i + PatchesOnHand.Length] = new HandSlot();
+			ActiveHand[i + PatchesOnHand.Length].uiButton = DecorationsOnHand[i];
 		}
 
 		// Start hidden.

@@ -264,6 +264,7 @@ public class Game : MonoBehaviour {
 			if(CurrentRound >= ActiveGame.NumRounds)
 			{
 				// GAME OVER!!!!
+				ActivePlayfield.HideSymbols();
 				ActiveGame.SetState(new GameOverState(Players, ActivePlayfield));
 				return;
 			}
