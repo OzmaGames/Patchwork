@@ -153,11 +153,6 @@ public class Player : MonoBehaviour {
 					List<GamePieceBase> collidedPieces;
 					if(ActivePlayfield.CanPlaceAt(this, activePiece, activePiece.transform.position, out collidedPieces))
 					{
-						/*Plane[] planes = GeometryUtility.CalculateFrustumPlanes(Camera.main);
-						Bounds bounds = activePiece.GetComponent<Renderer>().bounds;
-						bool collide = GeometryUtility.TestPlanesAABB(planes, bounds);
-						Debug.Log(collide);*/
-
 						var btnAccept = ConfirmPlacementPrefab.transform.FindChild("Accept").GetComponent<UnityEngine.UI.Button>();
 						var btnDecline = ConfirmPlacementPrefab.transform.FindChild("Decline").GetComponent<UnityEngine.UI.Button>();
 						btnAccept.onClick.AddListener(() => ConfirmPlacement());
@@ -173,7 +168,6 @@ public class Player : MonoBehaviour {
 						{
 							confirmPos.y += 0.5f;
 						}
-						Debug.Log(vp.y);
 						ConfirmPlacementPrefab.transform.position = confirmPos;
 						
 						ConfirmPlacementPrefab.SetActive(true);
