@@ -191,12 +191,12 @@ public class Player : MonoBehaviour {
 
 			Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(mousePosition);
 			mouseWorldPosition.z = 0.0f;
-			Vector3 vp = Camera.main.WorldToViewportPoint(mouseWorldPosition);
+			/*Vector3 vp = Camera.main.WorldToViewportPoint(mouseWorldPosition);
 			vp.x = Mathf.Clamp(vp.x, 0.045f, 0.955f);
 			vp.y = Mathf.Clamp(vp.y, 0.07f, 0.93f);
 			Vector3 vpWorld = Camera.main.ViewportToWorldPoint(vp);
 			mouseWorldPosition.x = vpWorld.x;
-			mouseWorldPosition.y = vpWorld.y;
+			mouseWorldPosition.y = vpWorld.y;*/
 			if(activePiece != null)
 			{
 				if(Input.GetMouseButton(0))

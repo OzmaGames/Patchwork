@@ -16,4 +16,7 @@ public abstract class GamePieceBase : MonoBehaviour
 
 	public abstract void StartFlash(Color startColor, Color endColor, float time);
 	public abstract void SetHighlight(bool enable, Color color);
+
+	public abstract void StartEffect(string effect);
+	public abstract void StopEffect();
 }

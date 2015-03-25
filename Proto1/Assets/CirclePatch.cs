@@ -8,6 +8,7 @@ public class CirclePatch : GamePieceBase {
 	public const float FLASH_TIME = 1.0f;
 	const float GROWTH_SPEED = 0.5f;
 
+	public GameObject patchObject;
 	GameObject circlePatchSize;
 	GameObject circlePatchSymbol;
 
@@ -32,7 +33,7 @@ public class CirclePatch : GamePieceBase {
 		Thread,
 		Needle
 	}
-	 Symbols Symbol = Symbols.Scissor;
+	Symbols Symbol = Symbols.Scissor;
 	static Texture2D[] SymbolTexturePrefabs;
 	static Texture2D[] PatchSizeNumberPrefabs;
 	static Texture2D[] RandomPatternTextures;
@@ -317,9 +318,9 @@ public class CirclePatch : GamePieceBase {
 		patchSegments = new PatchSegment[Segments]; 
 
 		// Setup mesh.
-		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
+		MeshFilter meshFilter = patchObject.GetComponent<MeshFilter>();
 		meshFilter.mesh = GeneratedMesh;
-		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
+		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
 		meshRenderer.materials = new Material[GeneratedMesh.subMeshCount];
 		Material material;
 		List<string> shaderKeywords;
@@ -360,7 +361,7 @@ public class CirclePatch : GamePieceBase {
 
 		// Create symbol quad.
 		circlePatchSymbol = GameObject.CreatePrimitive(PrimitiveType.Quad);
-		circlePatchSymbol.name = gameObject.name + "_Symbol";
+		circlePatchSymbol.name = patchObject.name + "_Symbol";
 		circlePatchSymbol.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
 		SetSymbol(idas);
 		switch(idas)
@@ -375,16 +376,16 @@ public class CirclePatch : GamePieceBase {
 			idas = Symbols.Scissor;
 			break;
 		}
-		circlePatchSymbol.transform.SetParent(gameObject.transform, false);
+		circlePatchSymbol.transform.SetParent(patchObject.transform, false);
 		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f );
 		circlePatchSymbol.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
 
 		// Create size quad.
 		circlePatchSize = GameObject.CreatePrimitive(PrimitiveType.Quad);
-		circlePatchSize.name = gameObject.name + "_Size";
+		circlePatchSize.name = patchObject.name + "_Size";
 		circlePatchSize.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
 		circlePatchSize.GetComponent<Renderer>().material.mainTexture = PatchSizeNumberPrefabs[Segments - 1];
-		circlePatchSize.transform.SetParent(gameObject.transform, false);
+		circlePatchSize.transform.SetParent(patchObject.transform, false);
 		circlePatchSize.transform.localPosition = new Vector3(0.5f, 0.5f, Game.ZPosAdd * 0.35f);
 		circlePatchSize.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
 	}
@@ -415,7 +416,7 @@ public class CirclePatch : GamePieceBase {
 	public void SwapColors(Gradient[] colors, Gradient complementColor)
 	{
 		Material material;
-		Renderer renderer = GetComponent<Renderer>();
+		Renderer renderer = patchObject.GetComponent<Renderer>();
 		for(int s = 0; s < Segments; ++s)
 		{
 			material = renderer.materials[s];
@@ -443,7 +444,7 @@ public class CirclePatch : GamePieceBase {
 		size = CurrentSegment * SegmentScale;
 		maxSize = size;
 		Material material;
-		Renderer renderer = GetComponent<Renderer>();
+		Renderer renderer = patchObject.GetComponent<Renderer>();
 		for(int s = 0; s < CurrentSegment; ++s)
 		{
 			material = renderer.materials[s];
@@ -495,7 +496,7 @@ public class CirclePatch : GamePieceBase {
 
 	void Grow()
 	{
-		MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
 		Material material;
 		for(int s = 0; s < CurrentSegment; ++s)
 		{
@@ -535,11 +536,22 @@ public class CirclePatch : GamePieceBase {
 
 		// Start flashing to notify that it is done.
 		StartFlash(new Color(-0.5f, -0.5f, -0.5f), new Color(0.5f, 0.5f, 0.5f), FLASH_TIME);
+		//StartEffect("done");
 	}
 
 	public bool HasStoppedGrowing()
 	{
 		return doneGrowing;
+	}
+
+	public override void StartEffect(string effect)
+	{
+		Animator animator = GetComponent<Animator>();
+		animator.Play(effect);
+	}
+
+	public override void StopEffect()
+	{
 	}
 	
 	public override void SetHighlight(bool enable, Color color)
@@ -550,7 +562,7 @@ public class CirclePatch : GamePieceBase {
 
 	void UpdateHighlight()
 	{
-		MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
 		Material material;
 		if(!doHighlight)
 		{
@@ -590,7 +602,7 @@ public class CirclePatch : GamePieceBase {
 		if(flashTimer > 0.0f)
 		{
 			Material material;
-			Renderer renderer = GetComponent<Renderer>();
+			Renderer renderer = patchObject.GetComponent<Renderer>();
 			for(int s = 0; s < CurrentSegment; ++s)
 			{
 				material = renderer.materials[s];
@@ -602,7 +614,7 @@ public class CirclePatch : GamePieceBase {
 		else
 		{
 			Material material;
-			Renderer renderer = GetComponent<Renderer>();
+			Renderer renderer = patchObject.GetComponent<Renderer>();
 			for(int s = 0; s < CurrentSegment; ++s)
 			{
 				material = renderer.materials[s];
@@ -614,6 +626,32 @@ public class CirclePatch : GamePieceBase {
 		if(flashValue > 1.0f)
 		{
 			flashValue = 0.0f;
+		}
+	}
+
+	bool doColorOverlay = false;
+	Color ColorOverlay = Color.black;
+
+	public void StartColorOverlay()
+	{
+		doColorOverlay = true;
+		UpdateColorOverlay();
+	}
+
+	public void EndColorOverlay()
+	{
+		doColorOverlay = false;
+		UpdateColorOverlay();
+	}
+	
+	void UpdateColorOverlay()
+	{
+		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
+		Material material;
+		for(int s = 0; s < CurrentSegment; ++s)
+		{
+			material = meshRenderer.materials[s];
+			material.SetColor("_AddColor", AddColor);
 		}
 	}
 	
@@ -685,6 +723,11 @@ public class CirclePatch : GamePieceBase {
 				scoreLocalPos.y -= 1.0f;
 			}
 			circlePatchSize.transform.localPosition = scoreLocalPos;
+		}
+
+		if(doColorOverlay)
+		{
+			UpdateColorOverlay();
 		}
 	}
 }

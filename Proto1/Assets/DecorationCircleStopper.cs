@@ -139,6 +139,14 @@ public class DecorationCircleStopper : GamePieceBase {
 		return new Bounds(transform.position, new Vector3(HalfWidth, HalfHeight));
 	}
 
+	public override void StartEffect(string effect)
+	{
+	}
+	
+	public override void StopEffect()
+	{
+	}
+	
 	public override void SetHighlight(bool enable, Color color)
 	{
 		doHighlight = enable;
