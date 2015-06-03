@@ -137,6 +137,7 @@ public class Player : MonoBehaviour {
 		}
 	}
 
+	bool illegalPlacement = false;
 	void PlacePiece(Vector3 pos)
 	{
 		activePiece.SetPosition(pos.x, pos.y);
@@ -166,11 +167,12 @@ public class Player : MonoBehaviour {
 		}
 		else
 		{
+			illegalPlacement = true;
 			for(int i = 0; i < collidedPieces.Count; ++i)
 			{
 				collidedPieces[i].StartFlash(WARNING_FLASH_COLOR_1, WARNING_FLASH_COLOR_2, CirclePatch.FLASH_TIME);
 			}
-			PutBackInHand();
+			//PutBackInHand();
 		}
 	}
 
@@ -203,8 +205,9 @@ public class Player : MonoBehaviour {
 				{
 					// Move piece.
 					activePiece.SetPosition(mouseWorldPosition.x, mouseWorldPosition.y);
+					illegalPlacement = false;
 				}
-				else
+				else if(!illegalPlacement)
 				{
 					// Try to place.
 					PlacePiece(mouseWorldPosition);

@@ -10,8 +10,9 @@ GameObject:
   - 4: {fileID: 400000}
   - 114: {fileID: 11400000}
   - 95: {fileID: 9529242}
+  - 114: {fileID: 11443626}
   m_Layer: 0
-  m_Name: PatchPrefab
+  m_Name: piece
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -121,6 +122,18 @@ MonoBehaviour:
   AddColor: {r: 0, g: 0, b: 0, a: 1}
   Segments: 1
   PatternTextures: []
+--- !u!114 &11443626
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: adb623dfc676248aba202203f780dc02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AddColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1001 &100100000
 Prefab:
   m_ObjectHideFlags: 1

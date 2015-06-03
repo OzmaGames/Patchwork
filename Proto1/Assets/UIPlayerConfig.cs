@@ -135,7 +135,7 @@ public class UIPlayerConfig : UIPage
 
 		UnityEngine.UI.InputField txtName = Name.GetComponent<UnityEngine.UI.InputField>();
 		txtName.text = "";
-		txtName.Select();
+		//txtName.Select();
 		//UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(txtName.gameObject, null);
 	}
 }

@@ -20,27 +20,11 @@ ShaderVariantCollection:
         - keywords: DO_SEGMENT_3
           passType: 0
     data:
-      first: {fileID: 4800000, guid: f71aef19b7a344163bc425a98976046e, type: 3}
-      second:
-        variants:
-        - keywords: 
-          passType: 0
-        - keywords: SHADOWS_DEPTH
-          passType: 8
-    data:
       first: {fileID: 4800000, guid: 1bf454cf331344ccca7b48cf74f71611, type: 3}
       second:
         variants:
         - keywords: 
           passType: 0
-    data:
-      first: {fileID: 30, guid: 0000000000000000f000000000000000, type: 0}
-      second:
-        variants:
-        - keywords: DIRECTIONAL DIRLIGHTMAP_OFF DYNAMICLIGHTMAP_OFF LIGHTMAP_OFF
-          passType: 4
-        - keywords: DIRECTIONAL
-          passType: 5
     data:
       first: {fileID: 10750, guid: 0000000000000000f000000000000000, type: 0}
       second:

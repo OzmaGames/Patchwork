@@ -103,7 +103,12 @@ public class DecorationCircleStopper : GamePieceBase {
 		owner = collider;
 	}
 
-	public void SetOwner(Player player)
+	public override Player GetOwner()
+	{
+		return Owner;
+	}
+
+	public override void SetOwner(Player player)
 	{
 		Owner = player;
 	}
@@ -122,9 +127,21 @@ public class DecorationCircleStopper : GamePieceBase {
 	
 	public override void Place()
 	{
+		bool alreadyDoneGrowing = owner.HasStoppedGrowing();
 		owner.PlaceDecoration(this);
+		int scoreToGive = alreadyDoneGrowing ? 2 : (int)owner.GetSize();
+		if(Owner != owner.GetOwner())
+		{
+			scoreToGive = scoreToGive / 2;
+			Owner.AddScore(scoreToGive);
+		}
+		else if(alreadyDoneGrowing)
+		{
+			Owner.AddScore(scoreToGive);
+		}
 		transform.parent = owner.transform;
 		transform.localPosition = new Vector3(0.0f, 0.0f, ZPosDecorationLayer);
+		PlaceChilds();
 		isPlaced = true;
 		owner = null;
 	}
@@ -139,14 +156,6 @@ public class DecorationCircleStopper : GamePieceBase {
 		return new Bounds(transform.position, new Vector3(HalfWidth, HalfHeight));
 	}
 
-	public override void StartEffect(string effect)
-	{
-	}
-	
-	public override void StopEffect()
-	{
-	}
-	
 	public override void SetHighlight(bool enable, Color color)
 	{
 		doHighlight = enable;
@@ -194,6 +203,12 @@ public class DecorationCircleStopper : GamePieceBase {
 		{
 			flashValue = 0.0f;
 		}
+	}
+
+	public override void UpdateEffect(Color addColor)
+	{
+		GetComponent<Renderer>().material.SetColor("_AddColor", addColor);
+		UpdateChildsEffect(addColor);
 	}
 
 	void OnDestroy()

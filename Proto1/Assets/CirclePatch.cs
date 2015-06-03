@@ -15,6 +15,7 @@ public class CirclePatch : GamePieceBase {
 	Texture2D[] circlePatchSizes;
 
 	public Color AddColor = Color.black;
+	bool doColorOverlay = false;
 
 	static Mesh GeneratedMesh;
 
@@ -407,7 +408,12 @@ public class CirclePatch : GamePieceBase {
 		}
 	}
 
-	public void SetOwner(Player player)
+	public override Player GetOwner()
+	{
+		return Owner;
+	}
+
+	public override void SetOwner(Player player)
 	{
 		Owner = player;
 		SwapColors(Owner.Colors, Owner.ComplementColor);
@@ -455,6 +461,7 @@ public class CirclePatch : GamePieceBase {
 		}
 		transform.position = new Vector3(transform.position.x, transform.position.y, Game.BGZPos);
 		Game.BGZPos += Game.ZPosAdd;
+		PlaceChilds();
 		isPlaced = true;
 	}
 
@@ -536,7 +543,7 @@ public class CirclePatch : GamePieceBase {
 
 		// Start flashing to notify that it is done.
 		StartFlash(new Color(-0.5f, -0.5f, -0.5f), new Color(0.5f, 0.5f, 0.5f), FLASH_TIME);
-		//StartEffect("done");
+//		transform.parent.GetComponent<GamePiece>().StartEffect("Done");
 	}
 
 	public bool HasStoppedGrowing()
@@ -544,16 +551,6 @@ public class CirclePatch : GamePieceBase {
 		return doneGrowing;
 	}
 
-	public override void StartEffect(string effect)
-	{
-		Animator animator = GetComponent<Animator>();
-		animator.Play(effect);
-	}
-
-	public override void StopEffect()
-	{
-	}
-	
 	public override void SetHighlight(bool enable, Color color)
 	{
 		doHighlight = enable;
@@ -629,9 +626,6 @@ public class CirclePatch : GamePieceBase {
 		}
 	}
 
-	bool doColorOverlay = false;
-	Color ColorOverlay = Color.black;
-
 	public void StartColorOverlay()
 	{
 		doColorOverlay = true;
@@ -653,6 +647,18 @@ public class CirclePatch : GamePieceBase {
 			material = meshRenderer.materials[s];
 			material.SetColor("_AddColor", AddColor);
 		}
+	}
+	
+	public override void UpdateEffect(Color addColor)
+	{
+		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
+		Material material;
+		for(int s = 0; s < CurrentSegment; ++s)
+		{
+			material = meshRenderer.materials[s];
+			material.SetColor("_AddColor", addColor);
+		}
+		UpdateChildsEffect(addColor);
 	}
 	
 	public void SetShowSymbol(bool show)

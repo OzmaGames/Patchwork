@@ -5,10 +5,10 @@ AnimatorController:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: patch
+  m_Name: piece
   serializedVersion: 5
   m_AnimatorParameters:
-  - m_Name: highlight
+  - m_Name: StopEffect
     m_Type: 4
     m_DefaultFloat: 0
     m_DefaultInt: 0
@@ -55,8 +55,8 @@ AnimatorStateTransition:
   m_PrefabInternal: {fileID: 0}
   m_Name: 
   m_Conditions:
-  - m_ConditionMode: 2
-    m_ConditionEvent: highlight
+  - m_ConditionMode: 1
+    m_ConditionEvent: StopEffect
     m_EventTreshold: 0
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 110246682}
@@ -217,10 +217,7 @@ AnimatorStateTransition:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: 
-  m_Conditions:
-  - m_ConditionMode: 1
-    m_ConditionEvent: highlight
-    m_EventTreshold: 0
+  m_Conditions: []
   m_DstStateMachine: {fileID: 0}
   m_DstState: {fileID: 110265038}
   m_Solo: 0
@@ -240,7 +237,7 @@ AnimatorState:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: done
+  m_Name: Done
   m_Speed: 2
   m_CycleOffset: 0
   m_Transitions:
@@ -258,7 +255,7 @@ AnimatorState:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: normal
+  m_Name: Normal
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions: []
@@ -275,7 +272,7 @@ AnimatorState:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: patch_stop_highlight
+  m_Name: StopHighlight
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:
@@ -293,7 +290,7 @@ AnimatorState:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: patch_start_highlight
+  m_Name: highlight
   m_Speed: 1
   m_CycleOffset: 0
   m_Transitions:

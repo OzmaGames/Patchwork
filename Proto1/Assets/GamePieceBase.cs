@@ -17,6 +17,32 @@ public abstract class GamePieceBase : MonoBehaviour
 	public abstract void StartFlash(Color startColor, Color endColor, float time);
 	public abstract void SetHighlight(bool enable, Color color);
 
-	public abstract void StartEffect(string effect);
-	public abstract void StopEffect();
+	public abstract void UpdateEffect(Color addColor);
+
+	public abstract Player GetOwner();
+	public abstract void SetOwner(Player player);
+
+	protected void PlaceChilds()
+	{
+		for(int i = 0; i < transform.childCount; ++i)
+		{
+			GamePieceBase piece = transform.GetChild(i).GetComponent<GamePieceBase>();
+			if(piece != null)
+			{
+				piece.Place();
+			}
+		}
+	}
+
+	protected void UpdateChildsEffect(Color addColor)
+	{
+		for(int i = 0; i < transform.childCount; ++i)
+		{
+			GamePieceBase piece = transform.GetChild(i).GetComponent<GamePieceBase>();
+			if(piece != null)
+			{
+				piece.UpdateEffect(addColor);
+			}
+		}
+	}
 }
