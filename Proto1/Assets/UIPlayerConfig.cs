@@ -5,16 +5,6 @@ using System.Collections.Generic;
 
 public class UIPlayerConfig : UIPage
 {
-	public class InitDataPlayerConfig : UIPage.InitData
-	{
-		public InitDataPlayerConfig(List<Game.PlayerInfo> players)
-		{
-			Players = players;
-		}
-		
-		public List<Game.PlayerInfo> Players;
-	}
-	
 	public class SubmitDataPlayerConfig : SubmitData
 	{
 		public SubmitDataPlayerConfig(string name, int palette)
@@ -82,8 +72,14 @@ public class UIPlayerConfig : UIPage
 		return false;
 	}
 
-	public override void Submit()
+	public UIPage NextPage;
+	public void Submit()
 	{
+		if(!IsValid())
+		{
+			return;
+		}
+
 		UnityEngine.UI.InputField txtName = Name.GetComponent<UnityEngine.UI.InputField>();
 		UnityEngine.UI.ToggleGroup tglgPalette = PaletteGroup.GetComponent<UnityEngine.UI.ToggleGroup>();
 		if(tglgPalette.AnyTogglesOn() && (txtName.text.Length > 0))
@@ -112,9 +108,15 @@ public class UIPlayerConfig : UIPage
 			}
 			PlayerConfig = new SubmitDataPlayerConfig(txtName.text, palette);
 		}
+
+		if(Window.OnSubmit != null)
+		{
+			Window.OnSubmit(this);
+		}
+		Window.Show(NextPage);
 	}
 
-	public override void Show(InitData data)
+	public override void Show()
 	{
 		ResetUI();
 	}

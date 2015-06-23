@@ -35,8 +35,8 @@ public class CirclePatch : GamePieceBase {
 		Needle
 	}
 	Symbols Symbol = Symbols.Scissor;
-	static Texture2D[] SymbolTexturePrefabs;
-	static Texture2D[] PatchSizeNumberPrefabs;
+	static GameObject[] SymbolPrefabs;
+	static GameObject[] PatchSizeNumberPrefabs;
 	static Texture2D[] RandomPatternTextures;
 
 	public Texture2D[] PatternTextures;
@@ -121,19 +121,12 @@ public class CirclePatch : GamePieceBase {
 		}
 	}
 
-	public static void GenerateSegments(int numSegments, float segmentSize)
+	public static void GenerateSegments(int numSegments, float segmentSize, GameObject[] symbolPrefabs, GameObject[] patchSizeNumberPrefabs, Camera patchRendererCamera)
 	{
-		SymbolTexturePrefabs = new Texture2D[3];
-		SymbolTexturePrefabs[0] = Resources.Load<Texture2D>("textures/symbol_scissor");
-		SymbolTexturePrefabs[1] = Resources.Load<Texture2D>("textures/symbol_thread");
-		SymbolTexturePrefabs[2] = Resources.Load<Texture2D>("textures/symbol_needle");
-		PatchSizeNumberPrefabs = new Texture2D[6];
-		PatchSizeNumberPrefabs[0] = Resources.Load<Texture2D>("textures/patch_star_1");
-		PatchSizeNumberPrefabs[1] = Resources.Load<Texture2D>("textures/patch_star_2");
-		PatchSizeNumberPrefabs[2] = Resources.Load<Texture2D>("textures/patch_star_3");
-		PatchSizeNumberPrefabs[3] = Resources.Load<Texture2D>("textures/patch_star_4");
-		PatchSizeNumberPrefabs[4] = Resources.Load<Texture2D>("textures/patch_star_5");
-		PatchSizeNumberPrefabs[5] = Resources.Load<Texture2D>("textures/patch_star_6");
+		PatchRendererCamera = patchRendererCamera;
+
+		SymbolPrefabs = symbolPrefabs;
+		PatchSizeNumberPrefabs = patchSizeNumberPrefabs;
 		RandomPatternTextures = new Texture2D[6];
 		RandomPatternTextures[0] = CreatePatternTexture((int)(Random.value * 255.0f));
 		RandomPatternTextures[1] = CreatePatternTexture((int)(Random.value * 255.0f));
@@ -301,6 +294,43 @@ public class CirclePatch : GamePieceBase {
 		return false;
 	}
 
+	static void SetLayerRecursively(GameObject obj, int layer)
+	{
+		obj.layer = layer;
+		for(int i = 0; i < obj.transform.childCount; ++i)
+		{
+			SetLayerRecursively(obj.transform.GetChild(i).gameObject, layer);
+		}
+	}
+
+	public Texture2D OfflineTexture;
+	void RenderToTexture()
+	{
+		Debug.Log("RenderToTexture.start()");
+		// Set to patch renderer camera layer and center patch.
+		Vector3 oldPos = transform.position;
+		SetLayerRecursively(gameObject, 11);
+		transform.position = Vector3.zero;
+
+		// Render patch.
+		PatchRendererCamera.Render();
+
+		// Copy texture.
+		RenderTexture oldActive = RenderTexture.active;
+		RenderTexture camTex = PatchRendererCamera.targetTexture;
+		RenderTexture.active = camTex;
+		OfflineTexture = new Texture2D(camTex.width, camTex.height, TextureFormat.ARGB32, false);
+		OfflineTexture.ReadPixels(new Rect(0, 0, camTex.width, camTex.height), 0, 0);
+		OfflineTexture.Apply();
+		RenderTexture.active = oldActive;
+
+		// Restore layer and position.
+		SetLayerRecursively(gameObject, 0);
+		transform.position = oldPos;
+		Debug.Log("RenderToTexture.end()");
+	}
+	
+	static Camera PatchRendererCamera;
 	static Symbols idas = Symbols.Scissor;
 	public void Generate(PatchConfig config, Texture2D[] patternTextures, Gradient[] colors, Gradient complementColor)
 	{
@@ -355,15 +385,39 @@ public class CirclePatch : GamePieceBase {
 			}
 		}
 		material = meshRenderer.materials[0];
+		CurrentSegment = Segments;
+		size = CurrentSegment * SegmentScale;
+		maxSize = size;
 		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
+		for(int s = 0; s < Segments; ++s)
+		{
+			material = meshRenderer.materials[s];
+			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
+			material.SetFloat("_CirclePatchRadius", OuterRadius);
+			material.SetFloat("_CirclePatchLayer", CurrentSegment);
+			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
+		}
+		RenderToTexture();
+
 		CurrentSegment = 1;
 		size = CurrentSegment * SegmentScale;
 		maxSize = size;
+		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
+		for(int s = 0; s < Segments; ++s)
+		{
+			material = meshRenderer.materials[s];
+			material.SetVector("_CirclePatchSize", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+			material.SetFloat("_CirclePatchRadius", OuterRadius);
+			material.SetFloat("_CirclePatchLayer", CurrentSegment + s);
+			material.SetFloat("_CurrentSegmentArcSize", 0.0f);
+		}
+		material = meshRenderer.materials[0];
+		CurrentSegment = 1;
+		size = CurrentSegment * SegmentScale;
+		maxSize = size;
+		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
 
 		// Create symbol quad.
-		circlePatchSymbol = GameObject.CreatePrimitive(PrimitiveType.Quad);
-		circlePatchSymbol.name = patchObject.name + "_Symbol";
-		circlePatchSymbol.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
 		SetSymbol(idas);
 		switch(idas)
 		{
@@ -379,16 +433,17 @@ public class CirclePatch : GamePieceBase {
 		}
 		circlePatchSymbol.transform.SetParent(patchObject.transform, false);
 		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f );
-		circlePatchSymbol.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+//		circlePatchSymbol.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
 
 		// Create size quad.
-		circlePatchSize = GameObject.CreatePrimitive(PrimitiveType.Quad);
-		circlePatchSize.name = patchObject.name + "_Size";
-		circlePatchSize.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
-		circlePatchSize.GetComponent<Renderer>().material.mainTexture = PatchSizeNumberPrefabs[Segments - 1];
+		circlePatchSize = Instantiate(PatchSizeNumberPrefabs[Segments - 1]);
+		//circlePatchSize = GameObject.CreatePrimitive(PrimitiveType.Quad);
+		//circlePatchSize.name = patchObject.name + "_Size";
+		//circlePatchSize.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
+		//circlePatchSize.GetComponent<Renderer>().material.mainTexture = PatchSizeNumberPrefabs[Segments - 1];
 		circlePatchSize.transform.SetParent(patchObject.transform, false);
 		circlePatchSize.transform.localPosition = new Vector3(0.5f, 0.5f, Game.ZPosAdd * 0.35f);
-		circlePatchSize.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+		//circlePatchSize.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
 	}
 
 	public void SetSymbol(Symbols symbol)
@@ -397,13 +452,13 @@ public class CirclePatch : GamePieceBase {
 		switch(Symbol)
 		{
 		case Symbols.Scissor:
-			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = SymbolTexturePrefabs[0];
+			circlePatchSymbol = Instantiate(SymbolPrefabs[0]);
 			break;
 		case Symbols.Thread:
-			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = SymbolTexturePrefabs[1];
+			circlePatchSymbol = Instantiate(SymbolPrefabs[1]);
 			break;
 		case Symbols.Needle:
-			circlePatchSymbol.GetComponent<Renderer>().material.mainTexture = SymbolTexturePrefabs[2];
+			circlePatchSymbol = Instantiate(SymbolPrefabs[2]);
 			break;
 		}
 	}
@@ -545,7 +600,7 @@ public class CirclePatch : GamePieceBase {
 		StartFlash(new Color(-0.5f, -0.5f, -0.5f), new Color(0.5f, 0.5f, 0.5f), FLASH_TIME);
 //		transform.parent.GetComponent<GamePiece>().StartEffect("Done");
 	}
-
+	
 	public bool HasStoppedGrowing()
 	{
 		return doneGrowing;

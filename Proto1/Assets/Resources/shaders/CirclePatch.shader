@@ -1,7 +1,7 @@
 ﻿Shader "Custom/CirclePatch" {
 	Properties {
 		_CirclePatchSize("Circle Patch Min,Current,Max Size", vector) = (0.0, 0.0, 1.0)
-		_CirclePatchRadius("Circle Patch Radius", float) = 1.0
+		//_CirclePatchRadius("Circle Patch Radius", float) = 1.0
 
 		_AddColor ("ShadeColor", vector) = (0.0,0.0,0.0,0.0)
 
@@ -14,13 +14,13 @@
 		_FabricTexture("Fabric Texture", 2D) = "white" {}
 		_PatternTexture2("Pattern Texture 2", 2D) = "white" {}
 		_CirclePatchLayer("Circle Patch Layer", float) = 0.0
-		_CurrentSegmentArcSize("Circle Patch Current Segment Arc Size", float) = 0.0
+		//_CurrentSegmentArcSize("Circle Patch Current Segment Arc Size", float) = 0.0
 
-		_Color ("Color", Color) = (1,1,1,1)
-		_Distort("Distort", vector) = (0.5, 0.5, 1.0, 1.0)
-		_OuterRadius ("Outer Radius", float) = 0.5
-		_InnerRadius ("Inner Radius", float) = -0.5
-		_Hardness("Hardness", float) = 10.0
+		//_Color ("Color", Color) = (1,1,1,1)
+		//_Distort("Distort", vector) = (0.5, 0.5, 1.0, 1.0)
+		//_OuterRadius ("Outer Radius", float) = 0.5
+		//_InnerRadius ("Inner Radius", float) = -0.5
+		//_Hardness("Hardness", float) = 10.0
 	}
 	SubShader {
 		Tags {
@@ -78,15 +78,15 @@
 			}
 			
 			float4 _CirclePatchSize;
-			float _CirclePatchRadius;
+			//float _CirclePatchRadius;
 			float _CirclePatchLayer;
-			float _CurrentSegmentArcSize;
+			//float _CurrentSegmentArcSize;
 
-			float4 _Color;
-			float4 _Distort;
-			float _OuterRadius;
-			float _InnerRadius;
-			float _Hardness;
+			//float4 _Color;
+			//float4 _Distort;
+			//float _OuterRadius;
+			//float _InnerRadius;
+			//float _Hardness;
 
 			float SmuttStep(float x, float y, float z)
 			{
@@ -117,10 +117,10 @@
 				float fade = 1.0f;
 				float border = 1.0f;
 
-				float x = length((_Distort.xy - i.uv.xy) * _Distort.zw);
-				float rc = (_OuterRadius + _InnerRadius) * 0.5f; // "central" radius
-				float rd = _OuterRadius - rc; // distance from "central" radius to edge radii
-				float circleTest = saturate(abs(x - rc) / rd);
+//				float x = length((_Distort.xy - i.uv.xy) * _Distort.zw);
+//				float rc = (_OuterRadius + _InnerRadius) * 0.5f; // "central" radius
+//				float rd = _OuterRadius - rc; // distance from "central" radius to edge radii
+//				float circleTest = saturate(abs(x - rc) / rd);
 				
 //				float4 oc = 1.0f;
 //				oc.xyz *= (1.0f - pow(circleTest, _Hardness));

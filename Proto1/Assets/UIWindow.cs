@@ -26,21 +26,26 @@ public class UIWindow : MonoBehaviour
 	}
 
 	public delegate void SubmitDelegate(UIPage page);
-	/*public event*/ SubmitDelegate OnSubmit;
+	public /*event*/ SubmitDelegate OnSubmit;
 	public void Submit()
 	{
-		UIPage page = activePage.GetComponent<UIPage>();
+		/*UIPage page = activePage.GetComponent<UIPage>();
 		if(page.IsValid())
 		{
-			activePage.GetComponent<UIPage>().Submit();
-			OnSubmit(activePage.GetComponent<UIPage>());
-			NextPage();
-		}
+			page.Submit();
+			if(OnSubmit != null)
+			{
+				OnSubmit(page);
+			}
+			//if(page.DoNextPage())
+			//{
+			//	NextPage();
+			//}
+		}*/
 	}
 
 	public void PlayNow()
 	{
-		OnSubmit = null;
 		isDone = true;
 	}
 	
@@ -49,8 +54,8 @@ public class UIWindow : MonoBehaviour
 		Application.Quit();
 	}
 	
-	GameObject activePage;
-	int currentPage = 0;
+	UIPage activePage;
+	/*int currentPage = 0;
 	public void NextPage()
 	{
 		if(currentPage < transform.childCount)
@@ -73,7 +78,7 @@ public class UIWindow : MonoBehaviour
 				activePage.GetComponent<UIPage>().Show(showData);
 			}
 		}
-	}
+	}*/
 
 	bool isDone = false;
 	public bool IsDone
@@ -81,35 +86,41 @@ public class UIWindow : MonoBehaviour
 		get { return isDone; }
 	}
 
-	UIPage.InitData showData;
-	public void Show(string pageName, UIPage.InitData data, SubmitDelegate onSubmit)
+	public void Show(UIPage page)
 	{
-		isDone = false;
-		if(pageName.Length > 0)
+		if(activePage != null)
 		{
-			activePage = transform.FindChild(pageName).gameObject;
-			currentPage = activePage.transform.GetSiblingIndex();
+			activePage.Hide();
+			activePage.gameObject.SetActive(false);
+			activePage.SetWindow(null);
+		}
+		activePage = page;
+		if(activePage != null)
+		{
+			isDone = false;
+			activePage = page;
+			activePage.SetWindow(this);
+			activePage.gameObject.SetActive(true);
+			activePage.Show();
 		}
 		else
 		{
-			activePage = transform.GetChild(currentPage).gameObject;
+			isDone = true;
 		}
-		OnSubmit = onSubmit;
-		showData = data;
-		activePage.SetActive(true);
-		activePage.GetComponent<UIPage>().Show(showData);
 
-		if((visible != VisibleState.Visible) || (visible != VisibleState.Showing))
+		if((visible != VisibleState.Visible) && (visible != VisibleState.Showing))
 		{
+			Debug.Log("DoShowing: " + visible.ToString());
 			visible = VisibleState.Showing;
 			Animator animator = GetComponent<Animator>();
 			animator.SetBool("Visible", true);
 			animator.Play("window_show");
 		}
 	}
-	
+
 	public void Hide()
 	{
+		Debug.Log("Hide");
 		visible = VisibleState.Hiding;
 		Animator animator = GetComponent<Animator>();
 		animator.SetBool("Visible", false);
@@ -118,13 +129,15 @@ public class UIWindow : MonoBehaviour
 	
 	public void OnVisible()
 	{
+		Debug.Log("OnVisible");
 		visible = VisibleState.Visible;
 	}
 	
 	public void OnHidden()
 	{
-		activePage.GetComponent<UIPage>().Hide();
-		activePage.SetActive(false);
+		Debug.Log("OnHidden");
+		activePage.Hide();
+		activePage.gameObject.SetActive(false);
 
 		visible = VisibleState.Hidden;
 	}

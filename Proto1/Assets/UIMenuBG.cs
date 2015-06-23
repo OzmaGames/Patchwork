@@ -26,7 +26,7 @@ public class UIMenuBG : MonoBehaviour
 
 	public void Show()
 	{
-		if((visible != VisibleState.Visible) || (visible != VisibleState.Showing))
+		if((visible != VisibleState.Visible) && (visible != VisibleState.Showing))
 		{
 			visible = VisibleState.Showing;
 			Animator animator = GetComponent<Animator>();

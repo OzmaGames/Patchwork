@@ -16,11 +16,14 @@ public class UIRules : UIPage
 		return true;
 	}
 
-	public override void Submit()
+	public UIPage NextPage;
+	public void Submit()
 	{
+		Window.Submit();
+		Window.Show(NextPage);
 	}
 	
-	public override void Show(InitData data)
+	public override void Show()
 	{
 	}
 

@@ -31,10 +31,12 @@ public class Game : MonoBehaviour {
 	}
 	public PlayerPalette[] Palette;
 
-	public Texture2D[] Symbols;
-	public Texture2D[] PatchSizeNumbers;
+	public GameObject[] SymbolPrefabs;
+	public GameObject[] PatchSizeNumberPrefabs;
 
 	public GameObject DeckObjectPrefab;
+
+	public Camera PatchRendererCamera;
 
 	[System.Serializable]
 	public class PlayerSetting
@@ -109,44 +111,33 @@ public class Game : MonoBehaviour {
 
 			case PatchworkLogo.VisibleState.Hidden:
 				logo.gameObject.SetActive(false);
-				ActiveGame.SetState(new StartGameState());
+				ActiveGame.SetState(new MainMenuGameState());
 				break;
 			}
 		}
 	}
 
 	public GameObject WindowPrefab;
-	class StartGameState : State
+	public GameObject MainMenuPrefab;
+	class MainMenuGameState : State
 	{
-		UIWindow uiWindow;
 		UIMenuBG menubg;
+		UIWindow uiWindow;
+		UIMainMenu uiMainMenu;
 
 		public override void Start()
 		{
+			ActiveGame.QuitPrefab.SetActive(false);
+
 			menubg = ActiveGame.MenuBGPrefab.GetComponent<UIMenuBG>();
+			menubg.gameObject.SetActive(true);
+			menubg.Show();
+
+			uiMainMenu = ActiveGame.MainMenuPrefab.GetComponent<UIMainMenu>();
 			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
 			uiWindow.gameObject.SetActive(true);
-			uiWindow.Show("PlayerConfig1", new UIPage.InitData(), OnSubmit);
-		}
-
-		void OnSubmit(UIPage page)
-		{
-			if(page.GetType() == typeof(UIPlayerConfig))
-			{
-				UIPlayerConfig playerConfig = page as UIPlayerConfig;
-				int player = 0;
-				if(playerConfig.gameObject.name == "PlayerConfig1")
-				{
-					uiWindow.transform.FindChild("PlayerConfig2").GetComponent<UIPlayerConfig>().DisablePalette(playerConfig.PlayerConfig.Palette);
-					player = 0;
-				}
-				else
-				{
-					player = 1;
-				}
-				ActiveGame.PlayerSettings[player].Name = playerConfig.PlayerConfig.Name;
-				ActiveGame.PlayerSettings[player].Palette = ActiveGame.Palette[playerConfig.PlayerConfig.Palette];
-			}
+			uiWindow.OnSubmit = OnSubmit;
+			uiWindow.Show(uiMainMenu);
 		}
 
 		public override void Stop()
@@ -177,6 +168,31 @@ public class Game : MonoBehaviour {
 					ActiveGame.SetState(new MainGameState());
 				}
 				break;
+			}
+		}
+
+		void OnSubmit(UIPage page)
+		{
+			System.Type type = page.GetType();
+			if(type == typeof(UIMainMenu))
+			{
+				UIMainMenu mainMenu = page as UIMainMenu;
+			}
+			else if(type == typeof(UIPlayerConfig))
+			{
+				UIPlayerConfig playerConfig = page as UIPlayerConfig;
+				int player = 0;
+				if(playerConfig.gameObject.name == "PlayerConfig1")
+				{
+					uiWindow.transform.FindChild("PlayerConfig2").GetComponent<UIPlayerConfig>().DisablePalette(playerConfig.PlayerConfig.Palette);
+					player = 0;
+				}
+				else
+				{
+					player = 1;
+				}
+				ActiveGame.PlayerSettings[player].Name = playerConfig.PlayerConfig.Name;
+				ActiveGame.PlayerSettings[player].Palette = ActiveGame.Palette[playerConfig.PlayerConfig.Palette];
 			}
 		}
 	}
@@ -378,11 +394,13 @@ public class Game : MonoBehaviour {
 		}		
 	}
 
+	public GameObject GameOverPrefab;
 	class GameOverState : State
 	{
 		List<PlayerInfo> Players;
 		Playfield ActivePlayfield;
 		UIWindow uiWindow;
+		UIGameOver uiGameOver;
 
 		public GameOverState(List<PlayerInfo> players, Playfield playfield)
 		{
@@ -392,6 +410,8 @@ public class Game : MonoBehaviour {
 
 		public override void Start()
 		{
+			ActiveGame.QuitPrefab.SetActive(false);
+
 			// Find winner and loser.
 			Player winner;
 			Player loser;
@@ -406,9 +426,13 @@ public class Game : MonoBehaviour {
 				loser = Players[0].Player;
 			}
 
+			uiGameOver = ActiveGame.GameOverPrefab.GetComponent<UIGameOver>();
 			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
 			uiWindow.gameObject.SetActive(true);
-			uiWindow.Show("GameOver", new UIGameOver.InitDataGameOver(winner, loser), OnSubmit);
+			uiWindow.OnSubmit = OnSubmit;
+			uiGameOver.Winner = winner;
+			uiGameOver.Loser = loser;
+			uiWindow.Show(uiGameOver);
 		}
 		
 		public override void Stop()
@@ -438,7 +462,7 @@ public class Game : MonoBehaviour {
 				if(uiWindow.IsDone)
 				{
 					// Re-start.
-					ActiveGame.SetState(new StartGameState());
+					ActiveGame.SetState(new MainMenuGameState());
 				}
 				break;
 			}
@@ -471,7 +495,7 @@ public class Game : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		// Create circle patch mesh.
-		CirclePatch.GenerateSegments(8, 1.0f);
+		CirclePatch.GenerateSegments(8, 1.0f, SymbolPrefabs, PatchSizeNumberPrefabs, PatchRendererCamera);
 
 		// Create background.
 		Background = new GameObject("Background");
@@ -482,7 +506,6 @@ public class Game : MonoBehaviour {
 		// Set prefabs.
 		Player.DeckObjectPrefab = DeckObjectPrefab;
 
-		
 		SetState(new IntroGameState());
 	}
 
