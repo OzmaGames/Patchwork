@@ -6,11 +6,12 @@ public class CirclePatch : GamePieceBase {
 
 	public const int MAX_PATTERNS = 4;
 	public const float FLASH_TIME = 1.0f;
+	public const float SegmentScale = 1.0f;
 	const float GROWTH_SPEED = 0.5f;
 
 	public GameObject patchObject;
 	GameObject circlePatchSize;
-	GameObject circlePatchSymbol;
+	Symbol patchSymbol;
 
 	Texture2D[] circlePatchSizes;
 
@@ -21,20 +22,12 @@ public class CirclePatch : GamePieceBase {
 
 	public int Segments = 1;
 	int CurrentSegment = 0;
-	float SegmentScale = 1.0f;
 	float InnerRadius = 1.0f;
 	float OuterRadius = 1.0f;
 	float CurrentSegmentArcSize = 0.0f;
 
 	DecorationCircleStopper Decoration;
 
-	public enum Symbols
-	{
-		Scissor,
-		Thread,
-		Needle
-	}
-	Symbols Symbol = Symbols.Scissor;
 	static GameObject[] SymbolPrefabs;
 	static GameObject[] PatchSizeNumberPrefabs;
 	static Texture2D[] RandomPatternTextures;
@@ -270,9 +263,9 @@ public class CirclePatch : GamePieceBase {
 		return maxSize;
 	}
 
-	public Symbols GetSymbol()
+	public Symbol GetSymbol()
 	{
-		return Symbol;
+		return patchSymbol;
 	}
 
 	public bool CollidesAgainst(CirclePatch patch)
@@ -294,44 +287,81 @@ public class CirclePatch : GamePieceBase {
 		return false;
 	}
 
-	static void SetLayerRecursively(GameObject obj, int layer)
+	IEnumerator RenderPatch()
 	{
-		obj.layer = layer;
-		for(int i = 0; i < obj.transform.childCount; ++i)
-		{
-			SetLayerRecursively(obj.transform.GetChild(i).gameObject, layer);
-		}
+		yield return new WaitForEndOfFrame();
+		CachePatch();
 	}
-
-	public Texture2D OfflineTexture;
-	void RenderToTexture()
+	
+	static Camera PatchRendererCamera;
+	public GameObject RealPatch;
+	public Texture2D CachedPatchTexture;
+	void CachePatch()
 	{
-		Debug.Log("RenderToTexture.start()");
+		Material material;
+		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
+
 		// Set to patch renderer camera layer and center patch.
 		Vector3 oldPos = transform.position;
-		SetLayerRecursively(gameObject, 11);
+		patchObject.layer = 11;
 		transform.position = Vector3.zero;
+		
+		// Enable patch.
+		patchObject.SetActive(true);
+		
+		// Create a cached version of the patch.
+		float tmpSize = Segments * SegmentScale;
+		for(int s = 0; s < Segments; ++s)
+		{
+			material = meshRenderer.materials[s];
+			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, tmpSize, (s * SegmentScale) + SegmentScale, 0.0f));
+			material.SetFloat("_CirclePatchLayer", Segments);
+			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
+		}
+
+		RenderTexture oldActive = RenderTexture.active;
+		RenderTexture camTex = PatchRendererCamera.targetTexture;
+		RenderTexture.active = camTex;
 
 		// Render patch.
 		PatchRendererCamera.Render();
 
 		// Copy texture.
-		RenderTexture oldActive = RenderTexture.active;
-		RenderTexture camTex = PatchRendererCamera.targetTexture;
-		RenderTexture.active = camTex;
-		OfflineTexture = new Texture2D(camTex.width, camTex.height, TextureFormat.ARGB32, false);
-		OfflineTexture.ReadPixels(new Rect(0, 0, camTex.width, camTex.height), 0, 0);
-		OfflineTexture.Apply();
+		Texture2D cachedPatchTexture = new Texture2D(camTex.width, camTex.height, TextureFormat.ARGB32, false);
+		cachedPatchTexture.ReadPixels(new Rect(0.0f, 0.0f, camTex.width, camTex.height), 0, 0);
+		cachedPatchTexture.Apply();
+
 		RenderTexture.active = oldActive;
 
+		// Reset patch.
+		for(int s = 0; s < Segments; ++s)
+		{
+			material = meshRenderer.materials[s];
+			if(s < CurrentSegment)
+			{
+				material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
+				material.SetFloat("_CirclePatchLayer", CurrentSegment);
+				material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
+			}
+			else
+			{
+				material.SetVector("_CirclePatchSize", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
+				material.SetFloat("_CirclePatchLayer", CurrentSegment + s);
+				material.SetFloat("_CurrentSegmentArcSize", 0.0f);
+			}
+		}
+
+		// Hide patch.
+		patchObject.SetActive(false);
+		
 		// Restore layer and position.
-		SetLayerRecursively(gameObject, 0);
+		patchObject.layer = 0;
 		transform.position = oldPos;
-		Debug.Log("RenderToTexture.end()");
+		
+		// Update cache.
+		CachedPatchTexture = cachedPatchTexture;
 	}
-	
-	static Camera PatchRendererCamera;
-	static Symbols idas = Symbols.Scissor;
+
 	public void Generate(PatchConfig config, Texture2D[] patternTextures, Gradient[] colors, Gradient complementColor)
 	{
 		transform.position = new Vector3(0.0f, 0.0f, 0.0f);//Game.BGZPos);
@@ -385,84 +415,33 @@ public class CirclePatch : GamePieceBase {
 			}
 		}
 		material = meshRenderer.materials[0];
-		CurrentSegment = Segments;
-		size = CurrentSegment * SegmentScale;
-		maxSize = size;
 		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
-		for(int s = 0; s < Segments; ++s)
-		{
-			material = meshRenderer.materials[s];
-			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
-			material.SetFloat("_CirclePatchRadius", OuterRadius);
-			material.SetFloat("_CirclePatchLayer", CurrentSegment);
-			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
-		}
-		RenderToTexture();
-
 		CurrentSegment = 1;
 		size = CurrentSegment * SegmentScale;
 		maxSize = size;
-		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
-		for(int s = 0; s < Segments; ++s)
-		{
-			material = meshRenderer.materials[s];
-			material.SetVector("_CirclePatchSize", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-			material.SetFloat("_CirclePatchRadius", OuterRadius);
-			material.SetFloat("_CirclePatchLayer", CurrentSegment + s);
-			material.SetFloat("_CurrentSegmentArcSize", 0.0f);
-		}
-		material = meshRenderer.materials[0];
-		CurrentSegment = 1;
-		size = CurrentSegment * SegmentScale;
-		maxSize = size;
-		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
 
+		//StartCoroutine(RenderPatch());
+		//CachePatch();
+
+		// Create mesh used for presenting the cached copy of the patch.
+		/*meshFilter = gameObject.AddComponent<MeshFilter>();
+		meshFilter.mesh = Helpers.GenerateQuad(12.0f, 12.0f, 1.0f);
+		material = gameObject.AddComponent<MeshRenderer>().material;
+		material.mainTexture = CachedPatchTexture;
+		material.shader = Shader.Find("Custom/CirclePatchCached");
+		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
+*/
 		// Create symbol quad.
-		SetSymbol(idas);
-		switch(idas)
-		{
-		case Symbols.Scissor:
-			idas = Symbols.Thread;
-			break;
-		case Symbols.Thread:
-			idas = Symbols.Needle;
-			break;
-		default:
-			idas = Symbols.Scissor;
-			break;
-		}
-		circlePatchSymbol.transform.SetParent(patchObject.transform, false);
-		circlePatchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f );
-//		circlePatchSymbol.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
+		patchSymbol = Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>();
+		patchSymbol.transform.SetParent(gameObject.transform, false);
+		patchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f );
 
 		// Create size quad.
 		circlePatchSize = Instantiate(PatchSizeNumberPrefabs[Segments - 1]);
-		//circlePatchSize = GameObject.CreatePrimitive(PrimitiveType.Quad);
-		//circlePatchSize.name = patchObject.name + "_Size";
-		//circlePatchSize.GetComponent<Renderer>().material.shader = Shader.Find("Unlit/Transparent");
-		//circlePatchSize.GetComponent<Renderer>().material.mainTexture = PatchSizeNumberPrefabs[Segments - 1];
-		circlePatchSize.transform.SetParent(patchObject.transform, false);
+		circlePatchSize.transform.SetParent(gameObject.transform, false);
 		circlePatchSize.transform.localPosition = new Vector3(0.5f, 0.5f, Game.ZPosAdd * 0.35f);
-		//circlePatchSize.transform.localScale = new Vector3(1.5f, 1.5f, 1.5f);
 	}
-
-	public void SetSymbol(Symbols symbol)
-	{
-		Symbol = symbol;
-		switch(Symbol)
-		{
-		case Symbols.Scissor:
-			circlePatchSymbol = Instantiate(SymbolPrefabs[0]);
-			break;
-		case Symbols.Thread:
-			circlePatchSymbol = Instantiate(SymbolPrefabs[1]);
-			break;
-		case Symbols.Needle:
-			circlePatchSymbol = Instantiate(SymbolPrefabs[2]);
-			break;
-		}
-	}
-
+	
 	public override Player GetOwner()
 	{
 		return Owner;
@@ -487,6 +466,8 @@ public class CirclePatch : GamePieceBase {
 			material.SetColor("_ComplementColor1", complementColor.colorKeys[0].color);
 			material.SetColor("_ComplementColor2", complementColor.colorKeys[1].color);
 		}
+		//CachePatch();
+		//gameObject.GetComponent<MeshRenderer>().material.mainTexture = CachedPatchTexture;
 	}
 	
 	public override void AddToDeck()
@@ -506,14 +487,16 @@ public class CirclePatch : GamePieceBase {
 		maxSize = size;
 		Material material;
 		Renderer renderer = patchObject.GetComponent<Renderer>();
-		for(int s = 0; s < CurrentSegment; ++s)
+		int s = 0;
+		for(; s < CurrentSegment; ++s)
 		{
 			material = renderer.materials[s];
 			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
-			material.SetFloat("_CirclePatchRadius", OuterRadius);
 			material.SetFloat("_CirclePatchLayer", CurrentSegment);
 			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
 		}
+//		material = gameObject.GetComponent<MeshRenderer>().material;
+//		material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
 		transform.position = new Vector3(transform.position.x, transform.position.y, Game.BGZPos);
 		Game.BGZPos += Game.ZPosAdd;
 		PlaceChilds();
@@ -560,14 +543,16 @@ public class CirclePatch : GamePieceBase {
 	{
 		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
 		Material material;
-		for(int s = 0; s < CurrentSegment; ++s)
+		int s = 0;
+		for(; s < CurrentSegment; ++s)
 		{
 			material = meshRenderer.materials[s];
 			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
-			material.SetFloat("_CirclePatchRadius", OuterRadius);
 			material.SetFloat("_CirclePatchLayer", CurrentSegment);
 			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
 		}
+//		material = gameObject.GetComponent<MeshRenderer>().material;
+//		material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
 		//CurrentSegmentArcSize += 10.0f;
 		//if(CurrentSegmentArcSize > 360.0f)
 		{
@@ -718,7 +703,7 @@ public class CirclePatch : GamePieceBase {
 	
 	public void SetShowSymbol(bool show)
 	{
-		circlePatchSymbol.GetComponent<Renderer>().enabled = show;
+		patchSymbol.GetComponent<Renderer>().enabled = show;
 		circlePatchSize.GetComponent<Renderer>().enabled = show;
 	}
 
@@ -735,7 +720,7 @@ public class CirclePatch : GamePieceBase {
 	void OnDestroy()
 	{
 		circlePatchSize = null;
-		circlePatchSymbol = null;
+		patchSymbol = null;
 		circlePatchSizes = null;
 		Decoration = null;
 		PatternTextures = null;

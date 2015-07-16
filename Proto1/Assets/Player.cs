@@ -18,6 +18,9 @@ public class Player : MonoBehaviour {
 	public GameObject DeckObject;
 
 	[System.NonSerialized]
+	public Game ActiveGame;
+
+	[System.NonSerialized]
 	public Gradient[] Colors;
 	[System.NonSerialized]
 	public Gradient ComplementColor;

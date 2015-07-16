@@ -163,6 +163,7 @@ public class PlayerDeck : MonoBehaviour
 	{
 		bool roomToAdd = false;
 
+		Camera cam = null;
 		CirclePatch patch = piece.GetComponent<CirclePatch>();
 		if(patch != null)
 		{
@@ -171,8 +172,21 @@ public class PlayerDeck : MonoBehaviour
 				HandSlot slot = ActiveHand[i];
 				if(slot.Piece == null)
 				{
+					switch(i)
+					{
+					case 0:
+						cam = Owner.ActiveGame.PlayerDeckPatch1RendererCamera;
+						break;
+					case 1:
+						cam = Owner.ActiveGame.PlayerDeckPatch2RendererCamera;
+						break;
+					}
 					SetLayerRecursively(piece.gameObject, 8 + i);
 					piece.SetPosition(0.0f, 0.0f); 
+					Vector3 p = piece.gameObject.transform.position;
+					piece.gameObject.transform.position = Vector3.zero;
+					cam.Render();
+					piece.gameObject.transform.position = p;
 					piece.AddToDeck();
 					slot.Piece = piece;
 					roomToAdd = true;
@@ -189,8 +203,10 @@ public class PlayerDeck : MonoBehaviour
 				HandSlot slot = ActiveHand[PatchesOnHand.Length + i];
 				if(slot.Piece == null)
 				{
+					cam = Owner.ActiveGame.PlayerDeckDecorationRendererCamera;
 					SetLayerRecursively(piece.gameObject, 10);
 					piece.SetPosition(0.0f, 0.0f); 
+					cam.Render();
 					piece.AddToDeck();
 					slot.Piece = piece;
 					roomToAdd = true;
@@ -201,9 +217,11 @@ public class PlayerDeck : MonoBehaviour
 
 		return roomToAdd;
 	}
-	
+
 	void FillActiveHand()
 	{
+		Camera cam = null;
+
 		// Fill patches.
 		for(int i = 0; i < PatchesOnHand.Length; ++i)
 		{
@@ -212,8 +230,18 @@ public class PlayerDeck : MonoBehaviour
 			{
 				CirclePatch.PatchConfig patchConfig = PatchConfigs.Pop();
 				CirclePatch newPatch = CreatePatch(patchConfig);
+				switch(i)
+				{
+				case 0:
+					cam = Owner.ActiveGame.PlayerDeckPatch1RendererCamera;
+					break;
+				case 1:
+					cam = Owner.ActiveGame.PlayerDeckPatch2RendererCamera;
+					break;
+				}
 				SetLayerRecursively(newPatch.gameObject, 8 + i);
 				newPatch.SetPosition(0.0f, 0.0f); 
+				cam.Render();
 				newPatch.AddToDeck();
 				slot.Piece = newPatch;
 			}
@@ -227,8 +255,10 @@ public class PlayerDeck : MonoBehaviour
 			{
 				--NumDecorations;
 				DecorationCircleStopper newDecoration = CreateDecorationCircleStopper();
+				cam = Owner.ActiveGame.PlayerDeckDecorationRendererCamera;
 				SetLayerRecursively(newDecoration.gameObject, 10);
 				newDecoration.SetPosition(0.0f, 0.0f); 
+				cam.Render();
 				newDecoration.AddToDeck();
 				slot.Piece = newDecoration;
 			}

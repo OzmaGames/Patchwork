@@ -36,6 +36,9 @@ public class Game : MonoBehaviour {
 
 	public GameObject DeckObjectPrefab;
 
+	public Camera PlayerDeckPatch1RendererCamera;
+	public Camera PlayerDeckPatch2RendererCamera;
+	public Camera PlayerDeckDecorationRendererCamera;
 	public Camera PatchRendererCamera;
 
 	[System.Serializable]
@@ -63,18 +66,9 @@ public class Game : MonoBehaviour {
 
 	GameObject Background;
 
-	abstract class State
-	{
-		public Game ActiveGame;
-
-		public abstract void Start();
-		public abstract void Stop();
-		public abstract void Update();
-	}
-
 	public GameObject MenuBGPrefab;
 	public GameObject LogoPrefab;
-	class IntroGameState : State
+	class IntroGameState : GameState
 	{
 		const float WAIT_TIME = 2.0f;
 		float waitTimer = 0.0f;
@@ -119,7 +113,7 @@ public class Game : MonoBehaviour {
 
 	public GameObject WindowPrefab;
 	public GameObject MainMenuPrefab;
-	class MainMenuGameState : State
+	public class MainMenuGameState : GameState
 	{
 		UIMenuBG menubg;
 		UIWindow uiWindow;
@@ -160,23 +154,41 @@ public class Game : MonoBehaviour {
 				break;
 				
 			case UIWindow.VisibleState.Hidden:
-				if(uiWindow.IsDone)
+				if(uiWindow.IsDone && (newGameState != null))
 				{
 					// Start the game.
 					uiWindow.gameObject.SetActive(false);
 					ActiveGame.MenuBGPrefab.SetActive(false);
-					ActiveGame.SetState(new MainGameState());
+					ActiveGame.SetState(newGameState);
 				}
 				break;
 			}
 		}
 
+		GameState newGameState;
 		void OnSubmit(UIPage page)
 		{
 			System.Type type = page.GetType();
 			if(type == typeof(UIMainMenu))
 			{
 				UIMainMenu mainMenu = page as UIMainMenu;
+				switch(mainMenu.option)
+				{
+				case 1:
+					ActiveGame.PlayerSettings[0].Name = "Player";
+					ActiveGame.PlayerSettings[0].Palette = ActiveGame.Palette[0];
+					newGameState = new SingleplayerMainGameState();
+					uiWindow.Hide();
+					break;
+				case 2:
+					newGameState = new MultiplayerMainGameState();
+					uiWindow.Hide();
+					break;
+				case 3:
+					break;
+				case 4:
+					break;
+				}
 			}
 			else if(type == typeof(UIPlayerConfig))
 			{
@@ -190,6 +202,7 @@ public class Game : MonoBehaviour {
 				else
 				{
 					player = 1;
+					newGameState = new MultiplayerMainGameState();
 				}
 				ActiveGame.PlayerSettings[player].Name = playerConfig.PlayerConfig.Name;
 				ActiveGame.PlayerSettings[player].Palette = ActiveGame.Palette[playerConfig.PlayerConfig.Palette];
@@ -197,205 +210,15 @@ public class Game : MonoBehaviour {
 		}
 	}
 
-	bool abortGameSession = false;
+	public bool abortGameSession = false;
 	public GameObject QuitPrefab;
 	public GameObject PlayerStatsPrefab;
 	public GameObject TurnPrefab;
 	public GameObject HelpPrefab;
 	public GameObject ConfirmPlacementPrefab;
-	class MainGameState : State
-	{
-		int CurrentRound = 0;
-		List<PlayerInfo> Players = new List<PlayerInfo>();
-		List<PlayerInfo>.Enumerator ActivePlayer;
-		Playfield ActivePlayfield;
-
-		UnityEngine.UI.Text txtPlayer1Name;
-		UnityEngine.UI.Text txtPlayer1Score;
-		UnityEngine.UI.Text txtPlayer2Name;
-		UnityEngine.UI.Text txtPlayer2Score;
-		UnityEngine.UI.Text txtTurn;
-
-		public override void Start()
-		{
-			ActiveGame.abortGameSession = false;
-
-			ActiveGame.QuitPrefab.SetActive(true);
-
-			// Create playfield.
-			GameObject playfieldObject = new GameObject("Playfield");
-			playfieldObject.transform.localPosition = new Vector3(0.0f, 0.0f, -0.5f);
-			ActivePlayfield = playfieldObject.AddComponent<Playfield>();
-			ActivePlayfield.Generate(ActiveGame.PlayAreaHalfSize.x - 1.0f, ActiveGame.PlayAreaHalfSize.y - 1.0f, 10.0f, ActiveGame.BGTexture);
-
-			// Create players.
-			for(int i = 0; i < ActiveGame.PlayerSettings.Length; ++i)
-			{
-				AddPlayer(ActiveGame.PlayerSettings[i]);
-			}
-
-			// Setup UI.
-			ActiveGame.PlayerStatsPrefab.SetActive(true);
-			txtPlayer1Name = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Name").GetComponent<UnityEngine.UI.Text>();
-			txtPlayer1Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
-			txtPlayer2Name = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Name").GetComponent<UnityEngine.UI.Text>();
-			txtPlayer2Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
-			ActiveGame.TurnPrefab.SetActive(true);
-			txtTurn = ActiveGame.TurnPrefab.GetComponent<UnityEngine.UI.Text>();
-//			ActiveGame.HelpPrefab.SetActive(true);
-			UpdateUI();
-		}
-
-		public override void Stop()
-		{
-//			ActiveGame.HelpPrefab.SetActive(false);
-			ActiveGame.PlayerStatsPrefab.SetActive(false);
-			ActiveGame.TurnPrefab.SetActive(false);
-			ActiveGame.QuitPrefab.SetActive(false);
-		}
-		
-		public override void Update()
-		{
-			// Handle camera movement.
-			/*if((ActiveGame.someX != 0.0f) || (ActiveGame.someY != 0.0f))
-			{
-				Vector3 pos = Camera.main.transform.position;
-				Vector3 newPos = new Vector3(pos.x + ActiveGame.someX, pos.y + ActiveGame.someY, pos.z);
-				if(newPos.x > ActiveGame.PlayAreaHalfSize.x)
-				{
-					newPos.x = ActiveGame.PlayAreaHalfSize.x;
-				}
-				else if(newPos.x < (-ActiveGame.PlayAreaHalfSize.x))
-				{
-					newPos.x = -ActiveGame.PlayAreaHalfSize.x;
-				}
-				if(newPos.y > ActiveGame.PlayAreaHalfSize.y)
-				{
-					newPos.y = ActiveGame.PlayAreaHalfSize.y;
-				}
-				else if(newPos.y < (-ActiveGame.PlayAreaHalfSize.y))
-				{
-					newPos.y = -ActiveGame.PlayAreaHalfSize.y;
-				}
-				Camera.main.transform.position = newPos;
-			}*/
-			
-			if((CurrentRound >= ActiveGame.NumRounds) || (ActiveGame.abortGameSession))
-			{
-				PlayerInfo currentPlayerInfo = ActivePlayer.Current;
-				if(currentPlayerInfo != null)
-				{
-					currentPlayerInfo.Player.TurnOver();
-				}
-
-				// GAME OVER!!!!
-				ActivePlayfield.HideSymbols();
-				ActiveGame.SetState(new GameOverState(Players, ActivePlayfield));
-				return;
-			}
-			else
-			{
-				// Handle players turn.
-				PlayerInfo currentPlayerInfo = ActivePlayer.Current;
-				if(currentPlayerInfo != null)
-				{
-					if(currentPlayerInfo.Player.IsDone())
-					{
-						// Signal turn as done.
-						currentPlayerInfo.Player.TurnOver();
-						++currentPlayerInfo.Round;
-						
-						// Activate next player.
-						if(!ActivePlayer.MoveNext())
-						{
-							// Last player so rest back to first.
-							ActivePlayer = Players.GetEnumerator();
-							ActivePlayer.MoveNext();
-							
-							++CurrentRound;
-						}
-						if(CurrentRound < ActiveGame.NumRounds)
-						{
-							ActivatePlayer(ActivePlayer.Current);
-						}
-					}
-				}
-				else
-				{
-					ActivePlayer = Players.GetEnumerator();
-					ActivePlayer.MoveNext();
-					ActivatePlayer(ActivePlayer.Current);
-				}
-			}
-
-			UpdateUI();
-		}
-
-		void UpdateUI()
-		{
-			if(ActivePlayer.Current == Players[0])
-			{
-				txtPlayer1Name.color = ActiveGame.PlayerHighlightColor;
-				txtPlayer2Name.color = ActiveGame.PlayerNormalColor;
-			}
-			else if(ActivePlayer.Current == Players[1])
-			{
-				txtPlayer1Name.color = ActiveGame.PlayerNormalColor;
-				txtPlayer2Name.color = ActiveGame.PlayerHighlightColor;
-			}
-			else
-			{
-				txtPlayer1Name.color = ActiveGame.PlayerNormalColor;
-				txtPlayer2Name.color = ActiveGame.PlayerNormalColor;
-			}
-			txtPlayer1Name.text = Players[0].Player.gameObject.name;
-			txtPlayer1Score.text = Players[0].Player.Score.ToString();
-			txtPlayer2Name.text = Players[1].Player.gameObject.name;
-			txtPlayer2Score.text = Players[1].Player.Score.ToString();
-			txtTurn.text = "turn " + (CurrentRound + 1) + "/" + ActiveGame.NumRounds;
-		}
-
-		void AddPlayer(PlayerSetting playerSetting)
-		{
-			GameObject playerObject = new GameObject(playerSetting.Name);
-			Player player = playerObject.AddComponent<Player>();
-
-			player.ActivePlayfield = ActivePlayfield;
-			player.Colors = playerSetting.Palette.Colors;
-			player.ComplementColor = playerSetting.Palette.ComplementColor;
-			player.PatternTextures = playerSetting.PatchPatterns;
-			player.Decorations = playerSetting.Decorations;
-			player.ConfirmPlacementPrefab = ActiveGame.ConfirmPlacementPrefab;
-
-			Players.Add(new PlayerInfo(player));
-		}
-
-		void ActivatePlayer(PlayerInfo playerInfo)
-		{
-			playerInfo.Player.ActivateTurn();
-			
-			// Let the circles advance one more segment.
-			ActivePlayfield.ActivatePlayer(playerInfo.Player, true);
-		}
-		
-		void NextPlayer()
-		{
-			// Activate next player.
-			if(!ActivePlayer.MoveNext())
-			{
-				// Last player so rest back to first.
-				ActivePlayer = Players.GetEnumerator();
-				ActivePlayer.MoveNext();
-			}
-			if((ActivePlayer.Current != null) && (ActivePlayer.Current.Round < 12))
-			{
-				ActivatePlayer(ActivePlayer.Current);
-			}
-		}		
-	}
 
 	public GameObject GameOverPrefab;
-	class GameOverState : State
+	public class GameOverState : GameState
 	{
 		List<PlayerInfo> Players;
 		Playfield ActivePlayfield;
@@ -475,11 +298,11 @@ public class Game : MonoBehaviour {
 				UIGameOver gameOver = page as UIGameOver;
 			}
 		}
-		
+
 	}
 
-	State CurrentState;
-	void SetState(State state)
+	GameState CurrentState;
+	public void SetState(GameState state)
 	{
 		if(CurrentState != null)
 		{
@@ -494,6 +317,8 @@ public class Game : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		Symbol.s_Symbols = SymbolPrefabs;
+
 		// Create circle patch mesh.
 		CirclePatch.GenerateSegments(8, 1.0f, SymbolPrefabs, PatchSizeNumberPrefabs, PatchRendererCamera);
 

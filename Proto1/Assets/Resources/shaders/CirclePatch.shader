@@ -29,7 +29,7 @@
 			"AllowProjectors"="False"
 		}
 		blend SrcAlpha OneMinusSrcAlpha
-				
+
 		Pass
 		{
 			CGPROGRAM			
@@ -107,8 +107,12 @@
 			{
 				float lll = length(i.uv2.xy);
 				float ll = length(i.extras.zw);
+				float alpha = 1.0f;
 				if(ll > _CirclePatchSize.y)
-					discard;
+				{
+					alpha = 0.0f;
+					//discard;
+				}
 
 				float bgtex = 0.0f;
 				float fgtex = 0.0f;
@@ -172,6 +176,7 @@
 //				color = float4(gray, gray, gray, 1.0f);
 				color = float4(lerp(FGColorFromPalette(fgtex * fade), BGColorFromPalette(bgtex * fade), 1.0f - fgtex) * gray * border, 1.0f);
 				color.rgb += _AddColor.rgb;
+				color.a = alpha * color.a;
 				return color;
 			}
 			ENDCG
