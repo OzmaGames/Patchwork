@@ -4,9 +4,8 @@ using System.Collections.Generic;
 
 public class SingleplayerMainGameState : GameState
 {
-	int CurrentRound = 0;
 	Game.PlayerInfo ActivePlayer;
-	Playfield ActivePlayfield;
+	SinglePlayerPlayfield ActivePlayfield;
 
 	UnityEngine.UI.Text txtPlayer1Name;
 	UnityEngine.UI.Text txtPlayer1Score;
@@ -26,6 +25,15 @@ public class SingleplayerMainGameState : GameState
 		// Create player.
 		ActivePlayer = CreatePlayer(ActiveGame.PlayerSettings[0]);
 
+		// Setup UI.
+		ActiveGame.PlayerStatsPrefab.SetActive(true);
+		txtPlayer1Name = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Name").GetComponent<UnityEngine.UI.Text>();
+		txtPlayer1Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
+		ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Name").gameObject.SetActive(true);
+		ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Score").gameObject.SetActive(true);
+		ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Name").gameObject.SetActive(false);
+		ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Score").gameObject.SetActive(false);
+		UpdateUI();
 	}
 
 	public override void Stop()
@@ -34,20 +42,21 @@ public class SingleplayerMainGameState : GameState
 		ActivePlayfield = null;
 		GameObject.Destroy(ActivePlayer.Player.gameObject);
 		ActivePlayer = null;
+		ActiveGame.PlayerStatsPrefab.SetActive(false);
 		ActiveGame.QuitPrefab.SetActive(false);
 	}
 
 	bool first = true;
 	public override void Update()
 	{
-		if((CurrentRound >= ActiveGame.NumRounds) || (ActiveGame.abortGameSession))
+		if(ActivePlayfield.IsFullAndDone() || (ActiveGame.abortGameSession))
 		{
 			ActivePlayer.Player.TurnOver();
 
 			// GAME OVER!!!!
 			ActivePlayfield.HideSymbols();
 //			ActiveGame.SetState(new Game.GameOverState(null, ActivePlayfield));
-			ActiveGame.SetState(new Game.MainMenuGameState());
+			//ActiveGame.SetState(new Game.MainMenuGameState());
 			return;
 		}
 		else
@@ -65,19 +74,27 @@ public class SingleplayerMainGameState : GameState
 				++ActivePlayer.Round;
 				
 				// Activate next round.
-				++CurrentRound;
-				if(CurrentRound < ActiveGame.NumRounds)
-				{
-					ActivatePlayer(ActivePlayer);
-				}
+				ActivatePlayer(ActivePlayer);
 			}
 		}
+
+		UpdateUI();
+	}
+
+	void UpdateUI()
+	{
+		txtPlayer1Name.color = ActiveGame.PlayerNormalColor;
+		txtPlayer1Name.text = ActivePlayer.Player.gameObject.name;
+		txtPlayer1Score.text = ActivePlayer.Player.Score.ToString();
 	}
 
 	void ActivatePlayer(Game.PlayerInfo playerInfo)
 	{
-		playerInfo.Player.ActivateTurn();
-		
+		if(!ActivePlayfield.IsFull())
+		{
+			playerInfo.Player.ActivateTurn();
+		}
+
 		// Let the circles advance one more segment.
 		ActivePlayfield.ActivatePlayer(playerInfo.Player, true);
 	}
@@ -86,7 +103,10 @@ public class SingleplayerMainGameState : GameState
 	{
 		GameObject playerObject = new GameObject(playerSetting.Name);
 		Player player = playerObject.AddComponent<Player>();
-		
+
+		player.MinPatchSize = 1;
+		player.NumPatchesInDeck = 20;
+		player.NumDecorationsInDeck = 20;
 		player.ActivePlayfield = ActivePlayfield;
 		player.Colors = playerSetting.Palette.Colors;
 		player.ComplementColor = playerSetting.Palette.ComplementColor;

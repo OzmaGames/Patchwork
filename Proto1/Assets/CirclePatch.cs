@@ -431,7 +431,7 @@ public class CirclePatch : GamePieceBase {
 		material.shader = Shader.Find("Custom/CirclePatchCached");
 		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
 */
-		// Create symbol quad.
+		// Create symbol.
 		patchSymbol = Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>();
 		patchSymbol.transform.SetParent(gameObject.transform, false);
 		patchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f );
@@ -557,6 +557,10 @@ public class CirclePatch : GamePieceBase {
 		//if(CurrentSegmentArcSize > 360.0f)
 		{
 			size += GROWTH_SPEED * Time.deltaTime;
+			if(size > maxSize)
+			{
+				size = maxSize;
+			}
 			//CurrentSegmentArcSize = 0.0f;
 		}
 	}
@@ -572,7 +576,7 @@ public class CirclePatch : GamePieceBase {
 	
 	public bool HasSegmentStoppedGrowing()
 	{
-		return segmentDoneGrowing;
+		return segmentDoneGrowing || doneGrowing;
 	}
 	
 	public void SetGrowthDone(bool enable)

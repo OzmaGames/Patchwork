@@ -4,10 +4,14 @@ using System.Collections.Generic;
 
 public class SinglePlayerPlayfield : Playfield
 {
-	struct Cell
+	class Cell
 	{
+		public bool IsDone;
 		public Rect Rect;
+		public float Size;
 		public Symbol Symbol;
+		public GamePieceBase Piece;
+		public bool BelongsToPlayer;
 	}
 	List<Cell> PlayfieldCells;
 
@@ -65,15 +69,12 @@ public class SinglePlayerPlayfield : Playfield
 		mouseWorldPosition.z = 0.0f;
 
 		Material cellMaterial = null;
-		for(int i = 0; i < PlayfieldCells.Count; ++i)
+		Cell cell;
+		int cellIndex = FindCell(mouseWorldPosition, out cell);
+		if(cellIndex >= 0)
 		{
-			Cell cell = PlayfieldCells[i];
-			if(cell.Rect.Contains(mouseWorldPosition))
-			{
-				MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-				cellMaterial = meshRenderer.materials[i];
-				break;
-			}
+			MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+			cellMaterial = meshRenderer.materials[cellIndex];
 		}
 
 		if(cellMaterial != highlightedCellMaterial)
@@ -103,32 +104,150 @@ public class SinglePlayerPlayfield : Playfield
 
 	void CheckForCollision()
 	{
+		for(int i = 0; i < PlayfieldCells.Count; ++i)
+		{
+			Cell cell = PlayfieldCells[i];
+			if(!cell.IsDone)
+			{
+				CirclePatch piece = cell.Piece as CirclePatch;
+				if(piece != null)
+				{
+					if(piece.GetSize() > cell.Size)
+					{
+						piece.SetCollided(true);
+						cell.IsDone = true;
+					}
+					else if(piece.HasStoppedGrowing())
+					{
+						cell.IsDone = true;
+					}
+				}
+			}
+		}
 	}
 
 
 	public override bool CanPlaceAt(Player player, GamePieceBase piece, Vector3 pos, out List<GamePieceBase> collidedPieces)
 	{
 		collidedPieces = new List<GamePieceBase>();
+		
+		if(!IsInsideGrid(pos))
+		{
+			return false;
+		}
+		
+		if(piece.GetComponent<DecorationCircleStopper>() != null)
+		{
+			bool hasCollided = false;
+			CirclePatch bestCollider = null;
+			DecorationCircleStopper decoration = piece.GetComponent<DecorationCircleStopper>();
+			for(int p = 0; p < Patches.Count; ++p)
+			{
+				CirclePatch patch = Patches[p].Patch;
+				// Enabled placing decoration on completed patches.
+				if(/*(!patch.HasStoppedGrowing()) &&*/ decoration.CollidesAgainst(patch))
+				{
+					if(patch.GetDecoration() == null)
+					{
+						if((bestCollider == null) || (bestCollider.transform.position.z > patch.transform.position.z))
+						{
+							bestCollider = patch;
+							hasCollided = true;
+						}
+					}
+					else
+					{
+						collidedPieces.Add(patch.GetDecoration());
+					}
+				}
+			}
+			
+			decoration.SetCollider(bestCollider);
+			return hasCollided;
+		}
+
 		return true;
 	}
 	
 	public override void GetCollision(GamePieceBase piece, out List<GamePieceBase> collidedPieces)
 	{
 		collidedPieces = new List<GamePieceBase>();
+		
+		Vector3 pos = piece.transform.position;
+		if(!IsInsideGrid(pos))
+		{
+			return;
+		}
 	}
 
 	public override void Place(Player player, GamePieceBase piece)
 	{
+		CirclePatch circlePatch = piece.GetComponent<CirclePatch>();
+		if(circlePatch != null)
+		{
+			Cell cell;
+			int cellIndex = FindCell(piece.transform.position, out cell);
+			if(cellIndex >= 0)
+			{
+				cell.Piece = circlePatch;
+				piece.SetPosition(cell.Rect.center.x, cell.Rect.center.y);
+				if(!cell.BelongsToPlayer)
+				{
+					if(cell.Symbol)
+					{
+						switch(circlePatch.GetSymbol().Compare(cell.Symbol))
+						{
+						case Symbol.CompareResult.Win:
+							Debug.Log("NOT MY TYPE - BUT THAT'S OK, I WIN!");
+							break;
+						case Symbol.CompareResult.Draw:
+							Debug.Log("NOT MY TYPE - BUT WE LOOK THE SAME!");
+							break;
+						case Symbol.CompareResult.Lose:
+							Debug.Log("NOT MY TYPE - WHY DID YOU PLACE ME HERE?!");
+							break;
+						}
+					}
+					else
+					{
+						Debug.Log("NOT MY TYPE!");
+					}
+				}
+			}
+
+			CirclePatch patch = piece.GetComponent<CirclePatch>();
+			Patches.Add(new PlacedPatch(player, patch));
+		}
+		piece.Place();
+	}
+
+	int FindCell(Vector2 pos, out Cell foundCell)
+	{
+		foundCell = null;
+		for(int i = 0; i < PlayfieldCells.Count; ++i)
+		{
+			Cell cell = PlayfieldCells[i];
+			if(cell.Rect.Contains(pos))
+			{
+				foundCell = cell;
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	public override bool IsInsideGrid(Vector3 pos)
 	{
-		return false;
+		if((Mathf.Abs(pos.x) >= HalfWidth) || (Mathf.Abs(pos.y) >= HalfHeight))
+		{
+			return false;
+		}
+		return true;
 	}
 
 	public override bool CanPlaceDecoration()
 	{
-		return false;
+		return true;
 	}
 
 	public override void ShowSymbols()
@@ -153,42 +272,40 @@ public class SinglePlayerPlayfield : Playfield
 		HalfHeight = halfHeight;
 		BGTexture = bgTexture;	
 
-		float scale = CirclePatch.SegmentScale * 2.0f;
-		float size = scale;
-
 		// Generate test playfield cells.
 		PlayfieldCells = new List<Cell>();
-		size = 3.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(-9.0f, -7.0f, size, size), null));
-		size = 2.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(-9.0f, -1.0f, size, size), Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>()));
-		size = 1.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(-5.0f, -1.0f, size, size), null));
-		size = 2.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(-9.0f, 3.0f, size, size), null));
-		size = 3.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(-5.0f, 1.0f, size, size), Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>()));
-		size = 2.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(-3.0f, -3.0f, size, size), null));
-		size = 3.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(-3.0f, -9.0f, size, size), null));
-		size = 1.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(1.0f, -3.0f, size, size), null));
-		size = 4.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(1.0f, -1.0f, size, size), Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>()));
-		size = 3.0f * scale;
-		PlayfieldCells.Add(GenerateCell(new Rect(3.0f, -7.0f, size, size), null));
+		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, -7.0f), 3.0f, null, true));
+		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, -1.0f), 2.0f, Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>(), false));
+		PlayfieldCells.Add(GenerateCell(new Vector2(-5.0f, -1.0f), 1.0f, null, true));
+		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, 3.0f), 2.0f, null, true));
+		PlayfieldCells.Add(GenerateCell(new Vector2(-5.0f, 1.0f), 3.0f, Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>(), true));
+		PlayfieldCells.Add(GenerateCell(new Vector2(-3.0f, -3.0f), 2.0f, null, true));
+		PlayfieldCells.Add(GenerateCell(new Vector2(-3.0f, -9.0f), 3.0f, null, true));
+		PlayfieldCells.Add(GenerateCell(new Vector2(1.0f, -3.0f), 1.0f, null, true));
+		PlayfieldCells.Add(GenerateCell(new Vector2(1.0f, -1.0f), 4.0f, Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>(), false));
+		PlayfieldCells.Add(GenerateCell(new Vector2(3.0f, -7.0f), 3.0f, null, false));
 
 		// Generate mesh from playfield cells.
 		GenerateMeshFromCell();
 
 	}
 
-	Cell GenerateCell(Rect rect, Symbol symbol)
+	Cell GenerateCell(Vector2 pos, float size, Symbol symbol, bool belongsToPlayer)
 	{
+		float rectSize = size * (CirclePatch.SegmentScale * 2.0f);
+
 		Cell cell = new Cell();
-		cell.Rect = rect;
+
+		cell.IsDone = false;
+		cell.Rect = new Rect(pos.x, pos.y, rectSize, rectSize);
+		cell.Size = size;
 		cell.Symbol = symbol;
+		cell.BelongsToPlayer = belongsToPlayer;
+		if(symbol != null)
+		{
+			symbol.transform.SetParent(gameObject.transform, false);
+			symbol.transform.localPosition = new Vector3(cell.Rect.center.x, cell.Rect.center.y, Game.ZPosAdd * 0.25f );
+		}
 		return cell;
 	}
 	
@@ -291,10 +408,77 @@ public class SinglePlayerPlayfield : Playfield
 
 	public override void ActivatePlayer(Player player, bool hideOthersSymbols)
 	{
+		for(int p = 0; p < Patches.Count; ++p)
+		{
+			if(Patches[p].Owner == player)
+			{
+				CirclePatch patch = Patches[p].Patch;
+				if(!patch.HasStoppedGrowing())
+				{
+#if HIDE_SYMBOLS
+					patch.SetShowSymbol(true);
+#endif
+					patch.NextSegment();
+				}
+				else if(hideOthersSymbols)
+				{
+					// Only show symbol on growing patches. 
+#if HIDE_SYMBOLS
+					patch.SetShowSymbol(false);
+#endif
+				}
+			}
+			else if(hideOthersSymbols)
+			{
+#if HIDE_SYMBOLS
+				Patches[p].Patch.SetShowSymbol(false);
+#endif
+			}
+			else
+			{
+#if HIDE_SYMBOLS
+				Patches[p].Patch.SetShowSymbol(true);
+#endif
+			}
+		}
 	}
 
+	public bool IsFull()
+	{
+		for(int i = 0; i < PlayfieldCells.Count; ++i)
+		{
+			Cell cell = PlayfieldCells[i];
+			if(cell.Piece == null)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public bool IsFullAndDone()
+	{
+		for(int i = 0; i < PlayfieldCells.Count; ++i)
+		{
+			Cell cell = PlayfieldCells[i];
+			if(!cell.IsDone)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	public override bool IsDone()
 	{
-		return false;
+		for(int p = 0; p < Patches.Count; ++p)
+		{
+			CirclePatch patch = Patches[p].Patch;
+			if(!patch.HasSegmentStoppedGrowing())
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 }

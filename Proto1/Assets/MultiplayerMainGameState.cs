@@ -39,6 +39,10 @@ public class MultiplayerMainGameState : GameState
 		txtPlayer1Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
 		txtPlayer2Name = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Name").GetComponent<UnityEngine.UI.Text>();
 		txtPlayer2Score = ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
+		ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Name").gameObject.SetActive(true);
+		ActiveGame.PlayerStatsPrefab.transform.FindChild("Player1").FindChild("Score").gameObject.SetActive(true);
+		ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Name").gameObject.SetActive(true);
+		ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Score").gameObject.SetActive(true);
 		ActiveGame.TurnPrefab.SetActive(true);
 		txtTurn = ActiveGame.TurnPrefab.GetComponent<UnityEngine.UI.Text>();
 		//			ActiveGame.HelpPrefab.SetActive(true);
@@ -159,6 +163,9 @@ public class MultiplayerMainGameState : GameState
 		GameObject playerObject = new GameObject(playerSetting.Name);
 		Player player = playerObject.AddComponent<Player>();
 		
+		player.MinPatchSize = 2;
+		player.NumPatchesInDeck = 20;
+		player.NumDecorationsInDeck = 20;
 		player.ActivePlayfield = ActivePlayfield;
 		player.Colors = playerSetting.Palette.Colors;
 		player.ComplementColor = playerSetting.Palette.ComplementColor;

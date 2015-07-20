@@ -265,7 +265,7 @@ public class PlayerDeck : MonoBehaviour
 		}
 	}
 
-	public void Generate(int numPatches, int numDecorations, Player owner)
+	public void Generate(int minSize, int numPatches, int numDecorations, Player owner)
 	{
 		Owner = owner;
 
@@ -275,7 +275,7 @@ public class PlayerDeck : MonoBehaviour
 		PatchConfigs = new Stack<CirclePatch.PatchConfig>();
 		for(int i = 0; i < NumPatches; ++i)
 		{
-			int segments = Random.Range(2, 7);
+			int segments = Random.Range(minSize, 7);
 			PatchConfigs.Push(new CirclePatch.PatchConfig(segments, 1.0f, owner.Colors.Length, CirclePatch.MAX_PATTERNS));
 		}
 

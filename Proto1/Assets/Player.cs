@@ -12,6 +12,12 @@ public class Player : MonoBehaviour {
 	[System.NonSerialized]
 	public Playfield ActivePlayfield;
 	[System.NonSerialized]
+	public int MinPatchSize = 2;
+	[System.NonSerialized]
+	public int NumPatchesInDeck = 20;
+	[System.NonSerialized]
+	public int NumDecorationsInDeck = 20;
+	[System.NonSerialized]
 	public PlayerDeck Deck;
 	[System.NonSerialized]
 	public static GameObject DeckObjectPrefab;
@@ -40,11 +46,16 @@ public class Player : MonoBehaviour {
 	bool isDone = false;
 
 	void Start () {
+		//GetNewDeck();
+	}
+
+	public void GetNewDeck()
+	{
 		// Create deck.
 		DeckObject = Instantiate(DeckObjectPrefab);
 		DeckObject.transform.SetParent(GameObject.Find("Canvas").transform, false);
 		Deck = DeckObject.GetComponent<PlayerDeck>();
-		Deck.Generate(20, 20, this);
+		Deck.Generate(MinPatchSize, NumPatchesInDeck, NumDecorationsInDeck, this);
 	}
 	
 	public void ActivateTurn()
@@ -53,6 +64,10 @@ public class Player : MonoBehaviour {
 		myTurn = true;
 
 		// Activate deck.
+		if(DeckObject == null)
+		{
+			GetNewDeck();
+		}
 		Deck.ActivateTurn();
 		Deck.Show();
 	}
