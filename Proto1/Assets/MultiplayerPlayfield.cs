@@ -141,7 +141,7 @@ public class MultiplayerPlayfield : Playfield
 		}
 	}
 
-	public override void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture)
+	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture)
 	{
 		// Generate playfield cells.
 		BGTexture = bgTexture;	

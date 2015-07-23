@@ -7,7 +7,7 @@ public class MultiplayerMainGameState : GameState
 	int CurrentRound = 0;
 	List<Game.PlayerInfo> Players = new List<Game.PlayerInfo>();
 	List<Game.PlayerInfo>.Enumerator ActivePlayer;
-	Playfield ActivePlayfield;
+	MultiplayerPlayfield ActivePlayfield;
 	
 	UnityEngine.UI.Text txtPlayer1Name;
 	UnityEngine.UI.Text txtPlayer1Score;

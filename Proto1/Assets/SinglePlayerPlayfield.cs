@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+/*using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;*/
 
 public class SinglePlayerPlayfield : Playfield
 {
-	class Cell
+	/*class Cell
 	{
 		public bool IsDone;
 		public Rect Rect;
@@ -12,8 +14,8 @@ public class SinglePlayerPlayfield : Playfield
 		public Symbol Symbol;
 		public GamePieceBase Piece;
 		public bool BelongsToPlayer;
-	}
-	List<Cell> PlayfieldCells;
+	}*/
+	List<CellPiece> PlayfieldCells;
 
 	bool Dirty = false;
 	float HalfWidth = 0.0f;
@@ -21,7 +23,8 @@ public class SinglePlayerPlayfield : Playfield
 	
 	Mesh GeneratedMesh;
 	Texture2D BGTexture;
-	
+	Texture2D[] CellTextures;
+
 	
 	class PlacedPatch
 	{
@@ -53,6 +56,14 @@ public class SinglePlayerPlayfield : Playfield
 		PlayfieldCells = null; 
 	}
 
+	/*void SaveLevel()
+	{
+		BinaryFormatter bf = new BinaryFormatter();
+		FileStream file = File.Create (Application.persistentDataPath + "/savedGames.txt");
+		//bf.Serialize(file, SaveLoad.savedGames);
+		file.Close();
+	}*/
+	
 	Material highlightedCellMaterial;
 	Color highlightColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);
 	void Update()
@@ -69,12 +80,12 @@ public class SinglePlayerPlayfield : Playfield
 		mouseWorldPosition.z = 0.0f;
 
 		Material cellMaterial = null;
-		Cell cell;
+		CellPiece cell;
 		int cellIndex = FindCell(mouseWorldPosition, out cell);
 		if(cellIndex >= 0)
 		{
-			MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-			cellMaterial = meshRenderer.materials[cellIndex];
+			MeshRenderer meshRenderer = cell.gameObject.GetComponent<MeshRenderer>();
+			cellMaterial = meshRenderer.material;
 		}
 
 		if(cellMaterial != highlightedCellMaterial)
@@ -106,7 +117,7 @@ public class SinglePlayerPlayfield : Playfield
 	{
 		for(int i = 0; i < PlayfieldCells.Count; ++i)
 		{
-			Cell cell = PlayfieldCells[i];
+			CellPiece cell = PlayfieldCells[i];
 			if(!cell.IsDone)
 			{
 				CirclePatch piece = cell.Piece as CirclePatch;
@@ -185,10 +196,11 @@ public class SinglePlayerPlayfield : Playfield
 		CirclePatch circlePatch = piece.GetComponent<CirclePatch>();
 		if(circlePatch != null)
 		{
-			Cell cell;
+			CellPiece cell;
 			int cellIndex = FindCell(piece.transform.position, out cell);
 			if(cellIndex >= 0)
 			{
+				Debug.Log("the ridim of leif");
 				cell.Piece = circlePatch;
 				piece.SetPosition(cell.Rect.center.x, cell.Rect.center.y);
 				if(!cell.BelongsToPlayer)
@@ -221,12 +233,12 @@ public class SinglePlayerPlayfield : Playfield
 		piece.Place();
 	}
 
-	int FindCell(Vector2 pos, out Cell foundCell)
+	int FindCell(Vector2 pos, out CellPiece foundCell)
 	{
 		foundCell = null;
 		for(int i = 0; i < PlayfieldCells.Count; ++i)
 		{
-			Cell cell = PlayfieldCells[i];
+			CellPiece cell = PlayfieldCells[i];
 			if(cell.Rect.Contains(pos))
 			{
 				foundCell = cell;
@@ -266,14 +278,15 @@ public class SinglePlayerPlayfield : Playfield
 		}
 	}	
 
-	public override void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture)
+	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture, Texture2D[] cellTextures)
 	{
 		HalfWidth = halfWidth;
 		HalfHeight = halfHeight;
-		BGTexture = bgTexture;	
+		BGTexture = bgTexture;
+		CellTextures = cellTextures;
 
 		// Generate test playfield cells.
-		PlayfieldCells = new List<Cell>();
+		PlayfieldCells = new List<CellPiece>();
 		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, -7.0f), 3.0f, null, true));
 		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, -1.0f), 2.0f, Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>(), false));
 		PlayfieldCells.Add(GenerateCell(new Vector2(-5.0f, -1.0f), 1.0f, null, true));
@@ -286,30 +299,34 @@ public class SinglePlayerPlayfield : Playfield
 		PlayfieldCells.Add(GenerateCell(new Vector2(3.0f, -7.0f), 3.0f, null, false));
 
 		// Generate mesh from playfield cells.
-		GenerateMeshFromCell();
+		//GenerateMeshFromCell();
 
 	}
 
-	Cell GenerateCell(Vector2 pos, float size, Symbol symbol, bool belongsToPlayer)
+	CellPiece GenerateCell(Vector2 pos, float size, Symbol symbol, bool belongsToPlayer)
 	{
 		float rectSize = size * (CirclePatch.SegmentScale * 2.0f);
+		
+		GameObject cellPieceObj = new GameObject();
+		CellPiece cellPiece = cellPieceObj.AddComponent<CellPiece>();
+		cellPiece.Generate(size, symbol, belongsToPlayer, new Color(Random.value, Random.value, Random.value, 1.0f), CellTextures[0]);
+		cellPieceObj.transform.position = new Vector3(pos.x + (rectSize / 2.0f), pos.y + (rectSize / 2.0f), 0.0f);
 
-		Cell cell = new Cell();
-
+/*		Cell cell = new Cell();
 		cell.IsDone = false;
 		cell.Rect = new Rect(pos.x, pos.y, rectSize, rectSize);
 		cell.Size = size;
 		cell.Symbol = symbol;
-		cell.BelongsToPlayer = belongsToPlayer;
+		cell.BelongsToPlayer = belongsToPlayer;*/
 		if(symbol != null)
 		{
-			symbol.transform.SetParent(gameObject.transform, false);
-			symbol.transform.localPosition = new Vector3(cell.Rect.center.x, cell.Rect.center.y, Game.ZPosAdd * 0.25f );
+			symbol.transform.SetParent(cellPieceObj.transform, false);
+			symbol.transform.localPosition =  new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f );
 		}
-		return cell;
+		return cellPiece;
 	}
 	
-	void GenerateMeshFromCell()
+	/*void GenerateMeshFromCell()
 	{
 		Vector3[] vertices = new Vector3[PlayfieldCells.Count * 6];
 		Vector2[] uvs = new Vector2[PlayfieldCells.Count * 6];
@@ -327,7 +344,7 @@ public class SinglePlayerPlayfield : Playfield
 			float yPos = cell.Rect.position.y;
 			float width = cell.Rect.width;
 			float height = cell.Rect.height;
-			Color color = new Color(Random.value, Random.value, Random.value, 0.2f);
+			Color color = ;
 
 			indices[i] = new int[6];
 
@@ -404,7 +421,7 @@ public class SinglePlayerPlayfield : Playfield
 			material.mainTexture = BGTexture;//RandomPatternTextures[Random.Range(0,6)];
 			material.SetColor("_AddColor", Color.clear);
 		}
-	}
+	}*/
 
 	public override void ActivatePlayer(Player player, bool hideOthersSymbols)
 	{
@@ -447,7 +464,7 @@ public class SinglePlayerPlayfield : Playfield
 	{
 		for(int i = 0; i < PlayfieldCells.Count; ++i)
 		{
-			Cell cell = PlayfieldCells[i];
+			CellPiece cell = PlayfieldCells[i];
 			if(cell.Piece == null)
 			{
 				return false;
@@ -460,7 +477,7 @@ public class SinglePlayerPlayfield : Playfield
 	{
 		for(int i = 0; i < PlayfieldCells.Count; ++i)
 		{
-			Cell cell = PlayfieldCells[i];
+			CellPiece cell = PlayfieldCells[i];
 			if(!cell.IsDone)
 			{
 				return false;

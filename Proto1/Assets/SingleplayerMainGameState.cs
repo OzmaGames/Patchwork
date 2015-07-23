@@ -20,7 +20,7 @@ public class SingleplayerMainGameState : GameState
 		GameObject playfieldObject = new GameObject("Playfield");
 		playfieldObject.transform.localPosition = new Vector3(0.0f, 0.0f, -0.5f);
 		ActivePlayfield = playfieldObject.AddComponent<SinglePlayerPlayfield>();
-		ActivePlayfield.Generate(ActiveGame.PlayAreaHalfSize.x - 1.0f, ActiveGame.PlayAreaHalfSize.y - 1.0f, 10.0f, ActiveGame.BGTexture);
+		ActivePlayfield.Generate(ActiveGame.PlayAreaHalfSize.x - 1.0f, ActiveGame.PlayAreaHalfSize.y - 1.0f, 10.0f, ActiveGame.BGTexture, ActiveGame.PlayerSettings[0].PatchPatterns);
 		
 		// Create player.
 		ActivePlayer = CreatePlayer(ActiveGame.PlayerSettings[0]);

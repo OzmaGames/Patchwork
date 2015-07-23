@@ -1,7 +1,8 @@
 ﻿Shader "Custom/FabricPiece" {
 	Properties {
 		_MainTex ("Base (RGB)", 2D) = "white" {}
-		_AddColor ("ShadeColor", vector) = (0.0,0.0,0.0,0.0)
+		_Color ("Main Color", Color) = (1.0,1.0,1.0,1.0)
+		_AddColor ("ShadeColor", Color) = (0.0,0.0,0.0,0.0)
 	}
 	SubShader {
 		Tags {
@@ -20,6 +21,7 @@
 			#include "UnityCG.cginc"
 
 			sampler2D _MainTex;
+			float4 _Color;
 			float4 _AddColor;
 
 			struct appdata {
@@ -45,11 +47,12 @@
 
 			half4 frag(v2f i) : COLOR
 			{
-				float4 mainColor = tex2D(_MainTex, i.uv * 0.01);
+				float4 mainColor = tex2D(_MainTex, i.uv);// * 0.01);
 				float4 color = mainColor;
 				color.rgb += _AddColor.rgb;
 				color.a = 1.0f;
-				return i.color + ((color.r + color.g + color.b) / 3.0f);
+				return _Color * color;//i.color + ((color.r + color.g + color.b) / 3.0f);
+				//return mainColor;//i.color + ((color.r + color.g + color.b) / 3.0f);
 			}
 			ENDCG
 		}

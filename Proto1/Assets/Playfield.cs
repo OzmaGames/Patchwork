@@ -18,8 +18,6 @@ public abstract class Playfield : MonoBehaviour
 	
 	public abstract void HideSymbols();
 
-	public abstract void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture);
-
 	// Move this to game state?
 	public abstract void ActivatePlayer(Player player, bool hideOthersSymbols);
 
