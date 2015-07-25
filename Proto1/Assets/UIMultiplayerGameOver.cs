@@ -1,19 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class UIGameOver : UIPage
+public class UIMultiplayerGameOver : UIPage
 {
 	public Player Winner;
 	public Player Loser;
 
-	void Start()
-	{
-	}
-	
-	void Update()
-	{
-	}
-	
 	public override bool IsValid()
 	{
 		return true;
@@ -32,5 +24,18 @@ public class UIGameOver : UIPage
 	
 	public override void Hide()
 	{
+	}
+
+	public int option = 0;
+	public void OpenMainMenu()
+	{
+		option = 1;
+		Window.OnSubmit(this);
+	}
+	
+	public void PlayAgain()
+	{
+		option = 2;
+		Window.OnSubmit(this);
 	}
 }

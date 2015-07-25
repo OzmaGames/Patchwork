@@ -30,6 +30,7 @@ public class Game : MonoBehaviour {
 		public Gradient ComplementColor;
 	}
 	public PlayerPalette[] Palette;
+	public Texture2D[] CellSymbolIcons;
 
 	public GameObject[] SymbolPrefabs;
 	public GameObject[] PatchSizeNumberPrefabs;
@@ -172,12 +173,17 @@ public class Game : MonoBehaviour {
 			if(type == typeof(UIMainMenu))
 			{
 				UIMainMenu mainMenu = page as UIMainMenu;
-				switch(mainMenu.option)
+				Debug.Log("HOW DID I GET HERE? " + mainMenu.option);
+			}
+			else if(type == typeof(UILevelSelect))
+			{
+				UILevelSelect levelSelect = page as UILevelSelect;
+				switch(levelSelect.option)
 				{
 				case 1:
 					ActiveGame.PlayerSettings[0].Name = "Player";
 					ActiveGame.PlayerSettings[0].Palette = ActiveGame.Palette[0];
-					newGameState = new SingleplayerMainGameState();
+					newGameState = new SingleplayerMainGameState(levelSelect.SelectedLevel);
 					uiWindow.Hide();
 					break;
 				case 2:
@@ -217,89 +223,8 @@ public class Game : MonoBehaviour {
 	public GameObject HelpPrefab;
 	public GameObject ConfirmPlacementPrefab;
 
-	public GameObject GameOverPrefab;
-	public class GameOverState : GameState
-	{
-		List<PlayerInfo> Players;
-		Playfield ActivePlayfield;
-		UIWindow uiWindow;
-		UIGameOver uiGameOver;
-
-		public GameOverState(List<PlayerInfo> players, Playfield playfield)
-		{
-			Players = players;
-			ActivePlayfield = playfield;
-		}
-
-		public override void Start()
-		{
-			ActiveGame.QuitPrefab.SetActive(false);
-
-			// Find winner and loser.
-			Player winner;
-			Player loser;
-			if(Players[0].Player.Score >= Players[1].Player.Score)
-			{
-				winner = Players[0].Player;
-				loser = Players[1].Player;
-			}
-			else
-			{
-				winner = Players[1].Player;
-				loser = Players[0].Player;
-			}
-
-			uiGameOver = ActiveGame.GameOverPrefab.GetComponent<UIGameOver>();
-			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
-			uiWindow.gameObject.SetActive(true);
-			uiWindow.OnSubmit = OnSubmit;
-			uiGameOver.Winner = winner;
-			uiGameOver.Loser = loser;
-			uiWindow.Show(uiGameOver);
-		}
-		
-		public override void Stop()
-		{
-			Destroy(ActivePlayfield.gameObject);
-			ActivePlayfield = null;
-			for(int i = 0; i < Players.Count; ++i)
-			{
-				Destroy(Players[i].Player.gameObject);
-			}
-			Players.Clear();
-			Players = null;
-		}
-		
-		public override void Update()
-		{
-			switch(uiWindow.Visible)
-			{
-			case UIWindow.VisibleState.Visible:
-				if(uiWindow.IsDone)
-				{
-					uiWindow.Hide();
-				}
-				break;
-				
-			case UIWindow.VisibleState.Hidden:
-				if(uiWindow.IsDone)
-				{
-					// Re-start.
-					ActiveGame.SetState(new MainMenuGameState());
-				}
-				break;
-			}
-		}
-		
-		void OnSubmit(UIPage page)
-		{
-			if(page.GetType() == typeof(UIGameOver))
-			{
-				UIGameOver gameOver = page as UIGameOver;
-			}
-		}
-
-	}
+	public GameObject SinglePlayerGameOverPrefab;
+	public GameObject MultiplayerGameOverPrefab;
 
 	GameState CurrentState;
 	public void SetState(GameState state)
@@ -320,7 +245,7 @@ public class Game : MonoBehaviour {
 		Symbol.s_Symbols = SymbolPrefabs;
 
 		// Create circle patch mesh.
-		CirclePatch.GenerateSegments(8, 1.0f, SymbolPrefabs, PatchSizeNumberPrefabs, PatchRendererCamera);
+		CirclePatch.GenerateSegments(8, 1.0f, PatchSizeNumberPrefabs, PatchRendererCamera);
 
 		// Create background.
 		Background = new GameObject("Background");

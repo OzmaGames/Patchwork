@@ -1,8 +1,13 @@
 ﻿Shader "Custom/FabricPiece" {
 	Properties {
+		_AddColor ("ShadeColor", Color) = (0,0,0,0)
+
+		_BaseColor1 ("BaseColor1", Color) = (1,1,1,1)
+		_BaseColor2 ("BaseColor2", Color) = (1,1,1,1)
+		_ComplementColor1 ("ComplementColor1", Color) = (1,1,1,1)
+		_ComplementColor2 ("ComplementColor2", Color) = (1,1,1,1)
+
 		_MainTex ("Base (RGB)", 2D) = "white" {}
-		_Color ("Main Color", Color) = (1.0,1.0,1.0,1.0)
-		_AddColor ("ShadeColor", Color) = (0.0,0.0,0.0,0.0)
 	}
 	SubShader {
 		Tags {
@@ -20,9 +25,12 @@
 			#pragma fragment frag
 			#include "UnityCG.cginc"
 
-			sampler2D _MainTex;
-			float4 _Color;
 			float4 _AddColor;
+			float4 _BaseColor1;
+			float4 _BaseColor2;
+			float4 _ComplementColor1;
+			float4 _ComplementColor2;
+			sampler2D _MainTex;
 
 			struct appdata {
 				float4 vertex : POSITION;
@@ -45,13 +53,18 @@
 				return o;
 			}
 
+			float3 BGColorFromPalette(float index)
+			{
+				return lerp(_BaseColor1, _BaseColor2, index).rgb; // Was mix()
+			}
+
 			half4 frag(v2f i) : COLOR
 			{
-				float4 mainColor = tex2D(_MainTex, i.uv);// * 0.01);
-				float4 color = mainColor;
+				float bgtex = tex2D(_MainTex, i.uv).r;// * 0.01);
+				float4 color = float4(BGColorFromPalette(bgtex), 1.0f);
 				color.rgb += _AddColor.rgb;
 				color.a = 1.0f;
-				return _Color * color;//i.color + ((color.r + color.g + color.b) / 3.0f);
+				return color;//i.color + ((color.r + color.g + color.b) / 3.0f);
 				//return mainColor;//i.color + ((color.r + color.g + color.b) / 3.0f);
 			}
 			ENDCG

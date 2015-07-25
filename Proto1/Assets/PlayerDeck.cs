@@ -72,12 +72,35 @@ public class PlayerDeck : MonoBehaviour
 			GamePieceBase piece = ActiveHand[i].Piece;
 			if(piece != null)
 			{
+				Camera cam = null;
 				piece.gameObject.SetActive(true);
+				switch(i)
+				{
+				case 0:
+					cam = Owner.ActiveGame.PlayerDeckPatch1RendererCamera;
+					break;
+				case 1:
+					cam = Owner.ActiveGame.PlayerDeckPatch2RendererCamera;
+					break;
+				default:
+				case 2:
+					cam = Owner.ActiveGame.PlayerDeckDecorationRendererCamera;
+					break;
+				}
+				RenderPiece(piece, cam);
 			}
 		}
 		gameObject.SetActive(true);
 	}
 
+	void RenderPiece(GamePieceBase piece, Camera camera)
+	{
+		Vector3 p = piece.gameObject.transform.position;
+		piece.gameObject.transform.position = Vector3.zero;
+		camera.Render();
+		piece.gameObject.transform.position = p;
+	}
+	
 	public void Hide()
 	{
 		for(int i = 0; i < (PatchesOnHand.Length + DecorationsOnHand.Length); ++i)
@@ -182,11 +205,8 @@ public class PlayerDeck : MonoBehaviour
 						break;
 					}
 					SetLayerRecursively(piece.gameObject, 8 + i);
-					piece.SetPosition(0.0f, 0.0f); 
-					Vector3 p = piece.gameObject.transform.position;
-					piece.gameObject.transform.position = Vector3.zero;
-					cam.Render();
-					piece.gameObject.transform.position = p;
+					piece.SetPosition(0.0f, 0.0f);
+					RenderPiece(piece, cam);
 					piece.AddToDeck();
 					slot.Piece = piece;
 					roomToAdd = true;
@@ -206,7 +226,7 @@ public class PlayerDeck : MonoBehaviour
 					cam = Owner.ActiveGame.PlayerDeckDecorationRendererCamera;
 					SetLayerRecursively(piece.gameObject, 10);
 					piece.SetPosition(0.0f, 0.0f); 
-					cam.Render();
+					RenderPiece(piece, cam);
 					piece.AddToDeck();
 					slot.Piece = piece;
 					roomToAdd = true;
@@ -241,7 +261,7 @@ public class PlayerDeck : MonoBehaviour
 				}
 				SetLayerRecursively(newPatch.gameObject, 8 + i);
 				newPatch.SetPosition(0.0f, 0.0f); 
-				cam.Render();
+				RenderPiece(newPatch, cam);
 				newPatch.AddToDeck();
 				slot.Piece = newPatch;
 			}
@@ -258,7 +278,7 @@ public class PlayerDeck : MonoBehaviour
 				cam = Owner.ActiveGame.PlayerDeckDecorationRendererCamera;
 				SetLayerRecursively(newDecoration.gameObject, 10);
 				newDecoration.SetPosition(0.0f, 0.0f); 
-				cam.Render();
+				RenderPiece(newDecoration, cam);
 				newDecoration.AddToDeck();
 				slot.Piece = newDecoration;
 			}

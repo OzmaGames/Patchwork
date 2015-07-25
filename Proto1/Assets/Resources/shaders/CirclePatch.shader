@@ -3,7 +3,7 @@
 		_CirclePatchSize("Circle Patch Min,Current,Max Size", vector) = (0.0, 0.0, 1.0)
 		//_CirclePatchRadius("Circle Patch Radius", float) = 1.0
 
-		_AddColor ("ShadeColor", vector) = (0.0,0.0,0.0,0.0)
+		_AddColor ("ShadeColor", Color) = (0.0,0.0,0.0,0.0)
 
 		_BaseColor1 ("BaseColor1", Color) = (1,1,1,1)
 		_BaseColor2 ("BaseColor2", Color) = (1,1,1,1)

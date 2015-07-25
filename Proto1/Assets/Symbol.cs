@@ -3,6 +3,13 @@ using System.Collections;
 
 public class Symbol : MonoBehaviour
 {
+	public enum SymbolColor
+	{
+		Black,
+		White
+	}
+	[SerializeField]
+	SymbolColor Color = SymbolColor.Black;
 	public enum SymbolTypes
 	{
 		Scissor,
@@ -20,11 +27,12 @@ public class Symbol : MonoBehaviour
 	}
 
 	public static GameObject[] s_Symbols;
-	public static GameObject Instantiate(SymbolTypes type)
+	public static GameObject Instantiate(SymbolTypes type, SymbolColor color)
 	{
 		for(int i = 0; i < s_Symbols.Length; ++i)
 		{
-			if(s_Symbols[i].GetComponent<Symbol>().Type == type)
+			Symbol symbol = s_Symbols[i].GetComponent<Symbol>();
+			if((symbol.Type == type) && (symbol.Color == color))
 			{
 				return Instantiate(s_Symbols[i]);
 			}

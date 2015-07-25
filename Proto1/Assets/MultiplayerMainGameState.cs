@@ -15,6 +15,101 @@ public class MultiplayerMainGameState : GameState
 	UnityEngine.UI.Text txtPlayer2Score;
 	UnityEngine.UI.Text txtTurn;
 	
+	class GameOverState : GameState
+	{
+		List<Game.PlayerInfo> Players;
+		Playfield ActivePlayfield;
+		UIWindow uiWindow;
+		UIMultiplayerGameOver uiGameOver;
+		
+		public GameOverState(List<Game.PlayerInfo> players, Playfield playfield)
+		{
+			Players = players;
+			ActivePlayfield = playfield;
+		}
+		
+		public override void Start()
+		{
+			ActiveGame.QuitPrefab.SetActive(false);
+			
+			// Find winner and loser.
+			Player winner;
+			Player loser;
+			if(Players[0].Player.Score >= Players[1].Player.Score)
+			{
+				winner = Players[0].Player;
+				loser = Players[1].Player;
+			}
+			else
+			{
+				winner = Players[1].Player;
+				loser = Players[0].Player;
+			}
+			
+			uiGameOver = ActiveGame.MultiplayerGameOverPrefab.GetComponent<UIMultiplayerGameOver>();
+			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
+			uiWindow.gameObject.SetActive(true);
+			uiWindow.OnSubmit = OnSubmit;
+			uiGameOver.Winner = winner;
+			uiGameOver.Loser = loser;
+			uiWindow.Show(uiGameOver);
+		}
+
+		public override void Stop()
+		{
+			GameObject.Destroy(ActivePlayfield.gameObject);
+			ActivePlayfield = null;
+			for(int i = 0; i < Players.Count; ++i)
+			{
+				GameObject.Destroy(Players[i].Player.gameObject);
+			}
+			Players.Clear();
+			Players = null;
+		}
+		
+		public override void Update()
+		{
+			switch(uiWindow.Visible)
+			{
+			case UIWindow.VisibleState.Visible:
+				if(uiWindow.IsDone)
+				{
+					uiWindow.Hide();
+				}
+				break;
+				
+			case UIWindow.VisibleState.Hidden:
+				if(uiWindow.IsDone)
+				{
+					// Re-start.
+					ActiveGame.SetState(new Game.MainMenuGameState());
+				}
+				break;
+			}
+		}
+		
+		void OnSubmit(UIPage page)
+		{
+			if(page.GetType() == typeof(UIMultiplayerGameOver))
+			{
+				UIMultiplayerGameOver gameOver = page as UIMultiplayerGameOver;
+				switch(gameOver.option)
+				{
+				case 1:
+					// Main menu.
+					ActiveGame.SetState(new Game.MainMenuGameState());
+					break;
+					
+				case 2:
+					// Play again.
+					ActiveGame.SetState(new MultiplayerMainGameState());
+					break;
+				}
+			}
+		}
+		
+	}
+
 	public override void Start()
 	{
 		ActiveGame.abortGameSession = false;
@@ -93,7 +188,7 @@ public class MultiplayerMainGameState : GameState
 			
 			// GAME OVER!!!!
 			ActivePlayfield.HideSymbols();
-			ActiveGame.SetState(new Game.GameOverState(Players, ActivePlayfield));
+			ActiveGame.SetState(new GameOverState(Players, ActivePlayfield));
 			return;
 		}
 		else

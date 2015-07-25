@@ -10,6 +10,86 @@ public class SingleplayerMainGameState : GameState
 	UnityEngine.UI.Text txtPlayer1Name;
 	UnityEngine.UI.Text txtPlayer1Score;
 
+	class GameOverState : GameState
+	{
+		Game.PlayerInfo Player;
+		Playfield ActivePlayfield;
+		UIWindow uiWindow;
+		UISinglePlayerGameOver uiGameOver;
+		
+		public GameOverState(Game.PlayerInfo player, Playfield playfield)
+		{
+			Player = player;
+			ActivePlayfield = playfield;
+		}
+		
+		public override void Start()
+		{
+			ActiveGame.QuitPrefab.SetActive(false);
+			
+			uiGameOver = ActiveGame.SinglePlayerGameOverPrefab.GetComponent<UISinglePlayerGameOver>();
+			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
+			uiWindow.gameObject.SetActive(true);
+			uiWindow.OnSubmit = OnSubmit;
+			uiGameOver.Player = Player.Player;
+			uiWindow.Show(uiGameOver);
+		}
+		
+		public override void Stop()
+		{
+			GameObject.Destroy(ActivePlayfield.gameObject);
+			ActivePlayfield = null;
+			GameObject.Destroy(Player.Player.gameObject);
+			Player = null;
+		}
+		
+		public override void Update()
+		{
+			switch(uiWindow.Visible)
+			{
+			case UIWindow.VisibleState.Visible:
+				if(uiWindow.IsDone)
+				{
+					uiWindow.Hide();
+				}
+				break;
+				
+			case UIWindow.VisibleState.Hidden:
+				if(uiWindow.IsDone)
+				{
+					// Re-start.
+					ActiveGame.SetState(new Game.MainMenuGameState());
+				}
+				break;
+			}
+		}
+
+		void OnSubmit(UIPage page)
+		{
+			if(page.GetType() == typeof(UISinglePlayerGameOver))
+			{
+				UISinglePlayerGameOver gameOver = page as UISinglePlayerGameOver;
+				switch(gameOver.option)
+				{
+				case 1:
+					// Main menu.
+					ActiveGame.SetState(new Game.MainMenuGameState());
+					break;
+
+				case 2:
+					// Play next level.
+					Debug.Log("Next level: " + gameOver.CurrentLevel + 1);
+					break;
+				}
+			}
+		}
+		
+	}
+	
+	public SingleplayerMainGameState(int level)
+	{
+		Debug.Log("level: " + level);
+	}
 
 	public override void Start()
 	{
@@ -20,7 +100,7 @@ public class SingleplayerMainGameState : GameState
 		GameObject playfieldObject = new GameObject("Playfield");
 		playfieldObject.transform.localPosition = new Vector3(0.0f, 0.0f, -0.5f);
 		ActivePlayfield = playfieldObject.AddComponent<SinglePlayerPlayfield>();
-		ActivePlayfield.Generate(ActiveGame.PlayAreaHalfSize.x - 1.0f, ActiveGame.PlayAreaHalfSize.y - 1.0f, 10.0f, ActiveGame.BGTexture, ActiveGame.PlayerSettings[0].PatchPatterns);
+		ActivePlayfield.Generate(ActiveGame.PlayAreaHalfSize.x - 1.0f, ActiveGame.PlayAreaHalfSize.y - 1.0f, 10.0f, ActiveGame.BGTexture, ActiveGame.PlayerSettings[0].PatchPatterns, ActiveGame.Palette);
 		
 		// Create player.
 		ActivePlayer = CreatePlayer(ActiveGame.PlayerSettings[0]);
@@ -38,10 +118,6 @@ public class SingleplayerMainGameState : GameState
 
 	public override void Stop()
 	{
-		GameObject.Destroy(ActivePlayfield.gameObject);
-		ActivePlayfield = null;
-		GameObject.Destroy(ActivePlayer.Player.gameObject);
-		ActivePlayer = null;
 		ActiveGame.PlayerStatsPrefab.SetActive(false);
 		ActiveGame.QuitPrefab.SetActive(false);
 	}
@@ -55,8 +131,7 @@ public class SingleplayerMainGameState : GameState
 
 			// GAME OVER!!!!
 			ActivePlayfield.HideSymbols();
-//			ActiveGame.SetState(new Game.GameOverState(null, ActivePlayfield));
-			//ActiveGame.SetState(new Game.MainMenuGameState());
+			ActiveGame.SetState(new GameOverState(ActivePlayer, ActivePlayfield));
 			return;
 		}
 		else

@@ -36,19 +36,6 @@ public class UIMainMenu : UIPage
 	}
 
 	public int option = 0;
-	public void StartSinglePlayer()
-	{
-		option = 1;
-		Window.OnSubmit(this);
-		Window.PlayNow();
-	}
-
-	public void StartMultiPlayer()
-	{
-		option = 2;
-		Window.OnSubmit(this);
-	}
-
 	public void ShowHelp()
 	{
 		option = 3;

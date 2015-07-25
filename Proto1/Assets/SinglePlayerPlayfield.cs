@@ -6,24 +6,15 @@ using System.Runtime.Serialization.Formatters.Binary;*/
 
 public class SinglePlayerPlayfield : Playfield
 {
-	/*class Cell
-	{
-		public bool IsDone;
-		public Rect Rect;
-		public float Size;
-		public Symbol Symbol;
-		public GamePieceBase Piece;
-		public bool BelongsToPlayer;
-	}*/
 	List<CellPiece> PlayfieldCells;
 
 	bool Dirty = false;
 	float HalfWidth = 0.0f;
 	float HalfHeight = 0.0f;
 	
-	Mesh GeneratedMesh;
 	Texture2D BGTexture;
 	Texture2D[] CellTextures;
+	Game.PlayerPalette[] Palettes;
 
 	
 	class PlacedPatch
@@ -51,9 +42,14 @@ public class SinglePlayerPlayfield : Playfield
 		}
 		Patches.Clear();
 		Patches = null;
-		GeneratedMesh = null;
+		for(int i = 0; i < PlayfieldCells.Count; ++i)
+		{
+			Destroy(PlayfieldCells[i].gameObject);
+		}
+		PlayfieldCells.Clear();
+		PlayfieldCells = null;
+
 		BGTexture = null;
-		PlayfieldCells = null; 
 	}
 
 	/*void SaveLevel()
@@ -200,9 +196,9 @@ public class SinglePlayerPlayfield : Playfield
 			int cellIndex = FindCell(piece.transform.position, out cell);
 			if(cellIndex >= 0)
 			{
-				Debug.Log("the ridim of leif");
 				cell.Piece = circlePatch;
-				piece.SetPosition(cell.Rect.center.x, cell.Rect.center.y);
+				piece.SetPosition(cell.transform.position.x, cell.transform.position.y);
+				//piece.SetPosition(cell.Rect.center.x, cell.Rect.center.y);
 				if(!cell.BelongsToPlayer)
 				{
 					if(cell.Symbol)
@@ -211,6 +207,9 @@ public class SinglePlayerPlayfield : Playfield
 						{
 						case Symbol.CompareResult.Win:
 							Debug.Log("NOT MY TYPE - BUT THAT'S OK, I WIN!");
+							Material material = cell.GetComponent<MeshRenderer>().material;
+							material.SetColor("_BaseColor1", player.Colors[Random.Range(0, player.Colors.Length)].colorKeys[0].color);
+							material.SetColor("_BaseColor2", player.Colors[Random.Range(0, player.Colors.Length)].colorKeys[1].color);
 							break;
 						case Symbol.CompareResult.Draw:
 							Debug.Log("NOT MY TYPE - BUT WE LOOK THE SAME!");
@@ -239,7 +238,7 @@ public class SinglePlayerPlayfield : Playfield
 		for(int i = 0; i < PlayfieldCells.Count; ++i)
 		{
 			CellPiece cell = PlayfieldCells[i];
-			if(cell.Rect.Contains(pos))
+			if(cell.Contains(pos))
 			{
 				foundCell = cell;
 				return i;
@@ -276,18 +275,70 @@ public class SinglePlayerPlayfield : Playfield
 		{
 			Patches[p].Patch.SetShowSymbol(false);
 		}
-	}	
+	}
 
-	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture, Texture2D[] cellTextures)
+	class PlayfieldData
+	{
+		public class Cell
+		{
+			public Vector2 Pos;
+			public float Size;
+			public bool NoSymbol;
+			public Symbol.SymbolTypes Symbol;
+			public bool BelongToPlayer;
+
+			public Cell(Vector2 pos, float size, bool belongToPlayer)
+			{
+				Pos = pos;
+				Size = size;
+				NoSymbol = true;
+				BelongToPlayer = belongToPlayer;
+			}
+			public Cell(Vector2 pos, float size, Symbol.SymbolTypes symbol, bool belongToPlayer)
+			{
+				Pos = pos;
+				Size = size;
+				NoSymbol = false;
+				Symbol = symbol;
+				BelongToPlayer = belongToPlayer;
+			}
+		}
+
+		public Cell[] Cells;
+
+		public PlayfieldData(Cell[] cells)
+		{
+			Cells = cells;
+		}
+	}
+	PlayfieldData data = new PlayfieldData(new PlayfieldData.Cell[10] {
+		new PlayfieldData.Cell(new Vector2(-9.0f, -7.0f), 3.0f, true),
+		new PlayfieldData.Cell(new Vector2(-9.0f, -1.0f), 2.0f, Symbol.SymbolTypes.Needle, false),
+		new PlayfieldData.Cell(new Vector2(-5.0f, -1.0f), 1.0f, true),
+		new PlayfieldData.Cell(new Vector2(-9.0f, 3.0f), 2.0f, true),
+		new PlayfieldData.Cell(new Vector2(-5.0f, 1.0f), 3.0f, Symbol.SymbolTypes.Scissor, true),
+		new PlayfieldData.Cell(new Vector2(-3.0f, -3.0f), 2.0f, true),
+		new PlayfieldData.Cell(new Vector2(-3.0f, -9.0f), 3.0f, true),
+		new PlayfieldData.Cell(new Vector2(1.0f, -3.0f), 1.0f, true),
+		new PlayfieldData.Cell(new Vector2(1.0f, -1.0f), 4.0f, Symbol.SymbolTypes.Thread, false),
+		new PlayfieldData.Cell(new Vector2(3.0f, -7.0f), 3.0f, false)});
+
+	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture, Texture2D[] cellTextures, Game.PlayerPalette[] palettes)
 	{
 		HalfWidth = halfWidth;
 		HalfHeight = halfHeight;
 		BGTexture = bgTexture;
 		CellTextures = cellTextures;
+		Palettes = palettes;
 
 		// Generate test playfield cells.
 		PlayfieldCells = new List<CellPiece>();
-		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, -7.0f), 3.0f, null, true));
+		for(int i = 0; i < data.Cells.Length; ++i)
+		{
+			PlayfieldData.Cell cell = data.Cells[i];
+			PlayfieldCells.Add(GenerateCell(cell.Pos, cell.Size, cell.NoSymbol ? null : Symbol.Instantiate(cell.Symbol, Symbol.SymbolColor.White).GetComponent<Symbol>(), cell.BelongToPlayer));
+		}
+		/*PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, -7.0f), 3.0f, null, true));
 		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, -1.0f), 2.0f, Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>(), false));
 		PlayfieldCells.Add(GenerateCell(new Vector2(-5.0f, -1.0f), 1.0f, null, true));
 		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, 3.0f), 2.0f, null, true));
@@ -296,7 +347,7 @@ public class SinglePlayerPlayfield : Playfield
 		PlayfieldCells.Add(GenerateCell(new Vector2(-3.0f, -9.0f), 3.0f, null, true));
 		PlayfieldCells.Add(GenerateCell(new Vector2(1.0f, -3.0f), 1.0f, null, true));
 		PlayfieldCells.Add(GenerateCell(new Vector2(1.0f, -1.0f), 4.0f, Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>(), false));
-		PlayfieldCells.Add(GenerateCell(new Vector2(3.0f, -7.0f), 3.0f, null, false));
+		PlayfieldCells.Add(GenerateCell(new Vector2(3.0f, -7.0f), 3.0f, null, false));*/
 
 		// Generate mesh from playfield cells.
 		//GenerateMeshFromCell();
@@ -307,10 +358,10 @@ public class SinglePlayerPlayfield : Playfield
 	{
 		float rectSize = size * (CirclePatch.SegmentScale * 2.0f);
 		
-		GameObject cellPieceObj = new GameObject();
+		GameObject cellPieceObj = new GameObject("CellPiece_" + PlayfieldCells.Count);
 		CellPiece cellPiece = cellPieceObj.AddComponent<CellPiece>();
-		cellPiece.Generate(size, symbol, belongsToPlayer, new Color(Random.value, Random.value, Random.value, 1.0f), CellTextures[0]);
-		cellPieceObj.transform.position = new Vector3(pos.x + (rectSize / 2.0f), pos.y + (rectSize / 2.0f), 0.0f);
+		cellPiece.Generate(size, symbol, belongsToPlayer, belongsToPlayer ? Palettes[0] : Palettes[1], CellTextures[0]);
+		cellPieceObj.transform.position = new Vector3(pos.x + (rectSize / 2.0f), pos.y + (rectSize / 2.0f), Game.ZPosAdd * 0.25f);
 
 /*		Cell cell = new Cell();
 		cell.IsDone = false;

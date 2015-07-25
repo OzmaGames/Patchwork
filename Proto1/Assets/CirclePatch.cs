@@ -28,7 +28,6 @@ public class CirclePatch : GamePieceBase {
 
 	DecorationCircleStopper Decoration;
 
-	static GameObject[] SymbolPrefabs;
 	static GameObject[] PatchSizeNumberPrefabs;
 	static Texture2D[] RandomPatternTextures;
 
@@ -114,11 +113,10 @@ public class CirclePatch : GamePieceBase {
 		}
 	}
 
-	public static void GenerateSegments(int numSegments, float segmentSize, GameObject[] symbolPrefabs, GameObject[] patchSizeNumberPrefabs, Camera patchRendererCamera)
+	public static void GenerateSegments(int numSegments, float segmentSize, GameObject[] patchSizeNumberPrefabs, Camera patchRendererCamera)
 	{
 		PatchRendererCamera = patchRendererCamera;
 
-		SymbolPrefabs = symbolPrefabs;
 		PatchSizeNumberPrefabs = patchSizeNumberPrefabs;
 		RandomPatternTextures = new Texture2D[6];
 		RandomPatternTextures[0] = CreatePatternTexture((int)(Random.value * 255.0f));
@@ -432,7 +430,7 @@ public class CirclePatch : GamePieceBase {
 		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
 */
 		// Create symbol.
-		patchSymbol = Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>();
+		patchSymbol = Symbol.Instantiate(Symbol.GetRandomSymbolType(), Symbol.SymbolColor.Black).GetComponent<Symbol>();
 		patchSymbol.transform.SetParent(gameObject.transform, false);
 		patchSymbol.transform.localPosition = new Vector3(0.0f, 0.0f, Game.ZPosAdd * 0.25f );
 
