@@ -45,6 +45,17 @@ public class CellPiece : MonoBehaviour
 		meshRenderer.material.SetColor("_AddColor", Color.clear);
 	}
 
+	public void SwapColors(Game.PlayerPalette palette)
+	{
+		Palette = palette;
+
+		MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
+		meshRenderer.material.SetColor("_BaseColor1", Palette.Colors[Random.Range(0, Palette.Colors.Length)].colorKeys[0].color);
+		meshRenderer.material.SetColor("_BaseColor2", Palette.Colors[Random.Range(0, Palette.Colors.Length)].colorKeys[1].color);
+		meshRenderer.material.SetColor("_ComplementColor1", Palette.ComplementColor.colorKeys[1].color);
+		meshRenderer.material.SetColor("_ComplementColor2", Palette.ComplementColor.colorKeys[1].color);
+	}
+	
 	public bool Contains(Vector2 pos)
 	{
 		Rect rect = Rect;

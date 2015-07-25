@@ -31,6 +31,7 @@ public class CirclePatch : GamePieceBase {
 	static GameObject[] PatchSizeNumberPrefabs;
 	static Texture2D[] RandomPatternTextures;
 
+	public Game.PlayerPalette Palette;
 	public Texture2D[] PatternTextures;
 
 	struct PatchSegment
@@ -113,18 +114,29 @@ public class CirclePatch : GamePieceBase {
 		}
 	}
 
-	public static void GenerateSegments(int numSegments, float segmentSize, GameObject[] patchSizeNumberPrefabs, Camera patchRendererCamera)
+	public Rect[] AtlasRect;
+	public Texture2D AtlasTexture;
+	static Rect[] s_AtlasRect;
+	static Texture2D s_AtlasTexture;
+	public static void GenerateSegments(int numSegments, float segmentSize, GameObject[] patchSizeNumberPrefabs, Camera patchRendererCamera, Texture2D[] patternTextures)
 	{
 		PatchRendererCamera = patchRendererCamera;
 
 		PatchSizeNumberPrefabs = patchSizeNumberPrefabs;
-		RandomPatternTextures = new Texture2D[6];
+		RandomPatternTextures = new Texture2D[6 + patternTextures.Length];
 		RandomPatternTextures[0] = CreatePatternTexture((int)(Random.value * 255.0f));
 		RandomPatternTextures[1] = CreatePatternTexture((int)(Random.value * 255.0f));
 		RandomPatternTextures[2] = CreatePatternTexture((int)(Random.value * 255.0f));
 		RandomPatternTextures[3] = CreatePatternTexture((int)(Random.value * 255.0f));
 		RandomPatternTextures[4] = CreatePatternTexture((int)(Random.value * 255.0f));
 		RandomPatternTextures[5] = CreatePatternTexture((int)(Random.value * 255.0f));
+		for(int i = 0; i < patternTextures.Length; ++i)
+		{
+			RandomPatternTextures[i + 6] = patternTextures[i];
+		}
+
+		s_AtlasTexture = new Texture2D(2048, 2048, UnityEngine.TextureFormat.ARGB32, true);
+		s_AtlasRect = s_AtlasTexture.PackTextures(RandomPatternTextures, 0);
 
 		GeneratedMesh = new Mesh();
 		GeneratedMesh.subMeshCount = numSegments;
@@ -156,6 +168,7 @@ public class CirclePatch : GamePieceBase {
 				uvr.Add(new Vector2((ca * 0.5f) + 0.5f, (sa * 0.5f) + 0.5f));
 			}
 
+			float uvWrapScale = 10.0f;
 			// Generate triangles.
 			List<int> indices = new List<int>();
 			for(int i = 0; i < outerPoints.Count; ++i)
@@ -360,8 +373,11 @@ public class CirclePatch : GamePieceBase {
 		CachedPatchTexture = cachedPatchTexture;
 	}
 
-	public void Generate(PatchConfig config, Texture2D[] patternTextures, Gradient[] colors, Gradient complementColor)
+	public void Generate(PatchConfig config, Texture2D[] patternTextures, Game.PlayerPalette palette)
 	{
+		AtlasRect = s_AtlasRect;
+		AtlasTexture = s_AtlasTexture;
+
 		transform.position = new Vector3(0.0f, 0.0f, 0.0f);//Game.BGZPos);
 		//Game.BGZPos += Game.ZPosAdd;
 
@@ -372,6 +388,7 @@ public class CirclePatch : GamePieceBase {
 		InnerRadius = 0.0f;
 		OuterRadius = Segments * SegmentScale;
 
+		Palette = palette;
 		PatternTextures = patternTextures;
 
 		patchSegments = new PatchSegment[Segments]; 
@@ -399,10 +416,10 @@ public class CirclePatch : GamePieceBase {
 			if(s < Segments)
 			{
 				int paletteIndex = config.PaletteIndices[s];
-				material.SetColor("_BaseColor1", colors[paletteIndex].colorKeys[0].color);
-				material.SetColor("_BaseColor2", colors[paletteIndex].colorKeys[1].color);
-				material.SetColor("_ComplementColor1", complementColor.colorKeys[0].color);
-				material.SetColor("_ComplementColor2", complementColor.colorKeys[1].color);
+				material.SetColor("_BaseColor1", Palette.Colors[paletteIndex].colorKeys[0].color);
+				material.SetColor("_BaseColor2", Palette.Colors[paletteIndex].colorKeys[1].color);
+				material.SetColor("_ComplementColor1", Palette.ComplementColor.colorKeys[0].color);
+				material.SetColor("_ComplementColor2", Palette.ComplementColor.colorKeys[1].color);
 
 				int patternIndex = config.PatternIndices[s];
 				shaderKeywords = new List<string> { "DO_SEGMENT_" + patternIndex };
@@ -448,21 +465,23 @@ public class CirclePatch : GamePieceBase {
 	public override void SetOwner(Player player)
 	{
 		Owner = player;
-		SwapColors(Owner.Colors, Owner.ComplementColor);
+		SwapColors(Owner.Palette);
 	}
 
-	public void SwapColors(Gradient[] colors, Gradient complementColor)
+	public void SwapColors(Game.PlayerPalette palette)
 	{
+		Palette = palette;
+
 		Material material;
 		Renderer renderer = patchObject.GetComponent<Renderer>();
 		for(int s = 0; s < Segments; ++s)
 		{
 			material = renderer.materials[s];
 			int paletteIndex = patchSegments[s].colorIndex;
-			material.SetColor("_BaseColor1", colors[paletteIndex].colorKeys[0].color);
-			material.SetColor("_BaseColor2", colors[paletteIndex].colorKeys[1].color);
-			material.SetColor("_ComplementColor1", complementColor.colorKeys[0].color);
-			material.SetColor("_ComplementColor2", complementColor.colorKeys[1].color);
+			material.SetColor("_BaseColor1", Palette.Colors[paletteIndex].colorKeys[0].color);
+			material.SetColor("_BaseColor2", Palette.Colors[paletteIndex].colorKeys[1].color);
+			material.SetColor("_ComplementColor1", Palette.ComplementColor.colorKeys[0].color);
+			material.SetColor("_ComplementColor2", Palette.ComplementColor.colorKeys[1].color);
 		}
 		//CachePatch();
 		//gameObject.GetComponent<MeshRenderer>().material.mainTexture = CachedPatchTexture;

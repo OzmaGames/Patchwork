@@ -27,9 +27,7 @@ public class Player : MonoBehaviour {
 	public Game ActiveGame;
 
 	[System.NonSerialized]
-	public Gradient[] Colors;
-	[System.NonSerialized]
-	public Gradient ComplementColor;
+	public Game.PlayerPalette Palette;
 	[System.NonSerialized]
 	public Texture2D[] Decorations;
 
@@ -108,8 +106,6 @@ public class Player : MonoBehaviour {
 		ActivePlayfield = null;
 		Destroy(DeckObject);
 		Deck = null;
-		Colors = null;
-		ComplementColor = null;
 		Decorations = null;
 		if(activePiece != null)
 		{

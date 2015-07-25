@@ -183,8 +183,7 @@ public class SingleplayerMainGameState : GameState
 		player.NumPatchesInDeck = 20;
 		player.NumDecorationsInDeck = 20;
 		player.ActivePlayfield = ActivePlayfield;
-		player.Colors = playerSetting.Palette.Colors;
-		player.ComplementColor = playerSetting.Palette.ComplementColor;
+		player.Palette = playerSetting.Palette;
 		player.PatternTextures = playerSetting.PatchPatterns;
 		player.Decorations = playerSetting.Decorations;
 		player.ConfirmPlacementPrefab = ActiveGame.ConfirmPlacementPrefab;

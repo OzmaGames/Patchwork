@@ -61,7 +61,7 @@ public class SinglePlayerPlayfield : Playfield
 	}*/
 	
 	Material highlightedCellMaterial;
-	Color highlightColor = new Color(0.3f, 0.3f, 0.3f, 0.3f);
+	Color highlightColor = new Color(0.2f, 0.2f, 0.2f, 0.2f);
 	void Update()
 	{
 		CheckForCollision();
@@ -207,15 +207,14 @@ public class SinglePlayerPlayfield : Playfield
 						{
 						case Symbol.CompareResult.Win:
 							Debug.Log("NOT MY TYPE - BUT THAT'S OK, I WIN!");
-							Material material = cell.GetComponent<MeshRenderer>().material;
-							material.SetColor("_BaseColor1", player.Colors[Random.Range(0, player.Colors.Length)].colorKeys[0].color);
-							material.SetColor("_BaseColor2", player.Colors[Random.Range(0, player.Colors.Length)].colorKeys[1].color);
+							cell.SwapColors(circlePatch.Palette);
 							break;
 						case Symbol.CompareResult.Draw:
 							Debug.Log("NOT MY TYPE - BUT WE LOOK THE SAME!");
 							break;
 						case Symbol.CompareResult.Lose:
 							Debug.Log("NOT MY TYPE - WHY DID YOU PLACE ME HERE?!");
+							circlePatch.SwapColors(cell.Palette);
 							break;
 						}
 					}
@@ -356,19 +355,12 @@ public class SinglePlayerPlayfield : Playfield
 
 	CellPiece GenerateCell(Vector2 pos, float size, Symbol symbol, bool belongsToPlayer)
 	{
-		float rectSize = size * (CirclePatch.SegmentScale * 2.0f);
+		float offset = (size * CirclePatch.SegmentScale);
 		
 		GameObject cellPieceObj = new GameObject("CellPiece_" + PlayfieldCells.Count);
 		CellPiece cellPiece = cellPieceObj.AddComponent<CellPiece>();
 		cellPiece.Generate(size, symbol, belongsToPlayer, belongsToPlayer ? Palettes[0] : Palettes[1], CellTextures[0]);
-		cellPieceObj.transform.position = new Vector3(pos.x + (rectSize / 2.0f), pos.y + (rectSize / 2.0f), Game.ZPosAdd * 0.25f);
-
-/*		Cell cell = new Cell();
-		cell.IsDone = false;
-		cell.Rect = new Rect(pos.x, pos.y, rectSize, rectSize);
-		cell.Size = size;
-		cell.Symbol = symbol;
-		cell.BelongsToPlayer = belongsToPlayer;*/
+		cellPieceObj.transform.position = new Vector3(pos.x + offset, pos.y + offset, Game.ZPosAdd * 0.25f);
 		if(symbol != null)
 		{
 			symbol.transform.SetParent(cellPieceObj.transform, false);
@@ -376,103 +368,6 @@ public class SinglePlayerPlayfield : Playfield
 		}
 		return cellPiece;
 	}
-	
-	/*void GenerateMeshFromCell()
-	{
-		Vector3[] vertices = new Vector3[PlayfieldCells.Count * 6];
-		Vector2[] uvs = new Vector2[PlayfieldCells.Count * 6];
-		Color[] colors = new Color[PlayfieldCells.Count * 6];
-		int[][] indices = new int[PlayfieldCells.Count][];
-		
-		// Generate cells.
-		int v = 0;
-		int index = 0;
-		for(int i = 0; i < PlayfieldCells.Count; ++i)
-		{
-			Cell cell = PlayfieldCells[i];
-			
-			float xPos = cell.Rect.position.x;
-			float yPos = cell.Rect.position.y;
-			float width = cell.Rect.width;
-			float height = cell.Rect.height;
-			Color color = ;
-
-			indices[i] = new int[6];
-
-			vertices[v + 0].Set(xPos, yPos, 0.0f);
-			vertices[v + 1].Set(xPos, yPos + height, 0.0f);
-			vertices[v + 2].Set(xPos + width, yPos, 0.0f);
-			uvs[v + 0].Set(0.0f, 0.0f);
-			uvs[v + 1].Set(0.0f, 1.0f);
-			uvs[v + 2].Set(1.0f, 0.0f);
-			colors[v + 0].r = color.r;
-			colors[v + 0].g = color.g;
-			colors[v + 0].b = color.b;
-			colors[v + 0].a = color.a;
-			colors[v + 1].r = color.r;
-			colors[v + 1].g = color.g;
-			colors[v + 1].b = color.b;
-			colors[v + 1].a = color.a;
-			colors[v + 2].r = color.r;
-			colors[v + 2].g = color.g;
-			colors[v + 2].b = color.b;
-			colors[v + 2].a = color.a;
-			v += 3;
-			indices[i][0] = index++;
-			indices[i][1] = index++;
-			indices[i][2] = index++;
-
-			vertices[v + 0].Set(xPos, yPos + height, 0.0f);
-			vertices[v + 1].Set(xPos + width, yPos + height, 0.0f);
-			vertices[v + 2].Set(xPos + width, yPos, 0.0f);
-			uvs[v + 0].Set(0.0f, 1.0f);
-			uvs[v + 1].Set(1.0f, 1.0f);
-			uvs[v + 2].Set(1.0f, 0.0f);
-			colors[v + 0].r = color.r;
-			colors[v + 0].g = color.g;
-			colors[v + 0].b = color.b;
-			colors[v + 0].a = color.a;
-			colors[v + 1].r = color.r;
-			colors[v + 1].g = color.g;
-			colors[v + 1].b = color.b;
-			colors[v + 1].a = color.a;
-			colors[v + 2].r = color.r;
-			colors[v + 2].g = color.g;
-			colors[v + 2].b = color.b;
-			colors[v + 2].a = color.a;
-			v += 3;
-			indices[i][3] = index++;
-			indices[i][4] = index++;
-			indices[i][5] = index++;
-		}
-
-		GeneratedMesh = new Mesh();
-		GeneratedMesh.vertices = vertices;
-		GeneratedMesh.uv = uvs;
-		GeneratedMesh.colors = colors;
-		GeneratedMesh.subMeshCount = indices.Length;
-		for(int i = 0; i < GeneratedMesh.subMeshCount; ++i)
-		{
-			GeneratedMesh.SetTriangles(indices[i], i);
-		}
-		//GeneratedMesh.triangles = indices;
-		GeneratedMesh.RecalculateNormals();
-		GeneratedMesh.RecalculateBounds();
-
-		// Setup mesh.
-		MeshFilter meshFilter = gameObject.AddComponent<MeshFilter>();
-		meshFilter.mesh = GeneratedMesh;
-		MeshRenderer meshRenderer = gameObject.AddComponent<MeshRenderer>();
-		meshRenderer.materials = new Material[GeneratedMesh.subMeshCount];
-		Material material;
-		for(int s = 0; s < GeneratedMesh.subMeshCount; ++s)
-		{
-			material = meshRenderer.materials[s];
-			material.shader = Shader.Find("Custom/FabricPiece");
-			material.mainTexture = BGTexture;//RandomPatternTextures[Random.Range(0,6)];
-			material.SetColor("_AddColor", Color.clear);
-		}
-	}*/
 
 	public override void ActivatePlayer(Player player, bool hideOthersSymbols)
 	{

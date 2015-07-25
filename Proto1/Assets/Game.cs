@@ -245,7 +245,16 @@ public class Game : MonoBehaviour {
 		Symbol.s_Symbols = SymbolPrefabs;
 
 		// Create circle patch mesh.
-		CirclePatch.GenerateSegments(8, 1.0f, PatchSizeNumberPrefabs, PatchRendererCamera);
+		Texture2D[] patternTextures = new Texture2D[PlayerSettings[0].PatchPatterns.Length + PlayerSettings[1].PatchPatterns.Length];
+		for(int i = 0; i < PlayerSettings[0].PatchPatterns.Length; ++i)
+		{
+			patternTextures[i] = PlayerSettings[0].PatchPatterns[i];
+		}
+		for(int i = PlayerSettings[0].PatchPatterns.Length; i < PlayerSettings[1].PatchPatterns.Length; ++i)
+		{
+			patternTextures[i] = PlayerSettings[1].PatchPatterns[i];
+		}
+		CirclePatch.GenerateSegments(8, 1.0f, PatchSizeNumberPrefabs, PatchRendererCamera, patternTextures);
 
 		// Create background.
 		Background = new GameObject("Background");

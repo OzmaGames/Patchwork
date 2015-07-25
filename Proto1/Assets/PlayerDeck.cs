@@ -166,7 +166,7 @@ public class PlayerDeck : MonoBehaviour
 		GameObject patchObject = Instantiate(PatchPrefab);
 		patchObject.name = gameObject.name + "_Patch";
 		CirclePatch circlePatch = patchObject.GetComponent<CirclePatch>();
-		circlePatch.Generate(patchConfig, Owner.PatternTextures, Owner.Colors, Owner.ComplementColor);
+		circlePatch.Generate(patchConfig, Owner.PatternTextures, Owner.Palette);
 		circlePatch.SetOwner(Owner);
 		return circlePatch;
 	}
@@ -296,7 +296,7 @@ public class PlayerDeck : MonoBehaviour
 		for(int i = 0; i < NumPatches; ++i)
 		{
 			int segments = Random.Range(minSize, 7);
-			PatchConfigs.Push(new CirclePatch.PatchConfig(segments, 1.0f, owner.Colors.Length, CirclePatch.MAX_PATTERNS));
+			PatchConfigs.Push(new CirclePatch.PatchConfig(segments, 1.0f, owner.Palette.Colors.Length, CirclePatch.MAX_PATTERNS));
 		}
 
 		// Setup active hand.

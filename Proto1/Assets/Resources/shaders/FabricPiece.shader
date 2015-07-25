@@ -60,7 +60,9 @@
 
 			half4 frag(v2f i) : COLOR
 			{
-				float bgtex = tex2D(_MainTex, i.uv).r;// * 0.01);
+				float3 texcol = tex2D(_MainTex, i.uv);
+				float bgtex = saturate(texcol.r - 0.1f);
+				bgtex *= bgtex;
 				float4 color = float4(BGColorFromPalette(bgtex), 1.0f);
 				color.rgb += _AddColor.rgb;
 				color.a = 1.0f;
