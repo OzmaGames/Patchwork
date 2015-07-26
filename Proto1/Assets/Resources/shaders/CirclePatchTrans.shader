@@ -1,6 +1,7 @@
-﻿Shader "Custom/CirclePatch" {
+﻿Shader "Custom/CirclePatchTrans" {
 	Properties {
 		_CirclePatchSize("Circle Patch Min,Current,Max Size", vector) = (0.0, 0.0, 1.0)
+		//_CirclePatchRadius("Circle Patch Radius", float) = 1.0
 
 		_AddColor ("ShadeColor", Color) = (0.0,0.0,0.0,0.0)
 
@@ -13,13 +14,24 @@
 		_FabricTexture("Fabric Texture", 2D) = "white" {}
 		_PatternTexture2("Pattern Texture 2", 2D) = "white" {}
 		_CirclePatchLayer("Circle Patch Layer", float) = 0.0
+		//_CurrentSegmentArcSize("Circle Patch Current Segment Arc Size", float) = 0.0
 
 		_AtlasTex ("Atlas Texture", 2D) = "white" {}
+
+		//_Color ("Color", Color) = (1,1,1,1)
+		//_Distort("Distort", vector) = (0.5, 0.5, 1.0, 1.0)
+		//_OuterRadius ("Outer Radius", float) = 0.5
+		//_InnerRadius ("Inner Radius", float) = -0.5
+		//_Hardness("Hardness", float) = 10.0
 	}
 	SubShader {
 		Tags {
+			"RenderType"="Transparent"
+			"Queue"="Transparent"
 			"AllowProjectors"="False"
 		}
+		blend SrcAlpha OneMinusSrcAlpha
+
 		Pass
 		{
 			CGPROGRAM			
@@ -70,7 +82,15 @@
 			}
 			
 			float4 _CirclePatchSize;
+			//float _CirclePatchRadius;
 			float _CirclePatchLayer;
+			//float _CurrentSegmentArcSize;
+
+			//float4 _Color;
+			//float4 _Distort;
+			//float _OuterRadius;
+			//float _InnerRadius;
+			//float _Hardness;
 
 			float SmuttStep(float x, float y, float z)
 			{
@@ -91,6 +111,12 @@
 			{
 				float lll = length(i.uv2.xy);
 				float ll = length(i.extras.zw);
+				float alpha = 1.0f;
+				if(ll > _CirclePatchSize.y)
+				{
+					alpha = 0.0f;
+					//discard;
+				}
 
 				float bgtex = 0.0f;
 				float fgtex = 0.0f;
@@ -98,6 +124,16 @@
 				float4 color = 0.0f;
 				float fade = 1.0f;
 				float border = 1.0f;
+
+//				float x = length((_Distort.xy - i.uv.xy) * _Distort.zw);
+//				float rc = (_OuterRadius + _InnerRadius) * 0.5f; // "central" radius
+//				float rd = _OuterRadius - rc; // distance from "central" radius to edge radii
+//				float circleTest = saturate(abs(x - rc) / rd);
+				
+//				float4 oc = 1.0f;
+//				oc.xyz *= (1.0f - pow(circleTest, _Hardness));
+//				oc.a *= (1.0f - pow(circleTest, _Hardness * _Hardness));
+//				return oc;
 
 #if DO_SEGMENT_O
 				//gray = tex2D(_AtlasTex, TRANSFORM_TEX(((i.uv.yx * _CirclePatchLayer) / 2.0f), _AtlasTex)).r;
@@ -127,9 +163,11 @@
 #if DO_SEGMENT_3
 				//gray = tex2D(_AtlasTex, TRANSFORM_TEX(((i.uv * _CirclePatchLayer) / 2.0f), _AtlasTex)).b * 0.45f + 0.5f;
 				gray = tex2D(_FabricTexture, (i.uv * _CirclePatchLayer) / 2.0f).b * 0.45f + 0.5f;
+				//gray *= gray;//dot(tex2D(_TestTexture, i.uv), float3(0.333f, 0.333f, 0.333f));
 				bgtex = tex2D(_MainTex, i.uv.xy * 4.0f).b;// * 0.25f + 0.5f;
 				fgtex = tex2D(_PatternTexture2, i.uv2 * 0.55f).b;
 				bgtex *= i.uv2.x / i.uv2.y * 0.10f;
+//				fade = lerp(1.0f, 0.4f, ll - _CirclePatchSize.x);
 #endif
 				// Awful outline.
 				if(ll > (_CirclePatchSize.z - 0.1f))
@@ -142,8 +180,12 @@
 				gray *= gray;
 				
 				// Final color.
+//				return float4(ll, ll, ll, 1.0f);
+//				return float4(i.uv.x, i.uv.y, 0.0f, 1.0f);
+//				return float4(gray, gray, gray, 1.0f);
 				color = float4(lerp(FGColorFromPalette(fgtex * fade), BGColorFromPalette(bgtex * fade), 1.0f - fgtex) * gray * border, 1.0f);
 				color.rgb += _AddColor.rgb;
+				color.a = alpha * color.a;
 				return color;
 			}
 			ENDCG

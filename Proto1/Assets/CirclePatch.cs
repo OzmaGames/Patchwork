@@ -21,7 +21,7 @@ public class CirclePatch : GamePieceBase {
 	static Mesh GeneratedMesh;
 
 	public int Segments = 1;
-	int CurrentSegment = 0;
+	public int CurrentSegment = 0;
 	float InnerRadius = 1.0f;
 	float OuterRadius = 1.0f;
 	float CurrentSegmentArcSize = 0.0f;
@@ -34,21 +34,23 @@ public class CirclePatch : GamePieceBase {
 	public Game.PlayerPalette Palette;
 	public Texture2D[] PatternTextures;
 
-	struct PatchSegment
+	class PatchSegment
 	{
-		public int colorIndex;
-		public int patternIndex;
+		public int MainTexture;
+		public int _AtlasTex;
+		public int ColorIndex;
+		public int PatternIndex;
 	}
 	PatchSegment[] patchSegments;
-
+	
 	Player Owner;
-
+	
 	bool segmentDoneGrowing = false;
 	bool doneGrowing = false;
 	bool collided = false;
 	bool isPlaced = false;
-	float size = 0.0f;
-	float maxSize = 0.0f;
+	public float size = 0.0f;
+	public float maxSize = 0.0f;
 
 	Color flashColorStart = Color.black;
 	Color flashColorEnd = Color.white;
@@ -118,6 +120,8 @@ public class CirclePatch : GamePieceBase {
 	public Texture2D AtlasTexture;
 	static Rect[] s_AtlasRect;
 	static Texture2D s_AtlasTexture;
+	static Mesh[] s_Segments;
+	static bool olds = false;
 	public static void GenerateSegments(int numSegments, float segmentSize, GameObject[] patchSizeNumberPrefabs, Camera patchRendererCamera, Texture2D[] patternTextures)
 	{
 		PatchRendererCamera = patchRendererCamera;
@@ -138,34 +142,58 @@ public class CirclePatch : GamePieceBase {
 		s_AtlasTexture = new Texture2D(2048, 2048, UnityEngine.TextureFormat.ARGB32, true);
 		s_AtlasRect = s_AtlasTexture.PackTextures(RandomPatternTextures, 0);
 
+		s_Segments = new Mesh[numSegments];
+
 		GeneratedMesh = new Mesh();
 		GeneratedMesh.subMeshCount = numSegments;
 
 		const float requiredGranularity = 40.0f;
 		const float granularity = (2.0f * Mathf.PI) / requiredGranularity;
 
-		List<Vector3> vertices = new List<Vector3>();
-		List<Vector2> uvs = new List<Vector2>();
-		List<Vector2> uvs2 = new List<Vector2>();
-		List<Vector4> extras = new List<Vector4>();
-		List<int[]> submeshIndices = new List<int[]>();
-		int submeshIndicesStart = 0;
+		List<Vector3> meshVertices = new List<Vector3>();
+		List<Vector2> meshUVs = new List<Vector2>();
+		List<Vector2> meshUVs2 = new List<Vector2>();
+		List<Vector4> meshExtras = new List<Vector4>();
+		List<int> meshIndices = new List<int>();
+		int meshIndicesStart = 0;
+
+		List<Vector3> subMeshVertices = new List<Vector3>();
+		List<Vector2> subMeshUVs = new List<Vector2>();
+		List<Vector2> subMeshUVs2 = new List<Vector2>();
+		List<Vector4> subMeshExtras = new List<Vector4>();
+		List<int[]> subMeshIndices = new List<int[]>();
+		int subMeshIndicesStart = 0;
 		for(int s = 0; s < numSegments; ++s)
 		{
-			float innerRadius = 0.0f;//s * segmentSize;
+			meshVertices.Clear();
+			meshUVs.Clear();
+			meshUVs2.Clear();
+			meshExtras.Clear();
+			meshIndices.Clear();
+			meshIndicesStart = 0;
+
+			float innerRadius = s * segmentSize;
 			float outerRadius = (s + 1) * segmentSize;
+
+			if(olds)
+			{
+				innerRadius = 0.0f;
+			}
 
 			// Generate points for edges.
 			List<Vector2> innerPoints = new List<Vector2>();
 			List<Vector2> outerPoints = new List<Vector2>();
-			List<Vector2> uvr = new List<Vector2>();
+			List<Vector2> uvrO = new List<Vector2>();
+			List<Vector2> uvrI = new List<Vector2>();
 			for(float phi = 0.0f; phi < (Mathf.PI * 2.0f); phi += granularity)
 			{
 				float ca = Mathf.Cos(phi);
 				float sa = Mathf.Sin(phi);
 				innerPoints.Add(new Vector2(innerRadius * ca, innerRadius * sa));
 				outerPoints.Add(new Vector2(outerRadius * ca, outerRadius * sa));
-				uvr.Add(new Vector2((ca * 0.5f) + 0.5f, (sa * 0.5f) + 0.5f));
+				uvrO.Add(new Vector2((ca * 0.5f) + 0.5f, (sa * 0.5f) + 0.5f));
+				float pp = innerRadius / outerRadius;
+				uvrI.Add(new Vector2(((ca * pp) * 0.5f) + 0.5f, ((sa * pp) * 0.5f) + 0.5f));
 			}
 
 			float uvWrapScale = 10.0f;
@@ -176,65 +204,100 @@ public class CirclePatch : GamePieceBase {
 				Vector2 innerPointA = innerPoints[i];
 				Vector2 innerPointB = innerPoints[(i + 1) % innerPoints.Count];
 				Vector2 outerPointA = outerPoints[i];
-				Vector2 outerPointB = outerPoints[(i + 1) % outerPoints.Count];
-				
+				Vector2 outerPointB = outerPoints[(i + 1) % outerPoints.Count];				
 				Vector3 a = new Vector3(outerPointA.x, outerPointA.y, 0.0001f * s);
 				Vector3 b = new Vector3(innerPointA.x, innerPointA.y, 0.0001f * s);
 				Vector3 c = new Vector3(outerPointB.x, outerPointB.y, 0.0001f * s);
 				Vector3 d = new Vector3(innerPointB.x, innerPointB.y, 0.0001f * s);
-				vertices.Add(a);
-				vertices.Add(b);
-				vertices.Add(c);
-				vertices.Add(d);
-				
-				
-				Vector2 outerUVPointA = uvr[i];
-				Vector2 outerUVPointB = uvr[(i + 1) % uvr.Count];
+				meshVertices.Add(a);
+				meshVertices.Add(b);
+				meshVertices.Add(c);
+				meshVertices.Add(d);
+				subMeshVertices.Add(a);
+				subMeshVertices.Add(b);
+				subMeshVertices.Add(c);
+				subMeshVertices.Add(d);
+
+				Vector2 outerUVPointA = uvrO[i];
+				Vector2 outerUVPointB = uvrO[(i + 1) % uvrO.Count];
+				Vector2 innerUVPointA = uvrI[i];
+				Vector2 innerUVPointB = uvrI[(i + 1) % uvrI.Count];
 				Vector2 uvA = new Vector3(outerUVPointA.x, outerUVPointA.y);
-				Vector2 uvB = new Vector3(0.5f, 0.5f);
+				Vector2 uvB = new Vector3(innerUVPointA.x, innerUVPointA.y);
 				Vector2 uvC = new Vector3(outerUVPointB.x, outerUVPointB.y);
-				Vector2 uvD = new Vector3(0.5f, 0.5f);
-				
-				uvs.Add(uvA);
-				uvs.Add(uvB);
-				uvs.Add(uvC);
-				uvs.Add(uvD);
+				Vector2 uvD = new Vector3(innerUVPointB.x, innerUVPointB.y);
+				if(olds)
+				{
+					uvB = new Vector3(0.5f, 0.5f);
+					uvD = new Vector3(0.5f, 0.5f);
+				}
+				meshUVs.Add(uvA);
+				meshUVs.Add(uvB);
+				meshUVs.Add(uvC);
+				meshUVs.Add(uvD);
+				subMeshUVs.Add(uvA);
+				subMeshUVs.Add(uvB);
+				subMeshUVs.Add(uvC);
+				subMeshUVs.Add(uvD);
 
 				float uvScale = outerRadius;
 				Vector4 extraA = new Vector4(uvA.x * uvScale, uvA.y * uvScale, 0.0f, 0.0f);
 				Vector4 extraB = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
 				Vector4 extraC = new Vector4(uvC.x * uvScale, uvC.y * uvScale, 0.0f, 0.0f);
 				Vector4 extraD = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
-				extras.Add(extraA);
-				extras.Add(extraB);
-				extras.Add(extraC);
-				extras.Add(extraD);
+				meshExtras.Add(extraA);
+				meshExtras.Add(extraB);
+				meshExtras.Add(extraC);
+				meshExtras.Add(extraD);
+				subMeshExtras.Add(extraA);
+				subMeshExtras.Add(extraB);
+				subMeshExtras.Add(extraC);
+				subMeshExtras.Add(extraD);
 				
-				uvs2.Add(new Vector2(0.0f, 0.0f));
-				uvs2.Add(new Vector2(0.0f, 1.0f));
-				uvs2.Add(new Vector2(1.0f, 0.0f));
-				uvs2.Add(new Vector2(1.0f, 1.0f));
-				
-				indices.Add((i * 4) + 0 + submeshIndicesStart);
-				indices.Add((i * 4) + 1 + submeshIndicesStart);
-				indices.Add((i * 4) + 2 + submeshIndicesStart);
-				indices.Add((i * 4) + 2 + submeshIndicesStart);
-				indices.Add((i * 4) + 1 + submeshIndicesStart);
-				indices.Add((i * 4) + 3 + submeshIndicesStart);
+				meshUVs2.Add(new Vector2(0.0f, 0.0f));
+				meshUVs2.Add(new Vector2(0.0f, 1.0f));
+				meshUVs2.Add(new Vector2(1.0f, 0.0f));
+				meshUVs2.Add(new Vector2(1.0f, 1.0f));
+				subMeshUVs2.Add(new Vector2(0.0f, 0.0f));
+				subMeshUVs2.Add(new Vector2(0.0f, 1.0f));
+				subMeshUVs2.Add(new Vector2(1.0f, 0.0f));
+				subMeshUVs2.Add(new Vector2(1.0f, 1.0f));
+
+				meshIndices.Add((i * 4) + 0);
+				meshIndices.Add((i * 4) + 1);
+				meshIndices.Add((i * 4) + 2);
+				meshIndices.Add((i * 4) + 2);
+				meshIndices.Add((i * 4) + 1);
+				meshIndices.Add((i * 4) + 3);
+				indices.Add((i * 4) + 0 + subMeshIndicesStart);
+				indices.Add((i * 4) + 1 + subMeshIndicesStart);
+				indices.Add((i * 4) + 2 + subMeshIndicesStart);
+				indices.Add((i * 4) + 2 + subMeshIndicesStart);
+				indices.Add((i * 4) + 1 + subMeshIndicesStart);
+				indices.Add((i * 4) + 3 + subMeshIndicesStart);
 			}
 
-			submeshIndices.Add(indices.ToArray());
-			submeshIndicesStart = vertices.Count;
+			s_Segments[s] = new Mesh();
+			s_Segments[s].vertices = meshVertices.ToArray();
+			s_Segments[s].uv = meshUVs.ToArray();
+			s_Segments[s].uv2 = meshUVs2.ToArray();
+			s_Segments[s].tangents = meshExtras.ToArray();
+			s_Segments[s].triangles = meshIndices.ToArray();
+			s_Segments[s].RecalculateNormals();
+			s_Segments[s].RecalculateBounds();
+
+			subMeshIndices.Add(indices.ToArray());
+			subMeshIndicesStart = subMeshVertices.Count;
 		}
 
-		GeneratedMesh.vertices = vertices.ToArray();
-		GeneratedMesh.uv = uvs.ToArray();
-		GeneratedMesh.uv2 = uvs2.ToArray();
-		GeneratedMesh.tangents = extras.ToArray();
+		GeneratedMesh.vertices = subMeshVertices.ToArray();
+		GeneratedMesh.uv = subMeshUVs.ToArray();
+		GeneratedMesh.uv2 = subMeshUVs2.ToArray();
+		GeneratedMesh.tangents = subMeshExtras.ToArray();
 		// Add triangles to submesh.
 		for(int s = 0; s < numSegments; ++s)
 		{
-			GeneratedMesh.SetTriangles(submeshIndices[s], s);
+			GeneratedMesh.SetTriangles(subMeshIndices[s], s);
 		}
 		GeneratedMesh.RecalculateNormals();
 		GeneratedMesh.RecalculateBounds();
@@ -373,6 +436,31 @@ public class CirclePatch : GamePieceBase {
 		CachedPatchTexture = cachedPatchTexture;
 	}
 
+	public Material MakeMaterial(int segment, Shader shader)
+	{
+		PatchSegment patchSegment = patchSegments[segment];
+		
+		Material material = new Material(shader);
+		material.mainTexture = RandomPatternTextures[patchSegment.MainTexture];
+		material.SetTexture("_FabricTexture", PatternTextures[0]);
+		material.SetTexture("_PatternTexture2", PatternTextures[1]);
+		material.SetVector("_CirclePatchSize", new Vector4(segment * SegmentScale, size, (segment * SegmentScale) + SegmentScale, 0.0f));
+		material.SetFloat("_CirclePatchRadius", OuterRadius);
+		material.SetFloat("_CirclePatchLayer", segment);
+		material.SetFloat("_CurrentSegmentArcSize", 0.0f);
+		material.SetTexture("_AtlasTex", AtlasTexture);
+		material.SetTextureOffset("_AtlasTex", AtlasRect[patchSegment._AtlasTex].position);
+		material.SetTextureScale("_AtlasTex", AtlasRect[patchSegment._AtlasTex].size);
+		material.SetColor("_BaseColor1", Palette.Colors[patchSegment.ColorIndex].colorKeys[0].color);
+		material.SetColor("_BaseColor2", Palette.Colors[patchSegment.ColorIndex].colorKeys[1].color);
+		material.SetColor("_ComplementColor1", Palette.ComplementColor.colorKeys[0].color);
+		material.SetColor("_ComplementColor2", Palette.ComplementColor.colorKeys[1].color);
+		material.shaderKeywords = new string[] { "DO_SEGMENT_" + patchSegment.PatternIndex };
+		
+		return material;
+	}
+	
+	public GameObject[] PatchSegments;
 	public void Generate(PatchConfig config, Texture2D[] patternTextures, Game.PlayerPalette palette)
 	{
 		AtlasRect = s_AtlasRect;
@@ -384,6 +472,8 @@ public class CirclePatch : GamePieceBase {
 		// Setup initial values.
 		Segments = config.NumSegments;
 		CurrentSegment = 1;
+		size = CurrentSegment * SegmentScale;
+		maxSize = size;
 
 		InnerRadius = 0.0f;
 		OuterRadius = Segments * SegmentScale;
@@ -393,47 +483,36 @@ public class CirclePatch : GamePieceBase {
 
 		patchSegments = new PatchSegment[Segments]; 
 
-		// Setup mesh.
-		MeshFilter meshFilter = patchObject.GetComponent<MeshFilter>();
-		meshFilter.mesh = GeneratedMesh;
-		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
-		meshRenderer.materials = new Material[GeneratedMesh.subMeshCount];
+		MeshFilter meshFilter;
+		MeshRenderer meshRenderer;
 		Material material;
 		List<string> shaderKeywords;
-		for(int s = 0; s < GeneratedMesh.subMeshCount; ++s)
+
+		// Setup patch segments.
+		PatchSegments = new GameObject[Segments];
+		for(int s = 0; s < Segments; ++s)
 		{
-			material = meshRenderer.materials[s];
-			material.shader = Shader.Find("Custom/CirclePatch");
-			material.mainTexture = RandomPatternTextures[Random.Range(0,6)];
-			material.SetTexture("_FabricTexture", PatternTextures[0]);
-			material.SetTexture("_PatternTexture2", PatternTextures[1]);
-			material.SetVector("_CirclePatchSize", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
-			material.SetFloat("_CirclePatchRadius", OuterRadius);
-			material.SetFloat("_CirclePatchLayer", CurrentSegment + s);
-			material.SetFloat("_CurrentSegmentArcSize", 0.0f);
+			// Setup segment.
+			PatchSegment patchSegment = new PatchSegment();
+			patchSegment.MainTexture = Random.Range(0,6);
+			patchSegment._AtlasTex = 6;
+			patchSegment.ColorIndex = config.PaletteIndices[s];
+			patchSegment.PatternIndex = config.PatternIndices[s];
+			patchSegments[s] = patchSegment;
 
-			// Setup patch segment.
-			if(s < Segments)
+			PatchSegments[s] = new GameObject("PatchSegment_" + s);
+			if(!olds)
 			{
-				int paletteIndex = config.PaletteIndices[s];
-				material.SetColor("_BaseColor1", Palette.Colors[paletteIndex].colorKeys[0].color);
-				material.SetColor("_BaseColor2", Palette.Colors[paletteIndex].colorKeys[1].color);
-				material.SetColor("_ComplementColor1", Palette.ComplementColor.colorKeys[0].color);
-				material.SetColor("_ComplementColor2", Palette.ComplementColor.colorKeys[1].color);
-
-				int patternIndex = config.PatternIndices[s];
-				shaderKeywords = new List<string> { "DO_SEGMENT_" + patternIndex };
-				material.shaderKeywords = shaderKeywords.ToArray();
-
-				patchSegments[s].colorIndex = paletteIndex;
-				patchSegments[s].patternIndex = patternIndex;
+				PatchSegments[s].SetActive((s < CurrentSegment) ? true : false);
 			}
+			meshFilter = PatchSegments[s].AddComponent<MeshFilter>();
+			meshFilter.mesh = s_Segments[s];
+			meshRenderer = PatchSegments[s].AddComponent<MeshRenderer>();
+			meshRenderer.material = MakeMaterial(s, Shader.Find((s < CurrentSegment) ? "Custom/CirclePatch" : "Custom/CirclePatchTrans"));
+			PatchSegments[s].transform.SetParent(transform, false);
+			PatchSegments[s].transform.localPosition = Vector3.zero;
 		}
-		material = meshRenderer.materials[0];
-		material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, CurrentSegment * SegmentScale, 0.0f));
-		CurrentSegment = 1;
-		size = CurrentSegment * SegmentScale;
-		maxSize = size;
+		CurrentSegment = 0;
 
 		//StartCoroutine(RenderPatch());
 		//CachePatch();
@@ -473,11 +552,10 @@ public class CirclePatch : GamePieceBase {
 		Palette = palette;
 
 		Material material;
-		Renderer renderer = patchObject.GetComponent<Renderer>();
 		for(int s = 0; s < Segments; ++s)
 		{
-			material = renderer.materials[s];
-			int paletteIndex = patchSegments[s].colorIndex;
+			material = PatchSegments[s].GetComponent<MeshRenderer>().material;
+			int paletteIndex = patchSegments[s].ColorIndex;
 			material.SetColor("_BaseColor1", Palette.Colors[paletteIndex].colorKeys[0].color);
 			material.SetColor("_BaseColor2", Palette.Colors[paletteIndex].colorKeys[1].color);
 			material.SetColor("_ComplementColor1", Palette.ComplementColor.colorKeys[0].color);
@@ -499,21 +577,6 @@ public class CirclePatch : GamePieceBase {
 
 	public override void Place()
 	{
-		CurrentSegment = 1;
-		size = CurrentSegment * SegmentScale;
-		maxSize = size;
-		Material material;
-		Renderer renderer = patchObject.GetComponent<Renderer>();
-		int s = 0;
-		for(; s < CurrentSegment; ++s)
-		{
-			material = renderer.materials[s];
-			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
-			material.SetFloat("_CirclePatchLayer", CurrentSegment);
-			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
-		}
-//		material = gameObject.GetComponent<MeshRenderer>().material;
-//		material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
 		transform.position = new Vector3(transform.position.x, transform.position.y, Game.BGZPos);
 		Game.BGZPos += Game.ZPosAdd;
 		PlaceChilds();
@@ -539,9 +602,37 @@ public class CirclePatch : GamePieceBase {
 		if(!HasStoppedGrowing())
 		{
 			++CurrentSegment;
-			maxSize = (CurrentSegment * SegmentScale);
-			CurrentSegmentArcSize = 0.0f;
-			SetSegmentGrowthDone(false);
+			if(CurrentSegment < Segments)
+			{
+				maxSize = (CurrentSegment * SegmentScale) + SegmentScale;
+				CurrentSegmentArcSize = 0.0f;
+				SetSegmentGrowthDone(false);
+				PatchSegments[CurrentSegment].SetActive(true);
+
+				/*Material material = PatchSegments[CurrentSegment].GetComponent<MeshRenderer>().material;
+				material.shader = Shader.Find("Custom/CirclePatchTrans");
+				material.mainTexture = RandomPatternTextures[Random.Range(0,6)];
+				material.SetTexture("_FabricTexture", PatternTextures[0]);
+				material.SetTexture("_PatternTexture2", PatternTextures[1]);
+				material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, size, (CurrentSegment * SegmentScale) + SegmentScale, 0.0f));
+				material.SetFloat("_CirclePatchRadius", OuterRadius);
+				material.SetFloat("_CirclePatchLayer", CurrentSegment);
+				material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
+				material.SetTexture("_AtlasTex", AtlasTexture);
+				material.SetTextureOffset("_AtlasTex", AtlasRect[6].position);
+				material.SetTextureScale("_AtlasTex", AtlasRect[6].size);
+
+				// Setup patch segment.
+				int paletteIndex = patchSegments[CurrentSegment].colorIndex;
+				material.SetColor("_BaseColor1", Palette.Colors[paletteIndex].colorKeys[0].color);
+				material.SetColor("_BaseColor2", Palette.Colors[paletteIndex].colorKeys[1].color);
+				material.SetColor("_ComplementColor1", Palette.ComplementColor.colorKeys[0].color);
+				material.SetColor("_ComplementColor2", Palette.ComplementColor.colorKeys[1].color);
+				
+				int patternIndex = patchSegments[CurrentSegment].patternIndex;
+				List<string> shaderKeywords = new List<string> { "DO_SEGMENT_" + patternIndex };
+				material.shaderKeywords = shaderKeywords.ToArray();*/
+			}
 		}
 	}
 
@@ -558,18 +649,6 @@ public class CirclePatch : GamePieceBase {
 
 	void Grow()
 	{
-		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
-		Material material;
-		int s = 0;
-		for(; s < CurrentSegment; ++s)
-		{
-			material = meshRenderer.materials[s];
-			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
-			material.SetFloat("_CirclePatchLayer", CurrentSegment);
-			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
-		}
-//		material = gameObject.GetComponent<MeshRenderer>().material;
-//		material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
 		//CurrentSegmentArcSize += 10.0f;
 		//if(CurrentSegmentArcSize > 360.0f)
 		{
@@ -580,12 +659,35 @@ public class CirclePatch : GamePieceBase {
 			}
 			//CurrentSegmentArcSize = 0.0f;
 		}
+
+		Material material;
+		/*int s = 0;
+		for(; s < CurrentSegment; ++s)
+		{
+			material = PatchSegments[s].GetComponent<MeshRenderer>().material;
+			material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
+			material.SetFloat("_CirclePatchLayer", CurrentSegment);
+			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
+		}*/
+		if(CurrentSegment < Segments)
+		{
+			material = PatchSegments[CurrentSegment].GetComponent<MeshRenderer>().material;
+			material.SetVector("_CirclePatchSize", new Vector4(CurrentSegment * SegmentScale, size, (CurrentSegment * SegmentScale) + SegmentScale, 0.0f));
+			material.SetFloat("_CirclePatchLayer", CurrentSegment);
+			material.SetFloat("_CurrentSegmentArcSize", CurrentSegmentArcSize);
+		}
+//		material = gameObject.GetComponent<MeshRenderer>().material;
+//		material.SetVector("_CirclePatchSize", new Vector4(s * SegmentScale, size, (s * SegmentScale) + SegmentScale, 0.0f));
 	}
 	
 	public void SetSegmentGrowthDone(bool enable)
 	{
 		segmentDoneGrowing = enable;
-		if((segmentDoneGrowing) && (CurrentSegment >= Segments))
+		if(enable && (CurrentSegment < Segments))
+		{
+			PatchSegments[CurrentSegment].GetComponent<MeshRenderer>().material = MakeMaterial(CurrentSegment, Shader.Find("Custom/CirclePatch"));
+		}
+		if((segmentDoneGrowing) && ((CurrentSegment + 1) >= Segments))
 		{
 			SetGrowthDone(true);
 		}
@@ -620,20 +722,19 @@ public class CirclePatch : GamePieceBase {
 
 	void UpdateHighlight()
 	{
-		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
 		Material material;
 		if(!doHighlight)
 		{
 			for(int s = 0; s < CurrentSegment; ++s)
 			{
-				material = meshRenderer.materials[s];
+				material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 				material.SetColor("_AddColor", Color.black);
 			}
 			return;
 		}
 		for(int s = 0; s < CurrentSegment; ++s)
 		{
-			material = meshRenderer.materials[s];
+			material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 			material.SetColor("_AddColor", highlightColor);
 		}
 	}
@@ -660,10 +761,9 @@ public class CirclePatch : GamePieceBase {
 		if(flashTimer > 0.0f)
 		{
 			Material material;
-			Renderer renderer = patchObject.GetComponent<Renderer>();
 			for(int s = 0; s < CurrentSegment; ++s)
 			{
-				material = renderer.materials[s];
+				material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 				material.SetColor("_AddColor", Color.Lerp(flashColorStart, flashColorEnd, flashValue));
 			}
 
@@ -672,10 +772,9 @@ public class CirclePatch : GamePieceBase {
 		else
 		{
 			Material material;
-			Renderer renderer = patchObject.GetComponent<Renderer>();
 			for(int s = 0; s < CurrentSegment; ++s)
 			{
-				material = renderer.materials[s];
+				material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 				material.SetColor("_AddColor", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
 			}
 			isFlashing = false;
@@ -701,22 +800,20 @@ public class CirclePatch : GamePieceBase {
 	
 	void UpdateColorOverlay()
 	{
-		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
 		Material material;
 		for(int s = 0; s < CurrentSegment; ++s)
 		{
-			material = meshRenderer.materials[s];
+			material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 			material.SetColor("_AddColor", AddColor);
 		}
 	}
 	
 	public override void UpdateEffect(Color addColor)
 	{
-		MeshRenderer meshRenderer = patchObject.GetComponent<MeshRenderer>();
 		Material material;
 		for(int s = 0; s < CurrentSegment; ++s)
 		{
-			material = meshRenderer.materials[s];
+			material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 			material.SetColor("_AddColor", addColor);
 		}
 		UpdateChildsEffect(addColor);
