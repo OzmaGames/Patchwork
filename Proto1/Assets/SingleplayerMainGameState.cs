@@ -13,14 +13,18 @@ public class SingleplayerMainGameState : GameState
 	class GameOverState : GameState
 	{
 		Game.PlayerInfo Player;
-		Playfield ActivePlayfield;
+		SinglePlayerPlayfield ActivePlayfield;
 		UIWindow uiWindow;
 		UISinglePlayerGameOver uiGameOver;
-		
-		public GameOverState(Game.PlayerInfo player, Playfield playfield)
+		GameState NextState;
+		UILevelSelect uiLevelSelect;
+		int NextLevel;
+
+		public GameOverState(Game.PlayerInfo player, SinglePlayerPlayfield playfield, int nextLevel)
 		{
 			Player = player;
 			ActivePlayfield = playfield;
+			NextLevel = nextLevel;
 		}
 		
 		public override void Start()
@@ -29,6 +33,7 @@ public class SingleplayerMainGameState : GameState
 			
 			uiGameOver = ActiveGame.SinglePlayerGameOverPrefab.GetComponent<UISinglePlayerGameOver>();
 			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
+			uiLevelSelect = uiWindow.gameObject.transform.FindChild("LevelSelect").GetComponent<UILevelSelect>();
 			uiWindow.gameObject.SetActive(true);
 			uiWindow.OnSubmit = OnSubmit;
 			uiGameOver.Player = Player.Player;
@@ -58,7 +63,10 @@ public class SingleplayerMainGameState : GameState
 				if(uiWindow.IsDone)
 				{
 					// Re-start.
-					ActiveGame.SetState(new Game.MainMenuGameState());
+					if(NextState != null)
+					{
+						ActiveGame.SetState(NextState);
+					}
 				}
 				break;
 			}
@@ -73,12 +81,39 @@ public class SingleplayerMainGameState : GameState
 				{
 				case 1:
 					// Main menu.
-					ActiveGame.SetState(new Game.MainMenuGameState());
+					NextState = new Game.MainMenuGameState();
+					uiWindow.PlayNow();
 					break;
 
 				case 2:
 					// Play next level.
-					Debug.Log("Next level: " + gameOver.CurrentLevel + 1);
+					Debug.Log("Next level: " + NextLevel);
+					NextState = new SingleplayerMainGameState(NextLevel);
+					uiWindow.PlayNow();
+					break;
+
+				case 3:
+					// Level select.
+					uiWindow.Show(uiLevelSelect);
+					break;
+				}
+			}
+			else if(page.GetType() == typeof(UILevelSelect))
+			{
+				UILevelSelect levelSelect = page as UILevelSelect;
+				switch(levelSelect.option)
+				{
+				case 1:
+					ActiveGame.PlayerSettings[0].Name = "Score";
+					ActiveGame.PlayerSettings[0].Palette = ActiveGame.Palette[0];
+					NextState = new SingleplayerMainGameState(levelSelect.SelectedLevel);
+					break;
+				case 2:
+					NextState = new MultiplayerMainGameState();
+					break;
+				case 3:
+					break;
+				case 4:
 					break;
 				}
 			}
@@ -86,9 +121,64 @@ public class SingleplayerMainGameState : GameState
 		
 	}
 	
+	public SinglePlayerPlayfield.PlayfieldData[] Levels = new SinglePlayerPlayfield.PlayfieldData[] {
+		new SinglePlayerPlayfield.PlayfieldData(new SinglePlayerPlayfield.PlayfieldData.Cell[] {
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -7.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -1.0f), 2.0f, Symbol.SymbolTypes.Needle, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, -1.0f), 1.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, 3.0f), 2.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, 1.0f), 3.0f, Symbol.SymbolTypes.Scissor, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, -3.0f), 2.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, -9.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -3.0f), 1.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -1.0f), 4.0f, Symbol.SymbolTypes.Thread, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(3.0f, -7.0f), 3.0f, Symbol.SymbolTypes.Thread, false)
+		}),
+		new SinglePlayerPlayfield.PlayfieldData(new SinglePlayerPlayfield.PlayfieldData.Cell[] {
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -7.0f), 2.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-13.0f, -3.0f), 5.0f, Symbol.SymbolTypes.Needle, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, -11.0f), 4.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, -3.0f), 2.0f, Symbol.SymbolTypes.Scissor, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, 1.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -1.0f), 1.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -3.0f), 1.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(3.0f, -1.0f), 4.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(3.0f, -7.0f), 3.0f, Symbol.SymbolTypes.Thread, false),
+		}),
+		new SinglePlayerPlayfield.PlayfieldData(new SinglePlayerPlayfield.PlayfieldData.Cell[] {
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -7.0f), 4.0f, Symbol.SymbolTypes.Needle, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-11.0f, 1.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, 1.0f), 1.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, 1.0f), 1.0f, Symbol.SymbolTypes.Scissor, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, 3.0f), 4.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-1.0f, -7.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-1.0f, -1.0f), 2.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(2.0f, -1.0f), 4.0f, Symbol.SymbolTypes.Thread, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(5.0f, -9.0f), 2.0f, Symbol.SymbolTypes.Needle, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(5.0f, -5.0f), 2.0f, true),
+		}),
+		new SinglePlayerPlayfield.PlayfieldData(new SinglePlayerPlayfield.PlayfieldData.Cell[] {
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -11.0f), 5.0f, Symbol.SymbolTypes.Needle, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -1.0f), 2.0f, Symbol.SymbolTypes.Scissor, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, 3.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, -1.0f), 1.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, 1.0f), 1.0f, Symbol.SymbolTypes.Thread, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, -1.0f), 1.0f, Symbol.SymbolTypes.Needle, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, 1.0f), 4.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-1.0f, -1.0f), 1.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -11.0f), 4.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -3.0f), 2.0f, Symbol.SymbolTypes.Scissor, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(5.0f, -3.0f), 2.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(5.0f, 1.0f), 3.0f, true),
+		})
+	};
+	int ActiveLevel = 0;
+
+
 	public SingleplayerMainGameState(int level)
 	{
 		Debug.Log("level: " + level);
+		ActiveLevel = level;
 	}
 
 	public override void Start()
@@ -100,7 +190,7 @@ public class SingleplayerMainGameState : GameState
 		GameObject playfieldObject = new GameObject("Playfield");
 		playfieldObject.transform.localPosition = new Vector3(0.0f, 0.0f, -0.5f);
 		ActivePlayfield = playfieldObject.AddComponent<SinglePlayerPlayfield>();
-		ActivePlayfield.Generate(ActiveGame.PlayAreaHalfSize.x - 1.0f, ActiveGame.PlayAreaHalfSize.y - 1.0f, 10.0f, ActiveGame.BGTexture, ActiveGame.PlayerSettings[0].PatchPatterns, ActiveGame.Palette);
+		ActivePlayfield.Generate(ActiveGame.PlayAreaHalfSize.x - 1.0f, ActiveGame.PlayAreaHalfSize.y - 1.0f, 10.0f, ActiveGame.BGTexture, Levels[ActiveLevel], ActiveGame.PlayerSettings[0].PatchPatterns, ActiveGame.Palette);
 		
 		// Create player.
 		ActivePlayer = CreatePlayer(ActiveGame.PlayerSettings[0]);
@@ -131,7 +221,7 @@ public class SingleplayerMainGameState : GameState
 
 			// GAME OVER!!!!
 			ActivePlayfield.HideSymbols();
-			ActiveGame.SetState(new GameOverState(ActivePlayer, ActivePlayfield));
+			ActiveGame.SetState(new GameOverState(ActivePlayer, ActivePlayfield, (ActiveLevel + 1) % Levels.Length));
 			return;
 		}
 		else

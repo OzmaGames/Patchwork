@@ -159,7 +159,7 @@ public class Game : MonoBehaviour {
 				{
 					// Start the game.
 					uiWindow.gameObject.SetActive(false);
-					ActiveGame.MenuBGPrefab.SetActive(false);
+					menubg.gameObject.SetActive(false);
 					ActiveGame.SetState(newGameState);
 				}
 				break;
@@ -181,16 +181,16 @@ public class Game : MonoBehaviour {
 				switch(levelSelect.option)
 				{
 				case 1:
-					ActiveGame.PlayerSettings[0].Name = "Player";
+					ActiveGame.PlayerSettings[0].Name = "Score";
 					ActiveGame.PlayerSettings[0].Palette = ActiveGame.Palette[0];
 					newGameState = new SingleplayerMainGameState(levelSelect.SelectedLevel);
 					uiWindow.Hide();
 					break;
 				case 2:
-					newGameState = new MultiplayerMainGameState();
-					uiWindow.Hide();
+					Debug.Log("ShowHelp");
 					break;
 				case 3:
+					Debug.Log("ShowOptions");
 					break;
 				case 4:
 					break;
@@ -227,17 +227,31 @@ public class Game : MonoBehaviour {
 	public GameObject MultiplayerGameOverPrefab;
 
 	GameState CurrentState;
+	GameState NextState;
 	public void SetState(GameState state)
 	{
-		if(CurrentState != null)
+		NextState = state;
+	}
+
+	void UpdateState()
+	{
+		if(NextState != null)
 		{
-			CurrentState.Stop();
-			CurrentState.ActiveGame = null;
-			//System.GC.Collect();
+			// Stop old state.
+			if(CurrentState != null)
+			{
+				CurrentState.Stop();
+				CurrentState.ActiveGame = null;
+				//System.GC.Collect();
+			}
+
+			// Switch to new state.
+			CurrentState = NextState;
+			NextState = null;
+			CurrentState.ActiveGame = this;
+			CurrentState.Start();
 		}
-		CurrentState = state;
-		CurrentState.ActiveGame = this;
-		CurrentState.Start();
+		CurrentState.Update();
 	}
 
 	// Use this for initialization
@@ -288,7 +302,7 @@ public class Game : MonoBehaviour {
 	
 	void Update()
 	{
-		CurrentState.Update();
+		UpdateState();
 	}
 
 	public void AbortGameSession()

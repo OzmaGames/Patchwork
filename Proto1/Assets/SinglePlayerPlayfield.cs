@@ -276,7 +276,7 @@ public class SinglePlayerPlayfield : Playfield
 		}
 	}
 
-	class PlayfieldData
+	public class PlayfieldData
 	{
 		public class Cell
 		{
@@ -310,19 +310,8 @@ public class SinglePlayerPlayfield : Playfield
 			Cells = cells;
 		}
 	}
-	PlayfieldData data = new PlayfieldData(new PlayfieldData.Cell[10] {
-		new PlayfieldData.Cell(new Vector2(-9.0f, -7.0f), 3.0f, true),
-		new PlayfieldData.Cell(new Vector2(-9.0f, -1.0f), 2.0f, Symbol.SymbolTypes.Needle, false),
-		new PlayfieldData.Cell(new Vector2(-5.0f, -1.0f), 1.0f, true),
-		new PlayfieldData.Cell(new Vector2(-9.0f, 3.0f), 2.0f, true),
-		new PlayfieldData.Cell(new Vector2(-5.0f, 1.0f), 3.0f, Symbol.SymbolTypes.Scissor, true),
-		new PlayfieldData.Cell(new Vector2(-3.0f, -3.0f), 2.0f, true),
-		new PlayfieldData.Cell(new Vector2(-3.0f, -9.0f), 3.0f, true),
-		new PlayfieldData.Cell(new Vector2(1.0f, -3.0f), 1.0f, true),
-		new PlayfieldData.Cell(new Vector2(1.0f, -1.0f), 4.0f, Symbol.SymbolTypes.Thread, false),
-		new PlayfieldData.Cell(new Vector2(3.0f, -7.0f), 3.0f, false)});
 
-	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture, Texture2D[] cellTextures, Game.PlayerPalette[] palettes)
+	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture, PlayfieldData level, Texture2D[] cellTextures, Game.PlayerPalette[] palettes)
 	{
 		HalfWidth = halfWidth;
 		HalfHeight = halfHeight;
@@ -332,21 +321,11 @@ public class SinglePlayerPlayfield : Playfield
 
 		// Generate test playfield cells.
 		PlayfieldCells = new List<CellPiece>();
-		for(int i = 0; i < data.Cells.Length; ++i)
+		for(int i = 0; i < level.Cells.Length; ++i)
 		{
-			PlayfieldData.Cell cell = data.Cells[i];
+			PlayfieldData.Cell cell = level.Cells[i];
 			PlayfieldCells.Add(GenerateCell(cell.Pos, cell.Size, cell.NoSymbol ? null : Symbol.Instantiate(cell.Symbol, Symbol.SymbolColor.White).GetComponent<Symbol>(), cell.BelongToPlayer));
 		}
-		/*PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, -7.0f), 3.0f, null, true));
-		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, -1.0f), 2.0f, Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>(), false));
-		PlayfieldCells.Add(GenerateCell(new Vector2(-5.0f, -1.0f), 1.0f, null, true));
-		PlayfieldCells.Add(GenerateCell(new Vector2(-9.0f, 3.0f), 2.0f, null, true));
-		PlayfieldCells.Add(GenerateCell(new Vector2(-5.0f, 1.0f), 3.0f, Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>(), true));
-		PlayfieldCells.Add(GenerateCell(new Vector2(-3.0f, -3.0f), 2.0f, null, true));
-		PlayfieldCells.Add(GenerateCell(new Vector2(-3.0f, -9.0f), 3.0f, null, true));
-		PlayfieldCells.Add(GenerateCell(new Vector2(1.0f, -3.0f), 1.0f, null, true));
-		PlayfieldCells.Add(GenerateCell(new Vector2(1.0f, -1.0f), 4.0f, Symbol.Instantiate(Symbol.GetRandomSymbolType()).GetComponent<Symbol>(), false));
-		PlayfieldCells.Add(GenerateCell(new Vector2(3.0f, -7.0f), 3.0f, null, false));*/
 
 		// Generate mesh from playfield cells.
 		//GenerateMeshFromCell();

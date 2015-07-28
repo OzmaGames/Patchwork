@@ -13,13 +13,8 @@ public class UISinglePlayerGameOver : UIPage
 	
 	public override void Show()
 	{
-		//UnityEngine.UI.Text lblWinner = transform.FindChild("Winner").GetComponent<UnityEngine.UI.Text>();
-		//UnityEngine.UI.Text lblScore = transform.FindChild("Star").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
-		//UnityEngine.UI.Text lblLoser = transform.FindChild("Loser").GetComponent<UnityEngine.UI.Text>();
-		
-		//lblWinner.text = Winner.gameObject.name.ToUpper() + " IS THE WINNER!";
-		//lblScore.text = Winner.Score.ToString();
-		//lblLoser.text = "over " + Loser.gameObject.name + "'s " + Loser.Score.ToString();
+		UnityEngine.UI.Text lblScore = transform.FindChild("Star").FindChild("Score").GetComponent<UnityEngine.UI.Text>();
+		lblScore.text = Player.Score.ToString();
 	}
 	
 	public override void Hide()
@@ -33,10 +28,15 @@ public class UISinglePlayerGameOver : UIPage
 			Window.OnSubmit(this);
 	}
 	
-	public int CurrentLevel = 0;
 	public void PlayNextLevel()
 	{
 		option = 2;
+		Window.OnSubmit(this);
+	}
+
+	public void OpenLevelSelect()
+	{
+		option = 3;
 		Window.OnSubmit(this);
 	}
 }
