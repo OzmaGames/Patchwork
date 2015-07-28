@@ -11,9 +11,9 @@ public class DecorationCircleStopper : GamePieceBase {
 	float HalfWidth = 0.0f;
 	float HalfHeight = 0.0f;
 
-	Player Owner;
+	public Player Owner;
 
-	CirclePatch owner;
+	public CirclePatch PatchTarget;
 
 	public bool isActive = false;
 
@@ -91,7 +91,7 @@ public class DecorationCircleStopper : GamePieceBase {
 		float sumRadius = ((r1 + r2) * (r1 + r2));
 		if(distance <= sumRadius)
 		{
-			owner = patch;
+			PatchTarget = patch;
 			return true;
 		}
 		
@@ -100,7 +100,7 @@ public class DecorationCircleStopper : GamePieceBase {
 
 	public void SetCollider(CirclePatch collider)
 	{
-		owner = collider;
+		PatchTarget = collider;
 	}
 
 	public override Player GetOwner()
@@ -127,10 +127,14 @@ public class DecorationCircleStopper : GamePieceBase {
 	
 	public override void Place()
 	{
-		bool alreadyDoneGrowing = owner.HasStoppedGrowing();
-		owner.PlaceDecoration(this);
-		int scoreToGive = alreadyDoneGrowing ? 2 : (int)owner.GetSize();
-		if(Owner != owner.GetOwner())
+		PatchTarget.PlaceDecoration(this);
+		//ActivePlayfield.PieceDone(this);
+
+		/*bool alreadyDoneGrowing = PatchTarget.HasStoppedGrowing();
+		PatchTarget.PlaceDecoration(this);
+
+		int scoreToGive = alreadyDoneGrowing ? 2 : (int)PatchTarget.GetSize();
+		if(Owner != PatchTarget.GetOwner())
 		{
 			scoreToGive = scoreToGive / 2;
 			Owner.AddScore(scoreToGive);
@@ -138,12 +142,13 @@ public class DecorationCircleStopper : GamePieceBase {
 		else if(alreadyDoneGrowing)
 		{
 			Owner.AddScore(scoreToGive);
-		}
-		transform.parent = owner.transform;
+		}*/
+
+		transform.parent = PatchTarget.transform;
 		transform.localPosition = new Vector3(0.0f, 0.0f, ZPosDecorationLayer);
 		PlaceChilds();
 		isPlaced = true;
-		owner = null;
+		PatchTarget = null;
 	}
 
 	public override void SetPosition(float x, float y)
@@ -216,7 +221,7 @@ public class DecorationCircleStopper : GamePieceBase {
 		BGTexture = null;
 		GeneratedMesh = null;
 		Owner = null;
-		owner = null;
+		PatchTarget = null;
 	}
 
 	void Update()

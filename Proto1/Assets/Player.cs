@@ -83,10 +83,7 @@ public class Player : MonoBehaviour {
 				activePiece = null;
 			}
 
-			var btnAccept = ConfirmPlacementPrefab.transform.FindChild("Accept").GetComponent<UnityEngine.UI.Button>();
-			var btnDecline = ConfirmPlacementPrefab.transform.FindChild("Decline").GetComponent<UnityEngine.UI.Button>();
-			btnAccept.onClick.RemoveAllListeners();
-			btnDecline.onClick.RemoveAllListeners();
+			ConfirmPlacementPrefab.GetComponent<UIConfirmPlacement>().ActivePlayer = null;
 			ConfirmPlacementPrefab.SetActive(false);
 		}
 
@@ -124,21 +121,12 @@ public class Player : MonoBehaviour {
 		ActivePlayfield.Place(this, piece);
 		isDone = true;
 
-		var btnAccept = ConfirmPlacementPrefab.transform.FindChild("Accept").GetComponent<UnityEngine.UI.Button>();
-		var btnDecline = ConfirmPlacementPrefab.transform.FindChild("Decline").GetComponent<UnityEngine.UI.Button>();
-		btnAccept.onClick.RemoveAllListeners();
-		btnDecline.onClick.RemoveAllListeners();
 		ConfirmPlacementPrefab.SetActive(false);
 	}
 
 	public void DeclinePlacement()
 	{
 		PutBackInHand();
-
-		var btnAccept = ConfirmPlacementPrefab.transform.FindChild("Accept").GetComponent<UnityEngine.UI.Button>();
-		var btnDecline = ConfirmPlacementPrefab.transform.FindChild("Decline").GetComponent<UnityEngine.UI.Button>();
-		btnAccept.onClick.RemoveAllListeners();
-		btnDecline.onClick.RemoveAllListeners();
 		ConfirmPlacementPrefab.SetActive(false);
 	}
 
@@ -160,10 +148,7 @@ public class Player : MonoBehaviour {
 		List<GamePieceBase> collidedPieces;
 		if(ActivePlayfield.CanPlaceAt(this, activePiece, activePiece.transform.position, out collidedPieces))
 		{
-			var btnAccept = ConfirmPlacementPrefab.transform.FindChild("Accept").GetComponent<UnityEngine.UI.Button>();
-			var btnDecline = ConfirmPlacementPrefab.transform.FindChild("Decline").GetComponent<UnityEngine.UI.Button>();
-			btnAccept.onClick.AddListener(() => ConfirmPlacement());
-			btnDecline.onClick.AddListener(() => DeclinePlacement());
+			ConfirmPlacementPrefab.GetComponent<UIConfirmPlacement>().ActivePlayer = this;
 
 			Vector3 confirmPos = new Vector3(pos.x + 1.0f, pos.y - 0.25f, ConfirmPlacementPrefab.transform.position.z);
 			Vector3 vp = Camera.main.WorldToViewportPoint(confirmPos);

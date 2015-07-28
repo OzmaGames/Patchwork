@@ -8,13 +8,15 @@ public class SinglePlayerPlayfield : Playfield
 {
 	List<CellPiece> PlayfieldCells;
 
-	bool Dirty = false;
 	float HalfWidth = 0.0f;
 	float HalfHeight = 0.0f;
 	
 	Texture2D BGTexture;
 	Texture2D[] CellTextures;
 	Game.PlayerPalette[] Palettes;
+
+	GameObject BGCoverL;
+	GameObject BGCoverR;
 
 	
 	class PlacedPatch
@@ -48,6 +50,11 @@ public class SinglePlayerPlayfield : Playfield
 		}
 		PlayfieldCells.Clear();
 		PlayfieldCells = null;
+
+		Destroy(BGCoverL);
+		BGCoverL = null;
+		Destroy(BGCoverR);
+		BGCoverR = null;
 
 		BGTexture = null;
 	}
@@ -96,17 +103,6 @@ public class SinglePlayerPlayfield : Playfield
 				highlightedCellMaterial.SetColor("_AddColor", highlightColor);
 			}
 		}
-
-		////////////////////////////////////////////////////////////////
-		Dirty = true;
-		////////////////////////////////////////////////////////////////
-		
-		if(Dirty)
-		{
-			// Regenerate mesh.
-			//GenerateMesh();
-			Dirty = false;
-		}
 	}
 
 	void CheckForCollision()
@@ -121,8 +117,9 @@ public class SinglePlayerPlayfield : Playfield
 				{
 					if(piece.GetSize() > cell.Size)
 					{
-						piece.SetCollided(true);
 						cell.IsDone = true;
+						cell.GiveScore = false;
+						piece.SetCollided(true);
 					}
 					else if(piece.HasStoppedGrowing())
 					{
@@ -211,10 +208,12 @@ public class SinglePlayerPlayfield : Playfield
 							break;
 						case Symbol.CompareResult.Draw:
 							Debug.Log("NOT MY TYPE - BUT WE LOOK THE SAME!");
+							cell.GiveScore = false;
 							break;
 						case Symbol.CompareResult.Lose:
 							Debug.Log("NOT MY TYPE - WHY DID YOU PLACE ME HERE?!");
 							circlePatch.SwapColors(cell.Palette);
+							cell.GiveScore = false;
 							break;
 						}
 					}
@@ -228,6 +227,7 @@ public class SinglePlayerPlayfield : Playfield
 			CirclePatch patch = piece.GetComponent<CirclePatch>();
 			Patches.Add(new PlacedPatch(player, patch));
 		}
+		piece.ActivePlayfield = this;
 		piece.Place();
 	}
 
@@ -319,6 +319,27 @@ public class SinglePlayerPlayfield : Playfield
 		CellTextures = cellTextures;
 		Palettes = palettes;
 
+		MeshFilter meshFilter;
+		MeshRenderer meshRenderer;
+		
+		BGCoverL = new GameObject("BGColverL");
+		meshFilter = BGCoverL.AddComponent<MeshFilter>();
+		meshFilter.mesh = Helpers.GenerateQuad(14.0f, 14.0f, 15.0f);
+		meshRenderer = BGCoverL.AddComponent<MeshRenderer>();
+		meshRenderer.material = new Material(Shader.Find("Unlit/Texture"));
+		meshRenderer.material.mainTexture = BGTexture;
+		meshRenderer.material.color = Color.cyan;
+		BGCoverL.transform.position = new Vector3(-16.0f, 0.0f, -9.0f);
+
+		BGCoverR = new GameObject("BGColverR");
+		meshFilter = BGCoverR.AddComponent<MeshFilter>();
+		meshFilter.mesh = Helpers.GenerateQuad(14.0f, 14.0f, 15.0f);
+		meshRenderer = BGCoverR.AddComponent<MeshRenderer>();
+		meshRenderer.material = new Material(Shader.Find("Unlit/Texture"));
+		meshRenderer.material.mainTexture = BGTexture;
+		meshRenderer.material.color = Color.cyan;
+		BGCoverR.transform.position = new Vector3(16.0f, 0.0f, -9.0f);
+
 		// Generate test playfield cells.
 		PlayfieldCells = new List<CellPiece>();
 		for(int i = 0; i < level.Cells.Length; ++i)
@@ -409,6 +430,47 @@ public class SinglePlayerPlayfield : Playfield
 			}
 		}
 		return true;
+	}
+	
+	public override void PieceDone(GamePieceBase piece)
+	{
+		System.Type type = piece.GetType();
+		if(type == typeof(CirclePatch))
+		{
+			CirclePatch patch = piece as CirclePatch;
+			DecorationCircleStopper decoration = patch.GetDecoration();
+			bool alreadyDoneGrowing = patch.HasStoppedGrowing();
+
+			// Find cell for patch.
+			for(int i = 0; i < PlayfieldCells.Count; ++i)
+			{
+				CellPiece cell = PlayfieldCells[i];
+				if(cell.GiveScore && (cell.Piece != null))
+				{
+					if(cell.Piece.gameObject == patch.gameObject)
+					{
+						if(decoration != null)
+						{
+							int scoreToGive = alreadyDoneGrowing ? 2 : (int)patch.GetSize();
+							if(decoration.GetOwner() != patch.GetOwner())
+							{
+								scoreToGive = scoreToGive / 2;
+								decoration.GetOwner().AddScore(scoreToGive);
+							}
+							else if(alreadyDoneGrowing)
+							{
+								decoration.Owner.AddScore(scoreToGive);
+							}
+						}
+						if(!alreadyDoneGrowing)
+						{
+							patch.Owner.AddScore((int)patch.GetSize());
+						}
+						cell.GiveScore = false;
+					}
+				}
+			}
+		}
 	}
 	
 	public override bool IsDone()

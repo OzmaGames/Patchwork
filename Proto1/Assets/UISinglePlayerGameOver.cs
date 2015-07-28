@@ -24,8 +24,8 @@ public class UISinglePlayerGameOver : UIPage
 	public int option = 0;
 	public void OpenMainMenu()
 	{
-			option = 1;
-			Window.OnSubmit(this);
+		option = 1;
+		Window.OnSubmit(this);
 	}
 	
 	public void PlayNextLevel()

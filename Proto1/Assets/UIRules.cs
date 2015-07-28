@@ -19,8 +19,15 @@ public class UIRules : UIPage
 	public UIPage NextPage;
 	public void Submit()
 	{
-		Window.Submit();
 		Window.Show(NextPage);
+	}
+
+	public bool DoPlayNow = false;
+
+	public void PlayNow()
+	{
+		DoPlayNow = true;
+		Window.OnSubmit(this);
 	}
 	
 	public override void Show()

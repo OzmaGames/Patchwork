@@ -3,8 +3,9 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class Game : MonoBehaviour {
-
+public class Game : MonoBehaviour
+{
+	// Constants.
 	public const float BGLayerZ = -1.0f;
 	public const float FGLayerZ = -1.0f;
 	public const float UILayerZ = -1.0f;
@@ -13,16 +14,47 @@ public class Game : MonoBehaviour {
 	public static float BGZPos = BGLayerZ + ZPosAdd;
 	public static float FGZPos = FGLayerZ + ZPosAdd;
 	public static float UIZPos = UILayerZ + ZPosAdd;
+	public static void ResetPos()
+	{
+		Game.BGZPos = Game.BGLayerZ + Game.ZPosAdd;
+		Game.FGZPos = Game.FGLayerZ + Game.ZPosAdd;
+		Game.UIZPos = Game.UILayerZ + Game.ZPosAdd;
+	}
+	
 
-	public Color PlayerHighlightColor;
-	public Color PlayerNormalColor;
+	public bool abortGameSession = false;
 
-	public Texture2D BGTexture;
+	// Prefabs.
+	public GameObject[] SymbolPrefabs;
+	public GameObject[] PatchSizeNumberPrefabs;
+	public GameObject DeckObjectPrefab;
+	public GameObject QuitPrefab;
+	public GameObject PlayerStatsPrefab;
+	public GameObject TurnPrefab;
+	public GameObject HelpPrefab;
+	public GameObject ConfirmPlacementPrefab;
+	public GameObject SinglePlayerGameOverPrefab;
+	public GameObject MultiplayerGameOverPrefab;
+	public GameObject WindowPrefab;
+	public GameObject MainMenuPrefab;
+	public GameObject MenuBGPrefab;
+	public GameObject LogoPrefab;
 
+	// Offscreen render-cameras.
+	public Camera PlayerDeckPatch1RendererCamera;
+	public Camera PlayerDeckPatch2RendererCamera;
+	public Camera PlayerDeckDecorationRendererCamera;
+	public Camera PatchRendererCamera;
+	
+	// Background.
 	public Vector2 PlayAreaHalfSize = new Vector2(25.0f, 25.0f);
+	public Texture2D BGTexture;
+	GameObject Background;
 
+	// Game settings.
 	public int NumRounds = 12;
 
+	// Player settings.
 	[System.Serializable]
 	public class PlayerPalette
 	{
@@ -31,16 +63,12 @@ public class Game : MonoBehaviour {
 	}
 	public PlayerPalette[] Palette;
 	public Texture2D[] CellSymbolIcons;
+	public Color PlayerHighlightColor;
+	public Color PlayerNormalColor;
 
-	public GameObject[] SymbolPrefabs;
-	public GameObject[] PatchSizeNumberPrefabs;
-
-	public GameObject DeckObjectPrefab;
-
-	public Camera PlayerDeckPatch1RendererCamera;
-	public Camera PlayerDeckPatch2RendererCamera;
-	public Camera PlayerDeckDecorationRendererCamera;
-	public Camera PatchRendererCamera;
+	// State handling.
+	GameState CurrentState;
+	GameState NextState;
 
 	[System.Serializable]
 	public class PlayerSetting
@@ -65,10 +93,6 @@ public class Game : MonoBehaviour {
 		public int Score = 0;
 	}
 
-	GameObject Background;
-
-	public GameObject MenuBGPrefab;
-	public GameObject LogoPrefab;
 	class IntroGameState : GameState
 	{
 		const float WAIT_TIME = 2.0f;
@@ -106,20 +130,24 @@ public class Game : MonoBehaviour {
 
 			case PatchworkLogo.VisibleState.Hidden:
 				logo.gameObject.SetActive(false);
-				ActiveGame.SetState(new MainMenuGameState());
+				ActiveGame.SetState(new MainMenuGameState(ActiveGame.MainMenuPrefab.GetComponent<UIMainMenu>()));
 				break;
 			}
 		}
 	}
 
-	public GameObject WindowPrefab;
-	public GameObject MainMenuPrefab;
 	public class MainMenuGameState : GameState
 	{
 		UIMenuBG menubg;
 		UIWindow uiWindow;
 		UIMainMenu uiMainMenu;
+		UIPage StartPage;
 
+		public MainMenuGameState(UIPage startPage)
+		{
+			StartPage = startPage;
+		}
+		
 		public override void Start()
 		{
 			ActiveGame.QuitPrefab.SetActive(false);
@@ -128,38 +156,26 @@ public class Game : MonoBehaviour {
 			menubg.gameObject.SetActive(true);
 			menubg.Show();
 
-			uiMainMenu = ActiveGame.MainMenuPrefab.GetComponent<UIMainMenu>();
 			uiWindow = ActiveGame.WindowPrefab.GetComponent<UIWindow>();
 			uiWindow.gameObject.SetActive(true);
 			uiWindow.OnSubmit = OnSubmit;
-			uiWindow.Show(uiMainMenu);
+			uiWindow.Show(StartPage);
 		}
 
 		public override void Stop()
 		{
+			menubg.gameObject.SetActive(false);
 		}
 		
 		public override void Update()
 		{
 			switch(uiWindow.Visible)
 			{
-			case UIWindow.VisibleState.Visible:
-				if(uiWindow.IsDone)
-				{
-					uiWindow.Hide();
-					if((menubg.Visible == UIMenuBG.VisibleState.Showing) || (menubg.Visible == UIMenuBG.VisibleState.Visible))
-					{
-						menubg.Hide();
-					}
-				}
-				break;
-				
 			case UIWindow.VisibleState.Hidden:
-				if(uiWindow.IsDone && (newGameState != null))
+				uiWindow.gameObject.SetActive(false);
+				if(newGameState != null)
 				{
 					// Start the game.
-					uiWindow.gameObject.SetActive(false);
-					menubg.gameObject.SetActive(false);
 					ActiveGame.SetState(newGameState);
 				}
 				break;
@@ -170,12 +186,7 @@ public class Game : MonoBehaviour {
 		void OnSubmit(UIPage page)
 		{
 			System.Type type = page.GetType();
-			if(type == typeof(UIMainMenu))
-			{
-				UIMainMenu mainMenu = page as UIMainMenu;
-				Debug.Log("HOW DID I GET HERE? " + mainMenu.option);
-			}
-			else if(type == typeof(UILevelSelect))
+			if(type == typeof(UILevelSelect))
 			{
 				UILevelSelect levelSelect = page as UILevelSelect;
 				switch(levelSelect.option)
@@ -185,6 +196,7 @@ public class Game : MonoBehaviour {
 					ActiveGame.PlayerSettings[0].Palette = ActiveGame.Palette[0];
 					newGameState = new SingleplayerMainGameState(levelSelect.SelectedLevel);
 					uiWindow.Hide();
+					menubg.Hide();
 					break;
 				case 2:
 					Debug.Log("ShowHelp");
@@ -208,26 +220,23 @@ public class Game : MonoBehaviour {
 				else
 				{
 					player = 1;
-					newGameState = new MultiplayerMainGameState();
 				}
 				ActiveGame.PlayerSettings[player].Name = playerConfig.PlayerConfig.Name;
 				ActiveGame.PlayerSettings[player].Palette = ActiveGame.Palette[playerConfig.PlayerConfig.Palette];
 			}
+			else if(type == typeof(UIRules))
+			{
+				UIRules uiRules = page as UIRules;
+				if(uiRules.DoPlayNow)
+				{
+					newGameState = new MultiplayerMainGameState();
+					uiWindow.Hide();
+					menubg.Hide();
+				}
+			}
 		}
 	}
 
-	public bool abortGameSession = false;
-	public GameObject QuitPrefab;
-	public GameObject PlayerStatsPrefab;
-	public GameObject TurnPrefab;
-	public GameObject HelpPrefab;
-	public GameObject ConfirmPlacementPrefab;
-
-	public GameObject SinglePlayerGameOverPrefab;
-	public GameObject MultiplayerGameOverPrefab;
-
-	GameState CurrentState;
-	GameState NextState;
 	public void SetState(GameState state)
 	{
 		NextState = state;

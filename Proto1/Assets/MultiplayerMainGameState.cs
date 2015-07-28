@@ -21,7 +21,8 @@ public class MultiplayerMainGameState : GameState
 		Playfield ActivePlayfield;
 		UIWindow uiWindow;
 		UIMultiplayerGameOver uiGameOver;
-		
+		GameState NextGameState;
+
 		public GameOverState(List<Game.PlayerInfo> players, Playfield playfield)
 		{
 			Players = players;
@@ -62,6 +63,8 @@ public class MultiplayerMainGameState : GameState
 			for(int i = 0; i < Players.Count; ++i)
 			{
 				GameObject.Destroy(Players[i].Player.gameObject);
+				Players[i].Player = null;
+				Players[i] = null;
 			}
 			Players.Clear();
 			Players = null;
@@ -71,18 +74,11 @@ public class MultiplayerMainGameState : GameState
 		{
 			switch(uiWindow.Visible)
 			{
-			case UIWindow.VisibleState.Visible:
-				if(uiWindow.IsDone)
-				{
-					uiWindow.Hide();
-				}
-				break;
-				
 			case UIWindow.VisibleState.Hidden:
-				if(uiWindow.IsDone)
+				uiWindow.gameObject.SetActive(false);
+				if(NextGameState != null)
 				{
-					// Re-start.
-					ActiveGame.SetState(new Game.MainMenuGameState());
+					ActiveGame.SetState(NextGameState);
 				}
 				break;
 			}
@@ -97,21 +93,24 @@ public class MultiplayerMainGameState : GameState
 				{
 				case 1:
 					// Main menu.
-					ActiveGame.SetState(new Game.MainMenuGameState());
+					NextGameState = new Game.MainMenuGameState(ActiveGame.MainMenuPrefab.GetComponent<UIMainMenu>());
+					uiWindow.Hide();
 					break;
 					
 				case 2:
 					// Play again.
-					ActiveGame.SetState(new MultiplayerMainGameState());
+					NextGameState = new MultiplayerMainGameState();
+					uiWindow.Hide();
 					break;
 				}
 			}
 		}
-		
 	}
 
 	public override void Start()
 	{
+		Game.ResetPos();
+
 		ActiveGame.abortGameSession = false;
 		
 		ActiveGame.QuitPrefab.SetActive(true);
@@ -140,13 +139,11 @@ public class MultiplayerMainGameState : GameState
 		ActiveGame.PlayerStatsPrefab.transform.FindChild("Player2").FindChild("Score").gameObject.SetActive(true);
 		ActiveGame.TurnPrefab.SetActive(true);
 		txtTurn = ActiveGame.TurnPrefab.GetComponent<UnityEngine.UI.Text>();
-		//			ActiveGame.HelpPrefab.SetActive(true);
 		UpdateUI();
 	}
 	
 	public override void Stop()
 	{
-		//			ActiveGame.HelpPrefab.SetActive(false);
 		ActiveGame.PlayerStatsPrefab.SetActive(false);
 		ActiveGame.TurnPrefab.SetActive(false);
 		ActiveGame.QuitPrefab.SetActive(false);

@@ -4,6 +4,7 @@ using System.Collections;
 public class CellPiece : MonoBehaviour
 {
 	public bool IsDone = false;
+	public bool GiveScore = true;
 	Rect Rect;
 	public float Size = 0.0f;
 	public Symbol Symbol;

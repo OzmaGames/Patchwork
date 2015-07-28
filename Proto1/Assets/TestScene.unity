@@ -241,10 +241,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db55694b9f2b54ab299970f3d8255bb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PlayerHighlightColor: {r: .662745118, g: .164705887, b: .309803933, a: 1}
-  PlayerNormalColor: {r: 1, g: 1, b: 1, a: 1}
-  BGTexture: {fileID: 2800000, guid: fe89dc739a7964cd6b383221c644b5c3, type: 3}
+  abortGameSession: 0
+  SymbolPrefabs:
+  - {fileID: 140988, guid: 3c60575741a5040298a43cc53947470a, type: 2}
+  - {fileID: 149600, guid: d40866570db6d4de99c79c4757f7d7d3, type: 2}
+  - {fileID: 115994, guid: 89486c73d209f46309df40e410739b80, type: 2}
+  - {fileID: 140988, guid: b2b51c6bc7abc49949b6b055557da454, type: 2}
+  - {fileID: 149600, guid: 4daf76a022af14c67abf8151d05f1ff1, type: 2}
+  - {fileID: 115994, guid: a0826b33a963146b388ddcea98b47ead, type: 2}
+  PatchSizeNumberPrefabs:
+  - {fileID: 147958, guid: 754021659751243a198ef252737547f4, type: 2}
+  - {fileID: 106764, guid: 96fc55555c3d64abd9dce32712974151, type: 2}
+  - {fileID: 195594, guid: d1372ff572bff43fd8a068eeddf67ab9, type: 2}
+  - {fileID: 157186, guid: 1f40561a335b4427993c2df7fb2541c8, type: 2}
+  - {fileID: 173294, guid: 0411e719caf844c69b64995de21adaab, type: 2}
+  - {fileID: 127266, guid: 4062b9b5180674bb383f566e1d5441f1, type: 2}
+  DeckObjectPrefab: {fileID: 110670, guid: ddd9ca76e49ec4b40af76a0e012d1b84, type: 2}
+  QuitPrefab: {fileID: 423320396}
+  PlayerStatsPrefab: {fileID: 1578275042}
+  TurnPrefab: {fileID: 816955867}
+  HelpPrefab: {fileID: 0}
+  ConfirmPlacementPrefab: {fileID: 2024404692}
+  SinglePlayerGameOverPrefab: {fileID: 1604099897}
+  MultiplayerGameOverPrefab: {fileID: 2104050098}
+  WindowPrefab: {fileID: 1736654349}
+  MainMenuPrefab: {fileID: 1483303619}
+  MenuBGPrefab: {fileID: 1935872088}
+  LogoPrefab: {fileID: 425887693}
+  PlayerDeckPatch1RendererCamera: {fileID: 1631575136}
+  PlayerDeckPatch2RendererCamera: {fileID: 1776135993}
+  PlayerDeckDecorationRendererCamera: {fileID: 1507636449}
+  PatchRendererCamera: {fileID: 2124200600}
   PlayAreaHalfSize: {x: 25, y: 25}
+  BGTexture: {fileID: 2800000, guid: fe89dc739a7964cd6b383221c644b5c3, type: 3}
   NumRounds: 10
   Palette:
   - Colors:
@@ -675,25 +704,8 @@ MonoBehaviour:
   - {fileID: 2800000, guid: b9c111ec45904477089a932b5d191cbc, type: 3}
   - {fileID: 2800000, guid: 3948bde5f970f4beb9213b620002c312, type: 3}
   - {fileID: 2800000, guid: d0aee6f282d84465fa9b4c1cf789f0fd, type: 3}
-  SymbolPrefabs:
-  - {fileID: 140988, guid: 3c60575741a5040298a43cc53947470a, type: 2}
-  - {fileID: 149600, guid: d40866570db6d4de99c79c4757f7d7d3, type: 2}
-  - {fileID: 115994, guid: 89486c73d209f46309df40e410739b80, type: 2}
-  - {fileID: 140988, guid: b2b51c6bc7abc49949b6b055557da454, type: 2}
-  - {fileID: 149600, guid: 4daf76a022af14c67abf8151d05f1ff1, type: 2}
-  - {fileID: 115994, guid: a0826b33a963146b388ddcea98b47ead, type: 2}
-  PatchSizeNumberPrefabs:
-  - {fileID: 147958, guid: 754021659751243a198ef252737547f4, type: 2}
-  - {fileID: 106764, guid: 96fc55555c3d64abd9dce32712974151, type: 2}
-  - {fileID: 195594, guid: d1372ff572bff43fd8a068eeddf67ab9, type: 2}
-  - {fileID: 157186, guid: 1f40561a335b4427993c2df7fb2541c8, type: 2}
-  - {fileID: 173294, guid: 0411e719caf844c69b64995de21adaab, type: 2}
-  - {fileID: 127266, guid: 4062b9b5180674bb383f566e1d5441f1, type: 2}
-  DeckObjectPrefab: {fileID: 110670, guid: ddd9ca76e49ec4b40af76a0e012d1b84, type: 2}
-  PlayerDeckPatch1RendererCamera: {fileID: 1631575136}
-  PlayerDeckPatch2RendererCamera: {fileID: 1776135993}
-  PlayerDeckDecorationRendererCamera: {fileID: 1507636449}
-  PatchRendererCamera: {fileID: 2124200600}
+  PlayerHighlightColor: {r: .662745118, g: .164705887, b: .309803933, a: 1}
+  PlayerNormalColor: {r: 1, g: 1, b: 1, a: 1}
   PlayerSettings:
   - Name: Player1
     PatchPatterns:
@@ -707,18 +719,6 @@ MonoBehaviour:
     - {fileID: 2800000, guid: 827e649185fde462693b33b06356a27f, type: 3}
     Decorations:
     - {fileID: 2800000, guid: ec2ab02a291244c529e8d3ef1d20c4de, type: 3}
-  MenuBGPrefab: {fileID: 1935872088}
-  LogoPrefab: {fileID: 425887693}
-  WindowPrefab: {fileID: 1736654349}
-  MainMenuPrefab: {fileID: 1483303619}
-  abortGameSession: 0
-  QuitPrefab: {fileID: 423320396}
-  PlayerStatsPrefab: {fileID: 1578275042}
-  TurnPrefab: {fileID: 816955867}
-  HelpPrefab: {fileID: 0}
-  ConfirmPlacementPrefab: {fileID: 2024404692}
-  SinglePlayerGameOverPrefab: {fileID: 1604099897}
-  MultiplayerGameOverPrefab: {fileID: 2104050098}
 --- !u!4 &18623757
 Transform:
   m_ObjectHideFlags: 0
@@ -805,7 +805,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1736654351}
+      - m_Target: {fileID: 1081550680}
         m_MethodName: PlayNow
         m_Mode: 1
         m_Arguments:
@@ -2511,7 +2511,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1736654351}
+      - m_Target: {fileID: 1050219561}
         m_MethodName: PlayNow
         m_Mode: 1
         m_Arguments:
@@ -3169,7 +3169,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1736654351}
+      - m_Target: {fileID: 1050219561}
         m_MethodName: PlayNow
         m_Mode: 1
         m_Arguments:
@@ -3573,6 +3573,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   NextPage: {fileID: 1050219561}
+  DoPlayNow: 0
 --- !u!1 &553056074
 GameObject:
   m_ObjectHideFlags: 0
@@ -4852,7 +4853,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1736654351}
+      - m_Target: {fileID: 1778139038}
         m_MethodName: PlayNow
         m_Mode: 1
         m_Arguments:
@@ -5472,7 +5473,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1736654351}
+      - m_Target: {fileID: 531773539}
         m_MethodName: PlayNow
         m_Mode: 1
         m_Arguments:
@@ -6149,6 +6150,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   NextPage: {fileID: 0}
+  DoPlayNow: 0
 --- !u!1 &1054128002
 GameObject:
   m_ObjectHideFlags: 0
@@ -6454,6 +6456,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   NextPage: {fileID: 1778139038}
+  DoPlayNow: 0
 --- !u!1 &1087595413
 GameObject:
   m_ObjectHideFlags: 0
@@ -8240,7 +8243,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1318997366}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2024404694}
+        m_MethodName: Decline
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_TypeName: UnityEngine.UI.Button+ButtonClickedEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
 --- !u!114 &1318997366
@@ -11938,6 +11952,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   NextPage: {fileID: 531773539}
+  DoPlayNow: 0
 --- !u!1 &1789728867
 GameObject:
   m_ObjectHideFlags: 0
@@ -12205,7 +12220,18 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1815904872}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 2024404694}
+        m_MethodName: Confirm
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_TypeName: UnityEngine.UI.Button+ButtonClickedEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
 --- !u!114 &1815904872
@@ -12697,6 +12723,7 @@ GameObject:
   serializedVersion: 4
   m_Component:
   - 224: {fileID: 2024404693}
+  - 114: {fileID: 2024404694}
   m_Layer: 5
   m_Name: ConfirmPlacement
   m_TagString: Untagged
@@ -12723,6 +12750,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 200, y: 79}
   m_Pivot: {x: .5, y: .5}
+--- !u!114 &2024404694
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 2024404692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97c51f86935ef4ecaa5ed551076cf83d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ActivePlayer: {fileID: 0}
 --- !u!1 &2043068990
 GameObject:
   m_ObjectHideFlags: 0

@@ -290,6 +290,7 @@ public class MultiplayerPlayfield : Playfield
 			CirclePatch patch = piece.GetComponent<CirclePatch>();
 			Patches.Add(new PlacedPatch(player, patch));
 		}
+		piece.ActivePlayfield = this;
 		piece.Place();
 	}
 
@@ -301,7 +302,7 @@ public class MultiplayerPlayfield : Playfield
 		}
 		return true;
 	}
-	
+
 	public override void GetCollision(GamePieceBase piece, out List<GamePieceBase> collidedPieces)
 	{
 		collidedPieces = new List<GamePieceBase>();
@@ -457,6 +458,35 @@ public class MultiplayerPlayfield : Playfield
 #if HIDE_SYMBOLS
 				Patches[p].Patch.SetShowSymbol(true);
 #endif
+			}
+		}
+	}
+	
+	public override void PieceDone(GamePieceBase piece)
+	{
+		System.Type type = piece.GetType();
+		if(type == typeof(CirclePatch))
+		{
+			CirclePatch patch = piece as CirclePatch;
+			DecorationCircleStopper decoration = patch.GetDecoration();
+			bool alreadyDoneGrowing = patch.HasStoppedGrowing();
+
+			if(decoration != null)
+			{
+				int scoreToGive = alreadyDoneGrowing ? 2 : (int)patch.GetSize();
+				if(decoration.GetOwner() != patch.GetOwner())
+				{
+					scoreToGive = scoreToGive / 2;
+					decoration.GetOwner().AddScore(scoreToGive);
+				}
+				else if(alreadyDoneGrowing)
+				{
+					decoration.Owner.AddScore(scoreToGive);
+				}
+			}
+			if(!alreadyDoneGrowing)
+			{
+				patch.Owner.AddScore((int)patch.GetSize());
 			}
 		}
 	}

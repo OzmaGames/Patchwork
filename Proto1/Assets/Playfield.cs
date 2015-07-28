@@ -21,5 +21,7 @@ public abstract class Playfield : MonoBehaviour
 	// Move this to game state?
 	public abstract void ActivatePlayer(Player player, bool hideOthersSymbols);
 
+	public abstract void PieceDone(GamePieceBase piece);
+	
 	public abstract bool IsDone();
 }

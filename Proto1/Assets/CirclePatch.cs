@@ -43,8 +43,8 @@ public class CirclePatch : GamePieceBase {
 	}
 	PatchSegment[] patchSegments;
 	
-	Player Owner;
-	
+	public Player Owner;
+
 	bool segmentDoneGrowing = false;
 	bool doneGrowing = false;
 	bool collided = false;
@@ -466,8 +466,7 @@ public class CirclePatch : GamePieceBase {
 		AtlasRect = s_AtlasRect;
 		AtlasTexture = s_AtlasTexture;
 
-		transform.position = new Vector3(0.0f, 0.0f, 0.0f);//Game.BGZPos);
-		//Game.BGZPos += Game.ZPosAdd;
+		transform.position = new Vector3(0.0f, 0.0f, 0.0f);
 
 		// Setup initial values.
 		Segments = config.NumSegments;
@@ -586,7 +585,7 @@ public class CirclePatch : GamePieceBase {
 	public void PlaceDecoration(DecorationCircleStopper decoration)
 	{
 		Decoration = decoration;
-		if(!HasStoppedGrowing())
+		//if(!HasStoppedGrowing())
 		{
 			SetGrowthDone(true);
 		}
@@ -700,9 +699,9 @@ public class CirclePatch : GamePieceBase {
 	
 	public void SetGrowthDone(bool enable)
 	{
+		ActivePlayfield.PieceDone(this);
 		doneGrowing = enable;
 		SetShowSymbol(false);
-		Owner.AddScore((int)size);
 
 		// Start flashing to notify that it is done.
 		StartFlash(new Color(-0.5f, -0.5f, -0.5f), new Color(0.5f, 0.5f, 0.5f), FLASH_TIME);

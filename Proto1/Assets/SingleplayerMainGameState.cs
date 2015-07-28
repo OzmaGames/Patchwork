@@ -52,21 +52,11 @@ public class SingleplayerMainGameState : GameState
 		{
 			switch(uiWindow.Visible)
 			{
-			case UIWindow.VisibleState.Visible:
-				if(uiWindow.IsDone)
-				{
-					uiWindow.Hide();
-				}
-				break;
-				
 			case UIWindow.VisibleState.Hidden:
-				if(uiWindow.IsDone)
+				uiWindow.gameObject.SetActive(false);
+				if(NextState != null)
 				{
-					// Re-start.
-					if(NextState != null)
-					{
-						ActiveGame.SetState(NextState);
-					}
+					ActiveGame.SetState(NextState);
 				}
 				break;
 			}
@@ -81,20 +71,22 @@ public class SingleplayerMainGameState : GameState
 				{
 				case 1:
 					// Main menu.
-					NextState = new Game.MainMenuGameState();
-					uiWindow.PlayNow();
+					NextState = new Game.MainMenuGameState(ActiveGame.MainMenuPrefab.GetComponent<UIMainMenu>());
+					uiWindow.Hide();
 					break;
 
 				case 2:
 					// Play next level.
 					Debug.Log("Next level: " + NextLevel);
 					NextState = new SingleplayerMainGameState(NextLevel);
-					uiWindow.PlayNow();
+					uiWindow.Hide();
 					break;
 
 				case 3:
 					// Level select.
-					uiWindow.Show(uiLevelSelect);
+					NextState = new Game.MainMenuGameState(uiLevelSelect);
+					//uiWindow.Show(uiLevelSelect);
+					uiWindow.Hide();
 					break;
 				}
 			}
@@ -107,11 +99,13 @@ public class SingleplayerMainGameState : GameState
 					ActiveGame.PlayerSettings[0].Name = "Score";
 					ActiveGame.PlayerSettings[0].Palette = ActiveGame.Palette[0];
 					NextState = new SingleplayerMainGameState(levelSelect.SelectedLevel);
+					uiWindow.Hide();
 					break;
 				case 2:
-					NextState = new MultiplayerMainGameState();
+					Debug.Log("ShowHelp");
 					break;
 				case 3:
+					Debug.Log("ShowOptions");
 					break;
 				case 4:
 					break;
@@ -183,6 +177,8 @@ public class SingleplayerMainGameState : GameState
 
 	public override void Start()
 	{
+		Game.ResetPos();
+
 		ActiveGame.abortGameSession = false;
 		ActiveGame.QuitPrefab.SetActive(true);
 

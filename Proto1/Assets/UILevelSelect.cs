@@ -38,7 +38,6 @@ public class UILevelSelect : UIPage
 		option = 1;
 		SelectedLevel = level;
 		Window.OnSubmit(this);
-		Window.PlayNow();
 	}
 	
 	public void ShowHelp()
