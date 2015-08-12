@@ -95,7 +95,7 @@ public class Game : MonoBehaviour
 
 	class IntroGameState : GameState
 	{
-		const float WAIT_TIME = 2.0f;
+		const float WAIT_TIME = 3.0f;
 		float waitTimer = 0.0f;
 		PatchworkLogo logo;
 		UIMenuBG menubg;

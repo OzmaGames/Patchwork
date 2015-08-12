@@ -117,7 +117,7 @@ public class SingleplayerMainGameState : GameState
 	
 	public SinglePlayerPlayfield.PlayfieldData[] Levels = new SinglePlayerPlayfield.PlayfieldData[] {
 		new SinglePlayerPlayfield.PlayfieldData(new SinglePlayerPlayfield.PlayfieldData.Cell[] {
-			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -7.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -7.0f), 3.0f, Symbol.SymbolTypes.Needle, true),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -1.0f), 2.0f, Symbol.SymbolTypes.Needle, false),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, -1.0f), 1.0f, true),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, 3.0f), 2.0f, true),
@@ -135,19 +135,19 @@ public class SingleplayerMainGameState : GameState
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, -3.0f), 2.0f, Symbol.SymbolTypes.Scissor, false),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, 1.0f), 3.0f, true),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -1.0f), 1.0f, true),
-			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -3.0f), 1.0f, true),
-			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(3.0f, -1.0f), 4.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -3.0f), 1.0f, Symbol.SymbolTypes.Needle, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(3.0f, -1.0f), 4.0f, Symbol.SymbolTypes.Scissor, true),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(3.0f, -7.0f), 3.0f, Symbol.SymbolTypes.Thread, false),
 		}),
 		new SinglePlayerPlayfield.PlayfieldData(new SinglePlayerPlayfield.PlayfieldData.Cell[] {
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-9.0f, -7.0f), 4.0f, Symbol.SymbolTypes.Needle, false),
-			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-11.0f, 1.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-11.0f, 1.0f), 3.0f, Symbol.SymbolTypes.Scissor, true),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, 1.0f), 1.0f, true),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, 1.0f), 1.0f, Symbol.SymbolTypes.Scissor, false),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-5.0f, 3.0f), 4.0f, true),
-			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-1.0f, -7.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-1.0f, -7.0f), 3.0f, Symbol.SymbolTypes.Thread, true),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-1.0f, -1.0f), 2.0f, true),
-			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(2.0f, -1.0f), 4.0f, Symbol.SymbolTypes.Thread, false),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(3.0f, -1.0f), 4.0f, Symbol.SymbolTypes.Thread, false),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(5.0f, -9.0f), 2.0f, Symbol.SymbolTypes.Needle, false),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(5.0f, -5.0f), 2.0f, true),
 		}),
@@ -160,10 +160,10 @@ public class SingleplayerMainGameState : GameState
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, -1.0f), 1.0f, Symbol.SymbolTypes.Needle, false),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-3.0f, 1.0f), 4.0f, true),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(-1.0f, -1.0f), 1.0f, true),
-			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -11.0f), 4.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -11.0f), 4.0f, Symbol.SymbolTypes.Thread, true),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(1.0f, -3.0f), 2.0f, Symbol.SymbolTypes.Scissor, false),
 			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(5.0f, -3.0f), 2.0f, true),
-			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(5.0f, 1.0f), 3.0f, true),
+			new SinglePlayerPlayfield.PlayfieldData.Cell(new Vector2(5.0f, 1.0f), 3.0f, Symbol.SymbolTypes.Needle, true),
 		})
 	};
 	int ActiveLevel = 0;

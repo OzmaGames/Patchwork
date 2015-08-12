@@ -724,15 +724,23 @@ public class CirclePatch : GamePieceBase {
 		Material material;
 		if(!doHighlight)
 		{
-			for(int s = 0; s < CurrentSegment; ++s)
+			for(int s = 0; s <= CurrentSegment; ++s)
 			{
+				if(s >= Segments)
+				{
+					break;
+				}
 				material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 				material.SetColor("_AddColor", Color.black);
 			}
 			return;
 		}
-		for(int s = 0; s < CurrentSegment; ++s)
+		for(int s = 0; s <= CurrentSegment; ++s)
 		{
+			if(s >= Segments)
+			{
+				break;
+			}
 			material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 			material.SetColor("_AddColor", highlightColor);
 		}
@@ -760,8 +768,12 @@ public class CirclePatch : GamePieceBase {
 		if(flashTimer > 0.0f)
 		{
 			Material material;
-			for(int s = 0; s < CurrentSegment; ++s)
+			for(int s = 0; s <= CurrentSegment; ++s)
 			{
+				if(s >= Segments)
+				{
+					break;
+				}
 				material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 				material.SetColor("_AddColor", Color.Lerp(flashColorStart, flashColorEnd, flashValue));
 			}
@@ -771,8 +783,12 @@ public class CirclePatch : GamePieceBase {
 		else
 		{
 			Material material;
-			for(int s = 0; s < CurrentSegment; ++s)
+			for(int s = 0; s <= CurrentSegment; ++s)
 			{
+				if(s >= Segments)
+				{
+					break;
+				}
 				material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 				material.SetColor("_AddColor", new Vector4(0.0f, 0.0f, 0.0f, 0.0f));
 			}
@@ -800,8 +816,12 @@ public class CirclePatch : GamePieceBase {
 	void UpdateColorOverlay()
 	{
 		Material material;
-		for(int s = 0; s < CurrentSegment; ++s)
+		for(int s = 0; s <= CurrentSegment; ++s)
 		{
+			if(s >= Segments)
+			{
+				break;
+			}
 			material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 			material.SetColor("_AddColor", AddColor);
 		}
@@ -810,8 +830,12 @@ public class CirclePatch : GamePieceBase {
 	public override void UpdateEffect(Color addColor)
 	{
 		Material material;
-		for(int s = 0; s < CurrentSegment; ++s)
+		for(int s = 0; s <= CurrentSegment; ++s)
 		{
+			if(s >= Segments)
+			{
+				break;
+			}
 			material = PatchSegments[s].GetComponent<MeshRenderer>().material;
 			material.SetColor("_AddColor", addColor);
 		}
