@@ -15,6 +15,9 @@ public class SinglePlayerPlayfield : Playfield
 	Texture2D[] CellTextures;
 	Game.PlayerPalette[] Palettes;
 
+	List<GameObject> Seams;
+	Texture2D[] StitchTextures;
+
 	GameObject BGCoverL;
 	GameObject BGCoverR;
 
@@ -50,6 +53,12 @@ public class SinglePlayerPlayfield : Playfield
 		}
 		PlayfieldCells.Clear();
 		PlayfieldCells = null;
+		for(int i = 0; i <Seams.Count; ++i)
+		{
+			Destroy(Seams[i]);
+		}
+		Seams.Clear();
+		Seams = null;
 
 		Destroy(BGCoverL);
 		BGCoverL = null;
@@ -311,13 +320,14 @@ public class SinglePlayerPlayfield : Playfield
 		}
 	}
 
-	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture, PlayfieldData level, Texture2D[] cellTextures, Game.PlayerPalette[] palettes)
+	public void Generate(float halfWidth, float halfHeight, float uvScale, Texture2D bgTexture, PlayfieldData level, Texture2D[] cellTextures, Game.PlayerPalette[] palettes, Texture2D[] stichTextures)
 	{
 		HalfWidth = halfWidth;
 		HalfHeight = halfHeight;
 		BGTexture = bgTexture;
 		CellTextures = cellTextures;
 		Palettes = palettes;
+		StitchTextures = stichTextures;
 
 		MeshFilter meshFilter;
 		MeshRenderer meshRenderer;
@@ -348,9 +358,32 @@ public class SinglePlayerPlayfield : Playfield
 			PlayfieldCells.Add(GenerateCell(cell.Pos, cell.Size, cell.NoSymbol ? null : Symbol.Instantiate(cell.Symbol, Symbol.SymbolColor.White).GetComponent<Symbol>(), cell.BelongToPlayer));
 		}
 
-		// Generate mesh from playfield cells.
-		//GenerateMeshFromCell();
+		Seams = new List<GameObject>();
+		GameObject seam;
+		for(int i = 0; i < level.Cells.Length; ++i)
+		{
+			float size = level.Cells[i].Size * CirclePatch.SegmentScale * 2.0f;
+			Vector3 pos = level.Cells[i].Pos;
+			float offset = (size * CirclePatch.SegmentScale) * 0.5f;
 
+			seam = new GameObject("SeamH" + i);
+			meshFilter = seam.AddComponent<MeshFilter>();
+			meshFilter.mesh = Helpers.GenerateQuad(size, 0.2f, (size * 2.5f), 1.0f);
+			meshRenderer = seam.AddComponent<MeshRenderer>();
+			meshRenderer.material = new Material(Shader.Find("Unlit/Transparent"));
+			meshRenderer.material.mainTexture = StitchTextures[0];
+			seam.transform.position = new Vector3(pos.x + offset, pos.y + offset + offset, Game.ZPosAdd * 0.26f);
+			Seams.Add(seam);
+
+			seam = new GameObject("SeamV" + i);
+			meshFilter = seam.AddComponent<MeshFilter>();
+			meshFilter.mesh = Helpers.GenerateQuad(0.2f, size, 1.0f, (size * 2.5f));
+			meshRenderer = seam.AddComponent<MeshRenderer>();
+			meshRenderer.material = new Material(Shader.Find("Unlit/Transparent"));
+			meshRenderer.material.mainTexture = StitchTextures[1];
+			seam.transform.position = new Vector3(pos.x + offset + offset, pos.y + offset, Game.ZPosAdd * 0.26f);
+			Seams.Add(seam);
+		}
 	}
 
 	CellPiece GenerateCell(Vector2 pos, float size, Symbol symbol, bool belongsToPlayer)
@@ -359,7 +392,7 @@ public class SinglePlayerPlayfield : Playfield
 		
 		GameObject cellPieceObj = new GameObject("CellPiece_" + PlayfieldCells.Count);
 		CellPiece cellPiece = cellPieceObj.AddComponent<CellPiece>();
-		cellPiece.Generate(size, symbol, belongsToPlayer, belongsToPlayer ? Palettes[0] : Palettes[1], CellTextures[0]);
+		cellPiece.Generate(size, symbol, belongsToPlayer, belongsToPlayer ? Palettes[0] : Palettes[1], CellTextures[Random.Range(0, CellTextures.Length)]);
 		cellPieceObj.transform.position = new Vector3(pos.x + offset, pos.y + offset, Game.ZPosAdd * 0.25f);
 		if(symbol != null)
 		{

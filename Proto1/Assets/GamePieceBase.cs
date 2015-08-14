@@ -36,7 +36,7 @@ public abstract class GamePieceBase : MonoBehaviour
 		}
 	}
 
-	protected void UpdateChildsEffect(Color addColor)
+	public void UpdateChildsEffect(Color addColor)
 	{
 		for(int i = 0; i < transform.childCount; ++i)
 		{

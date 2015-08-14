@@ -268,6 +268,14 @@ MonoBehaviour:
   MainMenuPrefab: {fileID: 1483303619}
   MenuBGPrefab: {fileID: 1935872088}
   LogoPrefab: {fileID: 425887693}
+  CellTextures:
+  - {fileID: 2800000, guid: 31c95f580c49442ef9b3c7eb5fcb9769, type: 3}
+  - {fileID: 2800000, guid: 403b5016408644b3c824cc4fc1b0fe0d, type: 3}
+  - {fileID: 2800000, guid: b0064484104834926a8f1de00b0eb7de, type: 3}
+  - {fileID: 2800000, guid: ac5151bf9df344612927c0d611f0d75a, type: 3}
+  StichTextures:
+  - {fileID: 2800000, guid: cb155dabfa84744848177613db95c6f1, type: 3}
+  - {fileID: 2800000, guid: bbccb3864190f4f11beccf1257e68cb0, type: 3}
   PlayerDeckPatch1RendererCamera: {fileID: 1631575136}
   PlayerDeckPatch2RendererCamera: {fileID: 1776135993}
   PlayerDeckDecorationRendererCamera: {fileID: 1507636449}
@@ -700,10 +708,6 @@ MonoBehaviour:
       atime7: 0
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
-  CellSymbolIcons:
-  - {fileID: 2800000, guid: b9c111ec45904477089a932b5d191cbc, type: 3}
-  - {fileID: 2800000, guid: 3948bde5f970f4beb9213b620002c312, type: 3}
-  - {fileID: 2800000, guid: d0aee6f282d84465fa9b4c1cf789f0fd, type: 3}
   PlayerHighlightColor: {r: .662745118, g: .164705887, b: .309803933, a: 1}
   PlayerNormalColor: {r: 1, g: 1, b: 1, a: 1}
   PlayerSettings:
@@ -10730,6 +10734,52 @@ CanvasRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1645402100}
+--- !u!1001 &1648081978
+Prefab:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 400000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+      propertyPath: m_RootOrder
+      value: 8
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_ParentPrefab: {fileID: 100100000, guid: 40853396bc17c46fc87b7a96751de990, type: 2}
+  m_IsPrefabParent: 0
 --- !u!1 &1658188424
 GameObject:
   m_ObjectHideFlags: 0

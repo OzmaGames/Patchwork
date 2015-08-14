@@ -41,9 +41,13 @@ public class CellPiece : MonoBehaviour
 		meshRenderer.material.mainTexture = BGTexture;//RandomPatternTextures[Random.Range(0,6)];
 		meshRenderer.material.SetColor("_BaseColor1", Palette.Colors[Random.Range(0, Palette.Colors.Length)].colorKeys[0].color);
 		meshRenderer.material.SetColor("_BaseColor2", Palette.Colors[Random.Range(0, Palette.Colors.Length)].colorKeys[1].color);
-		meshRenderer.material.SetColor("_ComplementColor1", Palette.ComplementColor.colorKeys[1].color);
+		meshRenderer.material.SetColor("_ComplementColor1", Palette.ComplementColor.colorKeys[0].color);
 		meshRenderer.material.SetColor("_ComplementColor2", Palette.ComplementColor.colorKeys[1].color);
 		meshRenderer.material.SetColor("_AddColor", Color.clear);
+		float flipU = Random.value >= 0.5f ? 1.0f : -1.0f;
+		float flipV = Random.value >= 0.5f ? 1.0f : -1.0f;
+		float scale = Random.Range(1.0f, 2.0f);
+		meshRenderer.material.SetVector("_Flip", new Vector4(flipU * scale, flipV * scale, scale, 1.0f));
 	}
 
 	public void SwapColors(Game.PlayerPalette palette)

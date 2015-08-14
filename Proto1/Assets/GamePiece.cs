@@ -5,6 +5,8 @@ public class GamePiece : GamePieceBase
 {
 	public Color AddColor = Color.black;
 	bool doEffect = false;
+	public GamePieceBase TargetPiece;
+	public GameObject TargetObject;
 
 	void Update()
 	{
@@ -28,11 +30,13 @@ public class GamePiece : GamePieceBase
 
 	public void OnEffectStart()
 	{
+		Debug.Log("OnEffectStart");
 		doEffect = true;
 	}
 
 	public void OnEffectEnd()
 	{
+		Debug.Log("OnEffectEnd");
 		doEffect = false;
 	}
 
@@ -58,7 +62,7 @@ public class GamePiece : GamePieceBase
 
 	public override void UpdateEffect(Color addColor)
 	{
-		UpdateChildsEffect(addColor);
+		TargetPiece.UpdateChildsEffect(addColor);
 	}
 
 	public override void SetPosition(float x, float y)

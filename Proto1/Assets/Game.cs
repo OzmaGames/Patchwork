@@ -40,6 +40,9 @@ public class Game : MonoBehaviour
 	public GameObject MenuBGPrefab;
 	public GameObject LogoPrefab;
 
+	public Texture2D[] CellTextures;
+	public Texture2D[] StichTextures;
+
 	// Offscreen render-cameras.
 	public Camera PlayerDeckPatch1RendererCamera;
 	public Camera PlayerDeckPatch2RendererCamera;
@@ -62,7 +65,6 @@ public class Game : MonoBehaviour
 		public Gradient ComplementColor;
 	}
 	public PlayerPalette[] Palette;
-	public Texture2D[] CellSymbolIcons;
 	public Color PlayerHighlightColor;
 	public Color PlayerNormalColor;
 

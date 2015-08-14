@@ -165,8 +165,8 @@ public class PlayerDeck : MonoBehaviour
 	{
 		GameObject patchObject = Instantiate(PatchPrefab);
 		patchObject.name = gameObject.name + "_Patch";
-		CirclePatch circlePatch = patchObject.GetComponent<CirclePatch>();
-		circlePatch.Generate(patchConfig, Owner.PatternTextures, Owner.Palette);
+		CirclePatch circlePatch = patchObject.transform.GetComponent<CirclePatch>();
+		circlePatch.Generate(patchConfig, Owner.PatternTextures, Owner.Palette, Owner.ActiveGame.StichTextures[0]);
 		circlePatch.SetOwner(Owner);
 		return circlePatch;
 	}

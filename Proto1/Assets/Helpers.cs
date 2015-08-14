@@ -5,6 +5,11 @@ public static class Helpers
 {
 	public static Mesh GenerateQuad(float width, float height, float uvScale)
 	{
+		return GenerateQuad(width, height, uvScale, uvScale);
+	}
+
+	public static Mesh GenerateQuad(float width, float height, float uScale, float vScale)
+	{
 		Mesh outMesh = new Mesh();
 		
 		Vector3[] vertices = new Vector3[4];
@@ -18,10 +23,10 @@ public static class Helpers
 		vertices[1] = new Vector3(-halfWidth, -halfHeight);
 		vertices[2] = new Vector3(halfWidth, -halfHeight);
 		vertices[3] = new Vector3(halfWidth, halfHeight);
-		uvs[0] = new Vector3(0.0f, uvScale);
+		uvs[0] = new Vector3(0.0f, vScale);
 		uvs[1] = new Vector3(0.0f, 0.0f);
-		uvs[2] = new Vector3(uvScale, 0.0f);
-		uvs[3] = new Vector3(uvScale, uvScale);
+		uvs[2] = new Vector3(uScale, 0.0f);
+		uvs[3] = new Vector3(uScale, vScale);
 		indices[0] = 2;
 		indices[1] = 1;
 		indices[2] = 0;
