@@ -9,6 +9,9 @@ public class CirclePatch : GamePieceBase {
 	public const float SegmentScale = 1.0f;
 	const float GROWTH_SPEED = 0.5f;
 
+	public GameObject ScoreMessagePrefab;
+	GameObject ScoreMessage;	
+
 	public GameObject patchObject;
 	GameObject circlePatchSize;
 	Symbol patchSymbol;
@@ -140,8 +143,8 @@ public class CirclePatch : GamePieceBase {
 		GeneratedMesh = new Mesh();
 		GeneratedMesh.subMeshCount = numSegments;
 
-		const float requiredGranularity = 40.0f;
-		const float granularity = (2.0f * Mathf.PI) / requiredGranularity;
+		float requiredGranularity = 40.0f;
+		float granularity = (2.0f * Mathf.PI) / requiredGranularity;
 
 		List<Vector3> meshVertices = new List<Vector3>();
 		List<Vector2> meshUVs = new List<Vector2>();
@@ -173,6 +176,7 @@ public class CirclePatch : GamePieceBase {
 			List<Vector2> outerPoints = new List<Vector2>();
 			List<Vector2> uvrO = new List<Vector2>();
 			List<Vector2> uvrI = new List<Vector2>();
+			granularity = (2.0f * Mathf.PI) / (requiredGranularity * (s + 1));
 			for(float phi = 0.0f; phi < (Mathf.PI * 2.0f); phi += granularity)
 			{
 				float ca = Mathf.Cos(phi);
@@ -289,6 +293,7 @@ public class CirclePatch : GamePieceBase {
 		// Generate stitches.
 		s_SegmentStitches = new Mesh[numSegments];
 		subMeshIndicesStart = 0;
+		requiredGranularity = 40.0f;
 		for(int s = 0; s < numSegments; ++s)
 		{
 			meshVertices.Clear();
@@ -298,14 +303,15 @@ public class CirclePatch : GamePieceBase {
 			meshIndices.Clear();
 			meshIndicesStart = 0;
 			
-			float innerRadius = (s * segmentSize) + (segmentSize * 0.9f);
-			float outerRadius = ((s + 1) * segmentSize) + (segmentSize * 0.1f);
+			float innerRadius = (s * segmentSize) + (segmentSize - 0.07f);//(s * segmentSize) + (segmentSize * 0.95f);
+			float outerRadius = (s * segmentSize) + (segmentSize + 0.07f);
 			
 			// Generate points for edges.
 			List<Vector2> innerPoints = new List<Vector2>();
 			List<Vector2> outerPoints = new List<Vector2>();
 			List<Vector2> uvrO = new List<Vector2>();
 			List<Vector2> uvrI = new List<Vector2>();
+			granularity = (2.0f * Mathf.PI) / (requiredGranularity * (s + 1));
 			for(float phi = 0.0f; phi < (Mathf.PI * 2.0f); phi += granularity)
 			{
 				float ca = Mathf.Cos(phi);
@@ -561,6 +567,7 @@ public class CirclePatch : GamePieceBase {
 		material.SetTexture("_FabricTexture", PatternTextures[0]);
 		material.SetTexture("_PatternTexture2", PatternTextures[1]);
 		material.SetVector("_CirclePatchSize", new Vector4(segment * SegmentScale, size, (segment * SegmentScale) + SegmentScale, 0.0f));
+		material.SetFloat("_Border", -0.1f);
 		material.SetFloat("_CirclePatchRadius", OuterRadius);
 		material.SetFloat("_CirclePatchLayer", segment);
 		material.SetFloat("_CurrentSegmentArcSize", 0.0f);
@@ -636,6 +643,7 @@ public class CirclePatch : GamePieceBase {
 			PatchSegments[s].transform.localPosition = Vector3.zero;
 		}
 		CurrentSegment = 0;
+		PatchSegments[0].GetComponent<MeshRenderer>().material.SetFloat("_Border", 0.5f);
 
 		//StartCoroutine(RenderPatch());
 		//CachePatch();
@@ -704,6 +712,7 @@ public class CirclePatch : GamePieceBase {
 		Game.BGZPos += Game.ZPosAdd;
 		PlaceChilds();
 		isPlaced = true;
+		PatchSegments[0].GetComponent<MeshRenderer>().material.SetFloat("_Border", -0.1f);
 	}
 
 	public void PlaceDecoration(DecorationCircleStopper decoration)
@@ -828,7 +837,12 @@ public class CirclePatch : GamePieceBase {
 		SetShowSymbol(false);
 
 		// Show seam.
-		Seam.GetComponent<MeshFilter>().mesh = s_SegmentStitches[CurrentSegment];
+		int segment = CurrentSegment;
+		if(HasCollided() && (GetSize() < GetMaxSize()))
+		{
+			segment = Mathf.Max(CurrentSegment - 1, 0);
+		}
+		Seam.GetComponent<MeshFilter>().mesh = s_SegmentStitches[segment];
 		Seam.SetActive(true);
 
 		
@@ -979,6 +993,24 @@ public class CirclePatch : GamePieceBase {
 		circlePatchSize.GetComponent<Renderer>().enabled = show;
 	}
 
+	public void ShowScoreMessage(int score, Color color)
+	{
+		ScoreMessage = Instantiate(ScoreMessagePrefab);
+		ScoreMessage.transform.SetParent(GameObject.Find("Canvas").transform, false);
+		//ScoreMessage.GetComponent<UnityEngine.RectTransform>();
+
+		Vector3 patchPos = transform.position;
+		Vector3 messagePos = new Vector3(patchPos.x, patchPos.y, ScoreMessage.transform.position.z);
+		Vector3 vp = Camera.main.WorldToViewportPoint(messagePos);
+		ScoreMessage.transform.position = messagePos;
+
+
+		UnityEngine.UI.Text msgText = ScoreMessage.GetComponentInChildren<UnityEngine.UI.Text>();
+		msgText.text = score.ToString();
+		msgText.color = color;
+		ScoreMessage.GetComponent<Animator>().Play("Show");
+	}
+
 	public override void SetPosition(float x, float y)
 	{
 		transform.position = new Vector3(x, y, transform.position.z);
@@ -998,11 +1030,16 @@ public class CirclePatch : GamePieceBase {
 		Destroy(patchSymbol);
 		patchSymbol = null;
 		circlePatchSizes = null;
-		Destroy(Decoration.gameObject);
-		Decoration = null;
+		if(Decoration != null)
+		{
+			Destroy(Decoration.gameObject);
+			Decoration = null;
+		}
 		PatternTextures = null;
 		patchSegments = null;
 		Owner = null;
+		Destroy(ScoreMessage);
+		ScoreMessage = null;
 	}
 
 	void Update ()

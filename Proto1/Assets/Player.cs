@@ -33,6 +33,8 @@ public class Player : MonoBehaviour {
 
 	[System.NonSerialized]
 	public GameObject ConfirmPlacementPrefab;
+	[System.NonSerialized]
+	public GameObject CancelPlacementPrefab;
 
 	public int Score = 0;
 
@@ -85,6 +87,8 @@ public class Player : MonoBehaviour {
 
 			ConfirmPlacementPrefab.GetComponent<UIConfirmPlacement>().ActivePlayer = null;
 			ConfirmPlacementPrefab.SetActive(false);
+			CancelPlacementPrefab.GetComponent<UIConfirmPlacement>().ActivePlayer = null;
+			CancelPlacementPrefab.SetActive(false);
 		}
 
 		// Hide deck.

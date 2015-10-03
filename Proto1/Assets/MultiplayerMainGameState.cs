@@ -263,6 +263,7 @@ public class MultiplayerMainGameState : GameState
 		player.PatternTextures = playerSetting.PatchPatterns;
 		player.Decorations = playerSetting.Decorations;
 		player.ConfirmPlacementPrefab = ActiveGame.ConfirmPlacementPrefab;
+		player.CancelPlacementPrefab = ActiveGame.CancelPlacementPrefab;
 		player.ActiveGame = ActiveGame;
 		
 		Players.Add(new Game.PlayerInfo(player));

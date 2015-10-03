@@ -33,12 +33,17 @@ public class Game : MonoBehaviour
 	public GameObject TurnPrefab;
 	public GameObject HelpPrefab;
 	public GameObject ConfirmPlacementPrefab;
+	public GameObject CancelPlacementPrefab;
 	public GameObject SinglePlayerGameOverPrefab;
 	public GameObject MultiplayerGameOverPrefab;
 	public GameObject WindowPrefab;
 	public GameObject MainMenuPrefab;
 	public GameObject MenuBGPrefab;
+	public GameObject OzmaLogoPrefab;
 	public GameObject LogoPrefab;
+
+	public GameObject HelpWindowPrefab;
+	public GameObject PuzzleHelp;
 
 	public Texture2D[] CellTextures;
 	public Texture2D[] StichTextures;
@@ -99,6 +104,7 @@ public class Game : MonoBehaviour
 	{
 		const float WAIT_TIME = 3.0f;
 		float waitTimer = 0.0f;
+		PatchworkLogo ozmaLogo;
 		PatchworkLogo logo;
 		UIMenuBG menubg;
 
@@ -108,9 +114,10 @@ public class Game : MonoBehaviour
 			menubg = ActiveGame.MenuBGPrefab.GetComponent<UIMenuBG>();
 			menubg.gameObject.SetActive(true);
 			menubg.Show();
+			ozmaLogo = ActiveGame.OzmaLogoPrefab.GetComponent<PatchworkLogo>();
 			logo = ActiveGame.LogoPrefab.GetComponent<PatchworkLogo>();
-			logo.gameObject.SetActive(true);
-			logo.Show();
+			ozmaLogo.gameObject.SetActive(true);
+			ozmaLogo.Show();
 			waitTimer = 0.0f;
 		}
 
@@ -120,20 +127,43 @@ public class Game : MonoBehaviour
 
 		public override void Update()
 		{
-			switch(logo.Visible)
+			if(ozmaLogo.gameObject.activeSelf)
 			{
-			case PatchworkLogo.VisibleState.Visible:
-				waitTimer += Time.deltaTime;
-				if(waitTimer >= WAIT_TIME)
+				switch(ozmaLogo.Visible)
 				{
-					logo.Hide();
-				}
-				break;
+				case PatchworkLogo.VisibleState.Visible:
+					waitTimer += Time.deltaTime;
+					if(waitTimer >= WAIT_TIME)
+					{
+						ozmaLogo.Hide();
+					}
+					break;
 
-			case PatchworkLogo.VisibleState.Hidden:
-				logo.gameObject.SetActive(false);
-				ActiveGame.SetState(new MainMenuGameState(ActiveGame.MainMenuPrefab.GetComponent<UIMainMenu>()));
-				break;
+				case PatchworkLogo.VisibleState.Hidden:
+					ozmaLogo.gameObject.SetActive(false);
+					logo.gameObject.SetActive(true);
+					logo.Show();
+					waitTimer = 0.0f;
+					break;
+				}
+			}
+			else
+			{
+				switch(logo.Visible)
+				{
+				case PatchworkLogo.VisibleState.Visible:
+					waitTimer += Time.deltaTime;
+					if(waitTimer >= WAIT_TIME)
+					{
+						logo.Hide();
+					}
+					break;
+					
+				case PatchworkLogo.VisibleState.Hidden:
+					logo.gameObject.SetActive(false);
+					ActiveGame.SetState(new MainMenuGameState(ActiveGame.MainMenuPrefab.GetComponent<UIMainMenu>()));
+					break;
+				}
 			}
 		}
 	}
@@ -144,6 +174,8 @@ public class Game : MonoBehaviour
 		UIWindow uiWindow;
 		UIMainMenu uiMainMenu;
 		UIPage StartPage;
+		UIPage PuzzleHelp;
+		UIWindow uiHelpWindow;
 
 		public MainMenuGameState(UIPage startPage)
 		{
@@ -153,6 +185,9 @@ public class Game : MonoBehaviour
 		public override void Start()
 		{
 			ActiveGame.QuitPrefab.SetActive(false);
+
+			PuzzleHelp = ActiveGame.PuzzleHelp.GetComponent<UIPage>();
+			uiHelpWindow = ActiveGame.HelpWindowPrefab.GetComponent<UIWindow>();
 
 			menubg = ActiveGame.MenuBGPrefab.GetComponent<UIMenuBG>();
 			menubg.gameObject.SetActive(true);
@@ -171,22 +206,38 @@ public class Game : MonoBehaviour
 		
 		public override void Update()
 		{
-			switch(uiWindow.Visible)
+			if(uiWindow != null)
 			{
-			case UIWindow.VisibleState.Hidden:
-				uiWindow.gameObject.SetActive(false);
-				if(newGameState != null)
+				switch(uiWindow.Visible)
 				{
-					// Start the game.
-					ActiveGame.SetState(newGameState);
+				case UIWindow.VisibleState.Hidden:
+					uiWindow.gameObject.SetActive(false);
+					if(newGameState != null)
+					{
+						// Start the game.
+						ActiveGame.SetState(newGameState);
+					}
+					break;
 				}
-				break;
+			}
+			if(uiHelpWindow != null)
+			{
+				if(uiHelpWindow.isActiveAndEnabled && (uiHelpWindow.Visible == UIWindow.VisibleState.Hidden))
+				{
+					uiHelpWindow.gameObject.SetActive(false);
+				}
 			}
 		}
 
 		GameState newGameState;
 		void OnSubmit(UIPage page)
 		{
+			if(uiHelpWindow.isActiveAndEnabled)
+			{
+				Debug.Log("HelpIsActive");
+				return;
+			}
+
 			System.Type type = page.GetType();
 			if(type == typeof(UILevelSelect))
 			{
@@ -202,6 +253,9 @@ public class Game : MonoBehaviour
 					break;
 				case 2:
 					Debug.Log("ShowHelp");
+					uiHelpWindow.gameObject.SetActive(true);
+					uiHelpWindow.OnSubmit = OnHelpSubmit;
+					uiHelpWindow.Show(PuzzleHelp);
 					break;
 				case 3:
 					Debug.Log("ShowOptions");
@@ -235,6 +289,16 @@ public class Game : MonoBehaviour
 					uiWindow.Hide();
 					menubg.Hide();
 				}
+			}
+		}
+
+		void OnHelpSubmit(UIPage page)
+		{
+			System.Type type = page.GetType();
+			if(type == typeof(UIPuzzleHelp))
+			{
+				UIPuzzleHelp puzzleHelp = page as UIPuzzleHelp;
+				uiHelpWindow.Hide();
 			}
 		}
 	}

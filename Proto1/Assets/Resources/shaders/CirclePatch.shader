@@ -8,6 +8,8 @@
 		_BaseColor2 ("BaseColor2", Color) = (1,1,1,1)
 		_ComplementColor1 ("ComplementColor1", Color) = (1,1,1,1)
 		_ComplementColor2 ("ComplementColor2", Color) = (1,1,1,1)
+		
+		_Border ("Border", float) = 0.5
 						
 		_MainTex ("Base (RGB)", 2D) = "white" {}
 		_FabricTexture("Fabric Texture", 2D) = "white" {}
@@ -41,6 +43,7 @@
 			float4 _BaseColor2;
 			float4 _ComplementColor1;
 			float4 _ComplementColor2;
+			float _Border;
 						
 			struct appdata {
 				float4 vertex : POSITION;
@@ -97,7 +100,7 @@
 				float gray = 0.0f;
 				float4 color = 0.0f;
 				float fade = 1.0f;
-				float border = 1.0f;
+				float border = 0.0f;
 
 #if DO_SEGMENT_O
 				//gray = tex2D(_AtlasTex, TRANSFORM_TEX(((i.uv.yx * _CirclePatchLayer) / 2.0f), _AtlasTex)).r;
@@ -134,7 +137,7 @@
 				// Awful outline.
 				if(ll > (_CirclePatchSize.z - 0.1f))
 				{
-					border = 0.5f;
+					border = _Border;
 					fade = 0.0f;
 				}
 				
@@ -142,7 +145,8 @@
 				gray *= gray;
 				
 				// Final color.
-				color = float4(lerp(FGColorFromPalette(fgtex * fade), BGColorFromPalette(bgtex * fade), 1.0f - fgtex) * gray * border, 1.0f);
+				color = float4((lerp(FGColorFromPalette(fgtex * fade), BGColorFromPalette(bgtex * fade), 1.0f - fgtex) *
+					gray) + (border * float3(1.0f, 1.0f, 1.0f)), 1.0f);
 				color.rgb += _AddColor.rgb;
 				return color;
 			}

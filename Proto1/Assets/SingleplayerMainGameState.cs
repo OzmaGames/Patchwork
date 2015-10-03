@@ -273,6 +273,7 @@ public class SingleplayerMainGameState : GameState
 		player.PatternTextures = playerSetting.PatchPatterns;
 		player.Decorations = playerSetting.Decorations;
 		player.ConfirmPlacementPrefab = ActiveGame.ConfirmPlacementPrefab;
+		player.CancelPlacementPrefab = ActiveGame.CancelPlacementPrefab;
 		player.ActiveGame = ActiveGame;
 		
 		return new Game.PlayerInfo(player);

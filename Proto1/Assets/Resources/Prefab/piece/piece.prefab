@@ -87,6 +87,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ActivePlayfield: {fileID: 0}
+  ScoreMessagePrefab: {fileID: 183718, guid: a9d3e53160a4f44babdb9e4a9ea391a8, type: 2}
   patchObject: {fileID: 0}
   AddColor: {r: 0, g: 0, b: 0, a: 1}
   Segments: 1

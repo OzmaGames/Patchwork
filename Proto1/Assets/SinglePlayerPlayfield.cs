@@ -21,7 +21,6 @@ public class SinglePlayerPlayfield : Playfield
 	GameObject BGCoverL;
 	GameObject BGCoverR;
 
-	
 	class PlacedPatch
 	{
 		public PlacedPatch(Player owner, CirclePatch patch)
@@ -368,7 +367,7 @@ public class SinglePlayerPlayfield : Playfield
 
 			seam = new GameObject("SeamH" + i);
 			meshFilter = seam.AddComponent<MeshFilter>();
-			meshFilter.mesh = Helpers.GenerateQuad(size, 0.2f, (size * 2.5f), 1.0f);
+			meshFilter.mesh = Helpers.GenerateQuad(size, 0.15f, (size * 8.0f), 1.0f);
 			meshRenderer = seam.AddComponent<MeshRenderer>();
 			meshRenderer.material = new Material(Shader.Find("Unlit/Transparent"));
 			meshRenderer.material.mainTexture = StitchTextures[0];
@@ -377,7 +376,7 @@ public class SinglePlayerPlayfield : Playfield
 
 			seam = new GameObject("SeamV" + i);
 			meshFilter = seam.AddComponent<MeshFilter>();
-			meshFilter.mesh = Helpers.GenerateQuad(0.2f, size, 1.0f, (size * 2.5f));
+			meshFilter.mesh = Helpers.GenerateQuad(0.15f, size, 1.0f, (size * 8.0f));
 			meshRenderer = seam.AddComponent<MeshRenderer>();
 			meshRenderer.material = new Material(Shader.Find("Unlit/Transparent"));
 			meshRenderer.material.mainTexture = StitchTextures[1];
@@ -478,28 +477,39 @@ public class SinglePlayerPlayfield : Playfield
 			for(int i = 0; i < PlayfieldCells.Count; ++i)
 			{
 				CellPiece cell = PlayfieldCells[i];
-				if(cell.GiveScore && (cell.Piece != null))
+				if((!cell.IsDone) && (cell.Piece != null))
 				{
-					if(cell.Piece.gameObject == patch.gameObject)
+					if(cell.GiveScore)
 					{
-						if(decoration != null)
+						if(cell.Piece.gameObject == patch.gameObject)
 						{
-							int scoreToGive = alreadyDoneGrowing ? 2 : (int)patch.GetSize();
-							if(decoration.GetOwner() != patch.GetOwner())
+							int scoreToGive = 0;
+							if(decoration != null)
 							{
-								scoreToGive = scoreToGive / 2;
-								decoration.GetOwner().AddScore(scoreToGive);
+								scoreToGive = alreadyDoneGrowing ? 2 : (int)patch.GetSize();
+								if(decoration.GetOwner() != patch.GetOwner())
+								{
+									scoreToGive = scoreToGive / 2;
+									decoration.GetOwner().AddScore(scoreToGive);
+								}
+								else if(alreadyDoneGrowing)
+								{
+									decoration.Owner.AddScore(scoreToGive);
+								}
 							}
-							else if(alreadyDoneGrowing)
+							if(!alreadyDoneGrowing)
 							{
-								decoration.Owner.AddScore(scoreToGive);
+								patch.Owner.AddScore((int)patch.GetSize());
+								scoreToGive += (int)patch.GetSize();
 							}
+							patch.ShowScoreMessage(scoreToGive, scoreToGive > 0 ? Color.white : Color.red);
+							cell.GiveScore = false;
+							cell.IsDone = true;
 						}
-						if(!alreadyDoneGrowing)
-						{
-							patch.Owner.AddScore((int)patch.GetSize());
-						}
-						cell.GiveScore = false;
+					}
+					else
+					{
+						patch.ShowScoreMessage(0, Color.red);
 					}
 				}
 			}
